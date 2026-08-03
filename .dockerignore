@@ -1,0 +1,7 @@
+.git
+data
+cases
+*.nc
+*.grib
+*.grb
+*.grib2
