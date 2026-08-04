@@ -73,5 +73,35 @@ RUN curl -fL \
 
 WORKDIR /workspace
 
-CMD ["bash"]
+# ------------------------------------------------------------
+# netCDF-C
+# ------------------------------------------------------------
 
+ARG NETCDF_C_VERSION=4.10.1
+ARG NETCDF_C_SHA256=db3b69ff4a5ee1a7d79a5c36664d2128b752c266e966369fcf7311ec5f927564
+
+WORKDIR /tmp
+
+RUN curl -fL \
+    https://downloads.unidata.ucar.edu/netcdf-c/${NETCDF_C_VERSION}/netcdf-c-${NETCDF_C_VERSION}.tar.gz \
+    -o netcdf-c.tar.gz \
+    && echo "${NETCDF_C_SHA256}  netcdf-c.tar.gz" | sha256sum -c - \
+    && tar -xzf netcdf-c.tar.gz \
+    && cd netcdf-c-${NETCDF_C_VERSION} \
+    && ./configure \
+    	--prefix=${MPAS_PREFIX} \
+    	--enable-hdf5 \
+    	--disable-dap \
+    	--disable-libxml2 \
+    	--disable-nczarr \
+	--disable-parallel4 \
+    	--enable-shared \
+   	--enable-static \
+    && make -j${BUILD_JOBS} \
+    && make check \
+    && make install \
+    && rm -rf /tmp/netcdf-c*
+
+WORKDIR /workspace
+
+CMD ["bash"]
