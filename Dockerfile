@@ -18,7 +18,7 @@ RUN apt-get update && apt-get install -y \
     pkg-config \
     && rm -rf /var/lib/apt/lists/*
 
-#Diretório da stack científica
+# Diretório da stack científica
 ENV MPAS_PREFIX=/opt/mpas
 
 ENV PATH=${MPAS_PREFIX}/bin:${PATH}
@@ -89,14 +89,14 @@ RUN curl -fL \
     && tar -xzf netcdf-c.tar.gz \
     && cd netcdf-c-${NETCDF_C_VERSION} \
     && ./configure \
-    	--prefix=${MPAS_PREFIX} \
-    	--enable-hdf5 \
-    	--disable-dap \
-    	--disable-libxml2 \
-    	--disable-nczarr \
-	--disable-parallel4 \
-    	--enable-shared \
-   	--enable-static \
+        --prefix=${MPAS_PREFIX} \
+        --enable-hdf5 \
+        --disable-dap \
+        --disable-libxml2 \
+        --disable-nczarr \
+        --disable-parallel4 \
+        --enable-shared \
+        --enable-static \
     && make -j${BUILD_JOBS} \
     && make check \
     && make install \
@@ -128,6 +128,9 @@ RUN curl -fL \
     && make check \
     && make install \
     && rm -rf /tmp/netcdf-fortran*
+
+# Variável usada pelo sistema de build do MPAS
+ENV NETCDF=${MPAS_PREFIX}
 
 WORKDIR /workspace
 
