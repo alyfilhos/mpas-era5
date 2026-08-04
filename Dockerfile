@@ -134,4 +134,68 @@ ENV NETCDF=${MPAS_PREFIX}
 
 WORKDIR /workspace
 
+# ------------------------------------------------------------
+# PnetCDF
+# ------------------------------------------------------------
+
+ARG PNETCDF_VERSION=1.15.0
+ARG PNETCDF_SHA256=39813fe91ec901c7cfca3212731edbb5201029ebf55caeaaaa08d9e33c6bad65
+
+WORKDIR /tmp
+
+RUN --mount=type=cache,target=/pnetcdf-test-output,sharing=locked \
+    command -v mpicc \
+    && command -v mpicxx \
+    && command -v mpifort \
+    && command -v mpif77 \
+    && mpicc --showme \
+    && mpifort --showme \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends bc \
+    && rm -rf /var/lib/apt/lists/* \
+    && curl -fL \
+       https://parallel-netcdf.github.io/Release/pnetcdf-${PNETCDF_VERSION}.tar.gz \
+       -o pnetcdf.tar.gz \
+    && echo "${PNETCDF_SHA256}  pnetcdf.tar.gz" | sha256sum -c - \
+    && tar -xzf pnetcdf.tar.gz \
+    && cd pnetcdf-${PNETCDF_VERSION} \
+    && MPICC=mpicc \
+       MPICXX=mpicxx \
+       MPIF77=mpif77 \
+       MPIF90=mpifort \
+       ./configure \
+        --prefix=${MPAS_PREFIX} \
+        --disable-gio \
+        --enable-shared \
+        --enable-static \
+    && make -j${BUILD_JOBS} \
+    && make check \
+    && ompi_info --param io all | grep -F "MCA io: romio321" \
+    && rm -rf /pnetcdf-test-output/pnetcdf-1.15.0 \
+    && mkdir -p /pnetcdf-test-output/pnetcdf-1.15.0 \
+    && timeout --signal=TERM --kill-after=30s 5m \
+       make ptest \
+       TESTMPIRUN="mpiexec --allow-run-as-root --mca io romio321 -n NP" \
+       TESTOUTDIR=/pnetcdf-test-output/pnetcdf-1.15.0 \
+    && rm -rf /pnetcdf-test-output/pnetcdf-1.15.0 \
+    && make install \
+    && which pnetcdf_version \
+    && pnetcdf_version \
+    && which pnetcdf-config \
+    && pnetcdf-config --help \
+    && pnetcdf-config --all \
+    && test "$(pnetcdf-config --version)" = "PnetCDF ${PNETCDF_VERSION}" \
+    && test "$(pnetcdf-config --prefix)" = "${MPAS_PREFIX}" \
+    && test "$(pnetcdf-config --has-fortran)" = "yes" \
+    && test "$(pnetcdf-config --gio)" = "disabled" \
+    && which ncmpidump \
+    && test -f "$(pnetcdf-config --libdir)/libpnetcdf.a" \
+    && test -e "$(pnetcdf-config --libdir)/libpnetcdf.so" \
+    && rm -rf /tmp/pnetcdf*
+
+# Variável usada pelo sistema de build do MPAS
+ENV PNETCDF=${MPAS_PREFIX}
+
+WORKDIR /workspace
+
 CMD ["bash"]

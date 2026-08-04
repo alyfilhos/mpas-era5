@@ -21,12 +21,12 @@ pacotes do sistema ou testes de compatibilidade.
 | HDF5 | 1.14.6 | adotada | `HDF5_VERSION=1.14.6`; checksum ainda não registrado |
 | netCDF-C | 4.10.1 | adotada | `NETCDF_C_VERSION=4.10.1`; SHA-256 registrado no `Dockerfile` |
 | netCDF-Fortran | 4.6.3 | adotada | `NETCDF_FORTRAN_VERSION=4.6.3`; SHA-256 registrado no `Dockerfile` |
+| PnetCDF | 1.15.0 | adotada | tarball oficial; SHA-256 local verificado; MPI-IO/OpenMPI; GIO desabilitado; Fortran e shared/static; [[../decisions/0001-pnetcdf-mpiio-backend|ADR 0001]] |
 
 ## Versões ainda não decididas
 
 | Componente | Versão | Estado | Próximo gate |
 |---|---|---|---|
-| PnetCDF | a decidir | não implementado | requisitos → fontes oficiais → compatibilidade → proposta → decisão do usuário |
 | PIO2 | a decidir | não implementado | requisitos → fontes oficiais → compatibilidade com MPI/PnetCDF/netCDF → proposta → decisão do usuário |
 | METIS | a decidir | não implementado | requisitos do MPAS escolhido → release oficial → proposta → decisão do usuário |
 | WPS | a decidir | não implementado | compatibilidade com `ungrib`, formato ERA5 e stack aprovada → decisão do usuário |

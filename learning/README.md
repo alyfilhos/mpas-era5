@@ -18,6 +18,8 @@ apontar para ele.
   do início dos ciclos Codex;
 - [`commits/0001-bootstrap-codex-workflow.md`](commits/0001-bootstrap-codex-workflow.md):
   nota educacional do ciclo de governança 0001;
+- [`commits/0002-add-pnetcdf.md`](commits/0002-add-pnetcdf.md): nota
+  educacional do build e da validação PnetCDF/MPI-IO;
 - `commits/NNNN-<descricao>.md`: uma nota por commit posterior ao bootstrap.
 
 ## O que cada nota por commit deve ensinar

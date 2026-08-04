@@ -28,7 +28,7 @@ compilação de software científico, MPI e ferramentas utilizadas em HPC.
 - HDF5 1.14.6 ✅
 - netCDF-C 4.10.1 ✅
 - netCDF-Fortran 4.6.3 ✅
-- PnetCDF ⏳
+- PnetCDF 1.15.0 ✅
 - PIO2 ⏳
 - METIS ⏳
 

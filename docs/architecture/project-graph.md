@@ -16,7 +16,7 @@ Stack científica
     │     ↓
     ├── netCDF-Fortran
     │     ↓
-    ├── PnetCDF
+    ├── PnetCDF 1.15.0 ✅
     │     ↓
     ├── PIO2
     │     ↓
@@ -40,9 +40,24 @@ Dockerfile
 → MPAS
 ```
 
-No ciclo 0001, a implementação termina em netCDF-Fortran. PnetCDF, PIO2,
-METIS, WPS e MPAS permanecem no grafo como destino do plano, não como
-componentes concluídos.
+No ciclo 0002, a implementação termina em PnetCDF 1.15.0. PIO2, METIS, WPS e
+MPAS permanecem no grafo como destino do plano, não como componentes
+concluídos.
+
+PnetCDF não depende da seta HDF5 → netCDF neste ciclo. A ordem no `Dockerfile`
+preserva a stack já construída, mas o caminho funcional novo é independente:
+
+```text
+tests/smoke/pnetcdf_mpi.f90
+          ↓
+   API Fortran PnetCDF
+          ↓
+   PnetCDF 1.15.0
+          ↓
+ MPI-IO (ROMIO 4.1.6)
+          ↓
+     OpenMPI 4.1.6
+```
 
 ## Fluxo de governança
 
@@ -87,7 +102,9 @@ mpas-era5/
 │   │   ├── source-registry.md        classificação e proveniência das fontes
 │   │   └── versions.lock.md          versões adotadas e a decidir
 │   ├── decisions/
-│   │   └── README.md                 política e template de ADR
+│   │   ├── README.md                 política e template de ADR
+│   │   └── 0001-pnetcdf-mpiio-backend.md
+│   │                                  decisão PnetCDF/GIO/MPI-IO
 │   ├── testing/
 │   │   └── validation-matrix.md      testes, status e evidências
 │   └── logs/                         reservado; atualmente vazio
@@ -95,19 +112,22 @@ mpas-era5/
 │   ├── README.md                     índice e regras do material didático
 │   ├── baseline.md                   explicação da stack já construída
 │   └── commits/
-│       └── 0001-bootstrap-codex-workflow.md
-│                                      nota educacional deste ciclo
+│       ├── 0001-bootstrap-codex-workflow.md
+│       └── 0002-add-pnetcdf.md         nota educacional do ciclo 0002
 ├── scripts/
-│   ├── validate/                     validações reproduzíveis futuras
+│   ├── validate/
+│   │   └── pnetcdf.sh                validação instalada MPI/Fortran
 │   └── codex/                        automações de suporte a ciclos futuros
+├── tests/
+│   └── smoke/
+│       └── pnetcdf_mpi.f90           I/O coletivo CDF-5 em 4 ranks
 ├── data/                              entradas locais; dados grandes fora do Git
 ├── cases/                             configurações futuras de experimentos
 └── docker/                            suporte Docker futuro
 ```
 
-`scripts/validate/` e `scripts/codex/` são criados vazios no ciclo 0001. Git
-não preserva diretórios vazios; a primeira automação aprovada deverá criar o
-arquivo correspondente e atualizar este grafo se a responsabilidade mudar.
+`scripts/validate/` passa a ser rastreável pelo script PnetCDF no ciclo 0002.
+`scripts/codex/` continua vazio e, por isso, não é preservado pelo Git.
 
 ## Responsabilidades e relações
 
@@ -120,6 +140,7 @@ arquivo correspondente e atualizar este grafo se a responsabilidade mudar.
 | `docs/testing/` | distinguir teste planejado, executado e comprovado | atualizada após cada validação técnica |
 | `learning/` | explicar conceitos e raciocínio por baseline/commit | referencia estado, fontes, ADRs e testes sem substituí-los |
 | `scripts/validate/` | hospedar validações repetíveis | resultados resumidos alimentam `docs/testing/` |
+| `tests/smoke/` | hospedar fontes mínimas independentes do build upstream | compiladas pelos scripts contra a instalação final |
 | `scripts/codex/` | hospedar automação de governança aprovada | deve respeitar `AGENTS.md` e o workflow |
 | `data/` | manter entradas locais do ERA5 e auxiliares | credenciais e dados grandes nunca devem entrar no Git |
 | `cases/` | manter configurações de execuções MPAS | depende de mesh, ERA5 e versões aprovadas |

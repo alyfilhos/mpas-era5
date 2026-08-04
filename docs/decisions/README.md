@@ -7,8 +7,13 @@ compatibilidade, ciência, reprodutibilidade ou manutenção. O diff mostra o qu
 mudou; o ADR explica por que a opção foi escolhida, quais alternativas foram
 consideradas e quais consequências foram aceitas.
 
-Este diretório contém apenas esta política no ciclo 0001. Nenhuma decisão
-arquitetural anterior foi reconstruída sem evidência.
+Nenhuma decisão arquitetural anterior ao workflow foi reconstruída sem
+evidência. Decisões novas são listadas abaixo.
+
+## Índice
+
+- [[0001-pnetcdf-mpiio-backend|ADR 0001 — PnetCDF 1.15.0 com backend MPI-IO]]
+  — aceito em 2026-08-04.
 
 ## Quando criar um ADR
 

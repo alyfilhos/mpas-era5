@@ -18,6 +18,7 @@ Este diretório centraliza a documentação técnica e científica do projeto.
 - [[references/source-registry|Registro de fontes]]
 - [[references/versions.lock|Versões adotadas e pendentes]]
 - [[decisions/README|Registros de Decisão Arquitetural (ADRs)]]
+- [[decisions/0001-pnetcdf-mpiio-backend|ADR 0001 — PnetCDF com MPI-IO]]
 - [[testing/validation-matrix|Matriz de validação]]
 
 ### Aprendizado
@@ -25,6 +26,7 @@ Este diretório centraliza a documentação técnica e científica do projeto.
 - [[../learning/README|Índice de aprendizado]]
 - [[../learning/baseline|Baseline didático da stack]]
 - [[../learning/commits/0001-bootstrap-codex-workflow|Ciclo 0001 — bootstrap do workflow Codex]]
+- [[../learning/commits/0002-add-pnetcdf|Ciclo 0002 — adicionar PnetCDF]]
 
 ## Blocos do projeto
 
