@@ -7,6 +7,25 @@ Este diretório centraliza a documentação técnica e científica do projeto.
 - [[architecture/project-graph|Grafo do projeto]]
 - [[build/scientific-stack|Stack científica]]
 
+### Projeto e governança
+
+- [[project/requirements|Requisitos do projeto]]
+- [[project/current-state|Estado atual]]
+- [[project/development-workflow|Workflow de desenvolvimento]]
+
+### Rastreabilidade
+
+- [[references/source-registry|Registro de fontes]]
+- [[references/versions.lock|Versões adotadas e pendentes]]
+- [[decisions/README|Registros de Decisão Arquitetural (ADRs)]]
+- [[testing/validation-matrix|Matriz de validação]]
+
+### Aprendizado
+
+- [[../learning/README|Índice de aprendizado]]
+- [[../learning/baseline|Baseline didático da stack]]
+- [[../learning/commits/0001-bootstrap-codex-workflow|Ciclo 0001 — bootstrap do workflow Codex]]
+
 ## Blocos do projeto
 
 1. Ambiente e containerização
@@ -16,3 +35,8 @@ Este diretório centraliza a documentação técnica e científica do projeto.
 5. Preparação da malha
 6. Primeira execução
 7. Validação e visualização
+
+## Regra de localização
+
+O [[architecture/project-graph|grafo do projeto]] é a referência para localizar
+diretórios, documentos e relações entre as partes do repositório.

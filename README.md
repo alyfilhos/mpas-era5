@@ -50,6 +50,10 @@ O mapa da estrutura e das relações entre os arquivos está em:
 
 [`docs/architecture/project-graph.md`](docs/architecture/project-graph.md)
 
+O material didático e as notas de aprendizado por ciclo estão em:
+
+[`learning/`](learning/README.md)
+
 ## Referências principais
 
 - MPAS-Model
