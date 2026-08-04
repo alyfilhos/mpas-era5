@@ -104,4 +104,31 @@ RUN curl -fL \
 
 WORKDIR /workspace
 
+# ------------------------------------------------------------
+# netCDF-Fortran
+# ------------------------------------------------------------
+
+ARG NETCDF_FORTRAN_VERSION=4.6.3
+ARG NETCDF_FORTRAN_SHA256=f642050e90025e7bb25848cc8f818545e1d3bdeb73fe6d103a6f8dc000a1a3d6
+
+WORKDIR /tmp
+
+RUN curl -fL \
+    https://downloads.unidata.ucar.edu/netcdf-fortran/${NETCDF_FORTRAN_VERSION}/netcdf-fortran-${NETCDF_FORTRAN_VERSION}.tar.gz \
+    -o netcdf-fortran.tar.gz \
+    && echo "${NETCDF_FORTRAN_SHA256}  netcdf-fortran.tar.gz" | sha256sum -c - \
+    && tar -xzf netcdf-fortran.tar.gz \
+    && cd netcdf-fortran-${NETCDF_FORTRAN_VERSION} \
+    && CC=gcc FC=gfortran ./configure \
+        --prefix=${MPAS_PREFIX} \
+        --disable-zstandard-plugin \
+        --enable-shared \
+        --enable-static \
+    && make -j${BUILD_JOBS} \
+    && make check \
+    && make install \
+    && rm -rf /tmp/netcdf-fortran*
+
+WORKDIR /workspace
+
 CMD ["bash"]
