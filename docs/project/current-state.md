@@ -1,23 +1,47 @@
 # Estado atual do projeto
 
-## Referência da inspeção
+## Como interpretar a referência Git
 
-Estado atualizado em **2026-08-04** ao final da implementação e validação
-técnica do ciclo 0003, a partir do Git real, do build Docker e dos testes
-executados.
+Este documento registra o estado técnico produzido por um ciclo, mas não tenta
+prever o hash do commit que futuramente o materializará. Um arquivo escrito
+antes do commit não pode conhecer o SHA desse commit.
 
-- branch: `main`;
-- `HEAD`: `2d6c5eec92766c6a7ca4018070e2aa6a21adc192`
-  (`build: add PnetCDF MPI-IO support`);
+A partir do ciclo 0004, cada atualização distingue:
+
+- **base do ciclo:** commit real sobre o qual o trabalho começou;
+- **estado produzido pelo ciclo:** conteúdo e validações presentes no
+  worktree;
+- **commit que materializa o estado:** consultar o Git depois do commit, por
+  exemplo com `git log --oneline -- docs/project/current-state.md`;
+- **HEAD atual:** obter sempre com `git rev-parse HEAD`, sem confiar em um SHA
+  antigo escrito neste documento.
+
+Consequentemente, a referência abaixo é uma observação datada, não uma
+declaração eterna do `HEAD`.
+
+## Referência do ciclo 0004
+
+Estado atualizado em **2026-08-05** depois da implementação, build, testes e
+regressões do METIS 5.1.0:
+
+- branch inspecionada: `main`;
+- base do ciclo:
+  `7e1d672696e6b892ca36b57ec53a1b3041aeedcf`
+  (`build: add PIO2 with PnetCDF backend`);
 - relação observada antes das mudanças: `main` alinhada com `origin/main`;
-- estado atual: mudanças do ciclo 0003 no worktree, sem commit e sem push,
-  aguardando relatório pré-commit e aprovação.
+- estado produzido: mudanças do ciclo 0004 no worktree, sem commit e sem push,
+  aguardando relatório pré-commit e aprovação;
+- commit que materializa este estado: **consultar Git**; nenhum SHA futuro foi
+  escrito;
+- `HEAD` observado ao atualizar este documento:
+  `7e1d672696e6b892ca36b57ec53a1b3041aeedcf`;
+- comando normativo para o `HEAD` atual: `git rev-parse HEAD`.
 
-O valor anterior deste documento ainda descrevia o estado pré-commit do ciclo
-0002: apontava para `e1f86a4` e dizia que PnetCDF permanecia no worktree. A
-inspeção real mostrou que o ciclo 0002 já é o `HEAD` `2d6c5ee`. Essa pendência
-documental conhecida foi corrigida neste ciclo; o Git, e não o texto antigo,
-foi usado como fonte do estado inicial.
+O documento anterior ainda registrava o `HEAD` do ciclo 0002 enquanto
+descrevia o worktree do ciclo 0003. O estado real conferido no início deste
+ciclo mostrou que o ciclo 0003 já estava materializado no commit base acima.
+A nova convenção elimina a tentativa de fazer o documento antecipar o próprio
+commit.
 
 ## Ambiente definido no repositório
 
@@ -25,130 +49,159 @@ O [`Dockerfile`](../../Dockerfile) define:
 
 - imagem base Ubuntu 24.04;
 - toolchain GNU por `build-essential` e `gfortran`;
-- OpenMPI pelos pacotes `openmpi-bin` e `libopenmpi-dev`;
+- OpenMPI por `openmpi-bin` e `libopenmpi-dev`;
 - prefixo científico `/opt/mpas`;
-- `PATH`, `LD_LIBRARY_PATH`, `CPPFLAGS` e `LDFLAGS` apontando para o
-  prefixo;
+- `PATH`, `LD_LIBRARY_PATH`, `CPPFLAGS` e `LDFLAGS` para o prefixo;
 - `NETCDF=/opt/mpas`, `PNETCDF=/opt/mpas` e `PIO=/opt/mpas`.
 
-O build validado reportou GCC/GFortran 13.3.0, OpenMPI 4.1.6 e MPI 3.1. As
-versões dos pacotes APT continuam sem lock; são a resolução obtida do Ubuntu
-24.04 na data do build.
+Não foi criada uma variável `METIS`: o workflow usa
+`/opt/mpas/bin/gpmetis` descoberto por `PATH`.
 
 ## Stack científica implementada
 
 | Componente | Versão | Estado e evidência atual |
 |---|---:|---|
-| zlib | 1.3.2 | camada existente preservada; recuperada do cache no build do ciclo 0003 |
+| zlib | 1.3.2 | camada existente preservada; recuperada do cache no build do ciclo 0004 |
 | HDF5 | 1.14.6 | camada serial existente preservada e recuperada do cache |
-| netCDF-C | 4.10.1 | camada existente preservada; NetCDF-4 presente, parallel I/O desabilitado |
-| netCDF-Fortran | 4.6.3 | camada existente preservada e versão reconfirmada |
-| PnetCDF | 1.15.0 | camada MPI-IO preservada; regressão F90/CDF-5 em 4 ranks aprovada |
-| PIO | 2.7.0 | C/Fortran static, timing desligado, PnetCDF habilitado, 109/109 testes e integração C em 4 ranks aprovados |
+| netCDF-C | 4.10.1 | camada serial preservada; `nc-config` reconfirmado na regressão |
+| netCDF-Fortran | 4.6.3 | camada preservada; `nf-config` reconfirmado |
+| PnetCDF | 1.15.0 | camada MPI-IO preservada; F90/CDF-5 em quatro ranks aprovado |
+| PIO | 2.7.0 | C/Fortran static, PnetCDF habilitado; integração CDF-2 aprovada com OMPIO e ROMIO |
+| METIS | 5.1.0 | static, índices/reais 32 bits, GKlib incluída; `gpmetis` offline validado |
 
-A imagem validada é `mpas-era5:pio-2.7.0`, com ID/digest local
-`sha256:0a54e71725fbdcbe44dee5f4012198ae504ddf191e4cf79fe2b7630c5bfe1c91`
-e tamanho reportado de 336876391 bytes. O build e as duas validações
-versionadas terminaram com código 0.
+A imagem validada é `mpas-era5:metis-5.1.0`, com ID/digest local
+`sha256:4d1cd35469cf12c710643d78a93448924dcd5bb1af6155846dd1e4f213af53b3`
+e tamanho reportado de 337.756.200 bytes. Todas as camadas anteriores ao METIS
+foram recuperadas do cache; nenhuma versão anterior foi reconstruída ou
+alterada.
 
-Os logs completos desta sessão estão temporariamente em:
+Os logs completos da sessão permanecem temporariamente em:
 
-- `/tmp/mpas-era5-pio-build.log`;
-- `/tmp/mpas-era5-pio-validation-final.log`;
-- `/tmp/mpas-era5-pio-pnetcdf-regression.log`.
+- `/tmp/mpas-era5-metis-build.log`;
+- `/tmp/mpas-era5-metis-validation.log`;
+- `/tmp/mpas-era5-metis-pnetcdf-regression.log`;
+- `/tmp/mpas-era5-metis-pio-regression.log`.
 
-Eles não são artefatos versionados. A evidência resumida e auditável está em
+Eles não são versionados. A evidência resumida está em
 [[../testing/validation-matrix|validation-matrix.md]].
 
-## PIO validado no ciclo 0003
+## METIS validado no ciclo 0004
 
-- release oficial atual: tag `pio2_7_0`, publicada em 2026-04-29;
-- tarball verificado antes da extração pelo SHA-256 local
-  `cce83743156ae723e7890931c2b48dcfe7ea8a276962dc4429f839d8f58d4a5a`;
-- auxiliares CMake fixados nos commits
-  `05ff8d8e4c88786e94a02c853d3ff921113d785c` e
-  `4816965ba946731352bad195b7d946a5fe682ff5`;
-- configuração CMake com `CC=mpicc`, `FC=mpifort`,
-  `CMAKE_PREFIX_PATH=/opt/mpas`, Fortran/testes/exemplos/PnetCDF habilitados
-  e `PIO_ENABLE_TIMING=OFF`;
-- o CMake encontrou netCDF-C 4.10.1, netCDF-Fortran 4.6.3, PnetCDF, MPI C e
-  MPI Fortran; `HAVE_NETCDF4` passou e `HAVE_NETCDF_PAR` falhou como
-  esperado para a stack serial;
-- todas as camadas até PnetCDF apareceram como `CACHED`: HDF5, netCDF-C,
-  netCDF-Fortran e PnetCDF não foram reconstruídos;
-- CTest upstream: 109/109 testes aprovados em 37,12 segundos;
-- instalação: `pio.h`, módulos Fortran, `libpioc.a`, `libpiof.a`,
-  `libpio.settings` e pacote CMake conferidos;
-- IOTYPEs em runtime:
-  `PNETCDF=1 NETCDF=1 NETCDF4C=0 NETCDF4P=0`;
-- integração instalada: programa C criou e releu CDF-2 explicitamente por
-  `PIO_IOTYPE_PNETCDF` em quatro ranks;
-- valores conferidos por `ncmpidump`:
-  `rank_value = 1000, 1001, 1002, 1003`;
-- o smoke passou com OMPIO padrão e com seleção ROMIO apenas no comando;
-- linkagem: o executável contém `PIOc_Init_Intracomm`, carrega PnetCDF e
-  netCDF de `/opt/mpas/lib` e MPI do OpenMPI do Ubuntu;
-- regressão da camada anterior: o smoke PnetCDF/Fortran passou em quatro ranks,
-  criou CDF-5 e preservou as versões netCDF/PnetCDF.
+- decisão: METIS 5.1.0 como particionador serial externo e offline;
+- origem: tarball first-party histórico de George Karypis;
+- SHA-256 local, confirmado por dois downloads:
+  `76faebe03f6c963127dbb73c13eab58c9a3faeae48779f049066a21c087c5db2`;
+- build real: `make config prefix=/opt/mpas`, `make -j8`,
+  `make install`;
+- configuração default estática; `IDXTYPEWIDTH=32` e
+  `REALTYPEWIDTH=32`;
+- GKlib fornecida em `GKlib/` pelo tarball 5.1.0; nenhuma dependência GKlib
+  externa;
+- ferramentas instaladas: `gpmetis`, `ndmetis`, `mpmetis`,
+  `m2gmetis`, `graphchk` e `cmpfillin`;
+- instalação também preserva `metis.h` e `libmetis.a`;
+- não há `make check`, CTest ou suíte formal registrada pela release;
+- validação aplicável upstream: `graphchk` e `gpmetis` no
+  `graphs/4elt.graph`, com quatro partições contíguas, `Edgecut: 341` e
+  balanceamento 1.001;
+- `gpmetis -help` confirmou `-minconn`, `-contig` e `-niter`;
+- o banner legado imprime `METIS 5.0`; a versão exata 5.1.0 é comprovada
+  pelos macros do `metis.h` instalado.
 
-## Arquitetura de I/O adotada
+O fixture versionado representa quatro cliques K4 conectadas em cadeia:
+16 vértices, 27 arestas, grafo conectado e quatro grupos naturais. O comando
+real foi:
 
-O primeiro caso MPAS usará `USE_PIO2=true` e o `io_type=pnetcdf` padrão.
-Seu caminho de I/O paralelo é:
-
-```text
-MPAS → PIO 2.7.0 → PnetCDF 1.15.0 → MPI-IO → OpenMPI
+```sh
+gpmetis -minconn -contig -niter=200 graph.info 4
 ```
 
-HDF5 e netCDF permanecem seriais. Essa arquitetura suporta os backends PIO
-PnetCDF e NetCDF clássico. Não oferece `PIO_IOTYPE_NETCDF4C` nem
-`PIO_IOTYPE_NETCDF4P` na release/configuração atual. O primeiro caso não tem
-necessidade comprovada de NetCDF-4 paralelo.
+Ele produziu `graph.info.part.4` somente em tmpfs. A validação confirmou:
 
-A decisão, alternativas e consequências estão em
-[[../decisions/0002-pio2-pnetcdf-with-serial-netcdf|ADR 0002]].
+- exatamente 16 linhas, uma por vértice;
+- exatamente um inteiro por linha e IDs restritos a 0..3;
+- quatro partições presentes, cada uma com 4 vértices;
+- imbalance simples máximo/média 1.000, ou 0%;
+- `edge cut` reportado 3 e recalculado independentemente 3;
+- cada partição conectada;
+- nenhum vértice ausente e nenhuma linha extra.
+
+O fluxo futuro é:
+
+```text
+graph.info
+    ↓
+gpmetis
+    ↓
+graph.info.part.N
+    ↓
+MPAS com N ranks MPI
+```
+
+METIS não é a implementação MPI do modelo. O ciclo demonstra a invariável
+quatro partições ↔ quatro tasks MPI, sem compilar ou executar MPAS.
+
+## Regressão da stack anterior
+
+- `scripts/validate/pnetcdf.sh` executado com a imagem final: código 0,
+  netCDF-C 4.10.1, netCDF-Fortran 4.6.3, PnetCDF 1.15.0 e F90/CDF-5 em quatro
+  ranks preservados;
+- `scripts/validate/pio.sh` executado com a imagem final: código 0,
+  PIO 2.7.0/PnetCDF e CDF-2 em quatro ranks passaram com OMPIO e ROMIO;
+- valores funcionais preservados: `0, 1, 2, 3` no smoke PnetCDF e
+  `1000, 1001, 1002, 1003` no smoke PIO.
+
+## Arquiteturas adotadas
+
+O caminho de I/O paralelo permanece:
+
+```text
+MPAS futuro → PIO 2.7.0 → PnetCDF 1.15.0 → MPI-IO → OpenMPI
+```
+
+O particionamento é uma preparação independente:
+
+```text
+mesh futura → graph.info → METIS 5.1.0 serial → graph.info.part.N
+```
+
+As decisões e alternativas estão em
+[[../decisions/0002-pio2-pnetcdf-with-serial-netcdf|ADR 0002]],
+[[../decisions/0003-metis-5.1.0-partitioning-baseline|ADR 0003]] e
+[[future-experiments|future-experiments.md]].
+
+## Artefatos do ciclo 0004
+
+- `tests/fixtures/metis/graph.info`: grafo didático deliberadamente
+  versionado;
+- `scripts/validate/metis.sh`: validação instalada e estrutural em tmpfs;
+- `docs/decisions/0003-metis-5.1.0-partitioning-baseline.md`: decisão aceita;
+- `docs/project/future-experiments.md`: backlog não aprovado de comparações;
+- `learning/commits/0004-add-metis.md`: nota educacional do ciclo.
 
 ## Componentes ainda não implementados
 
-- METIS;
+- METIS 5.2.1 e GKlib externa;
+- PT-Scotch;
 - WPS/ungrib;
-- MPAS `init_atmosphere`;
-- MPAS `atmosphere`;
-- aquisição e preparação ERA5;
-- seleção e preparação da primeira malha;
-- geração de `static.nc`, `init.nc` e, quando aplicável, LBC;
-- primeira execução MPAS;
-- validação física do caso.
-
-## Novos artefatos do ciclo
-
-- `tests/smoke/pio_pnetcdf.c`: integração C, PIO e PnetCDF em quatro ranks;
-- `scripts/validate/pio.sh`: validação da instalação, IOTYPEs, linkagem,
-  OMPIO/ROMIO e CDF-2;
-- `docs/decisions/0002-pio2-pnetcdf-with-serial-netcdf.md`: decisão aceita;
-- `learning/commits/0003-add-pio2.md`: nota educacional do ciclo.
+- MPAS `init_atmosphere` e `atmosphere`;
+- aquisição ou preparação ERA5;
+- seleção e preparação da primeira mesh;
+- `static.nc`, `init.nc` e LBC;
+- primeira execução e validação física MPAS.
 
 ## Lacunas e limitações atuais
 
-- o MPAS ainda não foi compilado; a compatibilidade foi estabelecida por
-  documentação oficial e pela cadeia PIO/PnetCDF, mas a integração
-  `USE_PIO2=true` será um teste obrigatório do próximo ciclo aplicável;
-- o CMake 2.7.0 associa a macro interna `_NETCDF4` a
-  `HAVE_NETCDF_PAR`; por isso o backend NetCDF-4 serial também fica ausente.
-  Mudar essa lógica localmente não foi aprovado nem necessário;
-- o alvo upstream `tests` é construído com `--parallel 1` para evitar uma
-  corrida entre dois arquivos-fonte Fortran gerados com o mesmo nome de módulo;
-- `PIO_ENABLE_NETCDF_INTEGRATION=OFF` desliga a camada opcional que apresenta
-  PIO como implementação interna da API netCDF; não desliga o backend
-  `PIO_IOTYPE_NETCDF`;
-- PIO é instalado somente como bibliotecas estáticas, a forma selecionada para
-  o futuro link do MPAS; shared PIO não foi validado;
-- o SHA-256 PIO foi calculado localmente sobre o artefato oficial; não foi
-  encontrado checksum SHA-256 publicado pelo upstream;
-- o probe PIO 2.6.5 teve uma falha persistente em `pio_rearr_opts`; 2.7.0
-  corrigiu o comportamento observado e foi adotado;
-- a falha OMPIO do ciclo 0002 permanece relevante para testes PnetCDF
-  upstream, embora o smoke PIO deste ciclo tenha passado tanto com OMPIO quanto
-  com ROMIO;
-- HDF5 continua sem checksum registrado, e as versões APT/digest Ubuntu não
-  estão totalmente fixadas; são dívidas herdadas e não alteradas neste ciclo.
+- ainda não existe uma mesh MPAS aprovada; o fixture não prova compatibilidade
+  ou performance em escala real;
+- o MPAS não foi compilado; o consumo real de `graph.info.part.N` permanece
+  teste de um ciclo futuro;
+- a release METIS 5.1.0 não fornece suíte formal; foram usados seus grafos de
+  teste, `graphchk`, o comando real MPAS e validação independente;
+- CMake emitiu aviso de depreciação e a GKlib incluída produziu avisos
+  `-Wmisleading-indentation`; não houve erro;
+- a imagem Ubuntu e as versões APT não possuem digest/lock completos;
+- o checksum HDF5 continua ausente;
+- HDF5 e netCDF continuam seriais por decisão anterior;
+- METIS 5.2.1 + GKlib fixada e PT-Scotch online são somente hipóteses futuras,
+  sem conclusão de superioridade.

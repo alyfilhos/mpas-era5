@@ -6,7 +6,7 @@ Este registro documenta de onde vêm requisitos, fatos técnicos, versões e
 orientações de troubleshooting. Uma fonte deve ser classificada antes de ser
 usada; autoridade e utilidade não são a mesma coisa.
 
-Última revisão deste registro: **2026-08-04**.
+Última revisão deste registro: **2026-08-05**.
 
 ## Classes de fonte
 
@@ -44,6 +44,13 @@ usada; autoridade e utilidade não são a mesma coisa.
 | DOC-PIO-005 | PIO 2.7.0 | [`cmake/TryNetCDF_PARALLEL.c`](https://github.com/NCAR/ParallelIO/blob/pio2_7_0/cmake/TryNetCDF_PARALLEL.c) | teste explícito de `NC_HAS_PARALLEL`; não chama `nc_create_par` ou `nc_open_par` | inspecionado em 2026-08-04 |
 | DOC-PIO-006 | PIO 2.7.0 | [`src/clib/pio_file.c`](https://github.com/NCAR/ParallelIO/blob/pio2_7_0/src/clib/pio_file.c), [`pio_nc.c`](https://github.com/NCAR/ParallelIO/blob/pio2_7_0/src/clib/pio_nc.c) e [`pio_nc4.c`](https://github.com/NCAR/ParallelIO/blob/pio2_7_0/src/clib/pio_nc4.c) | despacho dos IOTYPEs PnetCDF, NetCDF clássico e NetCDF-4; blocos NetCDF-4 protegidos por `_NETCDF4` | inspecionados em 2026-08-04; comportamento confirmado pelo smoke em runtime |
 | DOC-MPAS-001 | MPAS-Atmosphere 8.4.0 | [User's Guide oficial](https://www2.mmm.ucar.edu/projects/mpas/mpas_atmosphere_users_guide_8.4.0.pdf) | `USE_PIO2=true`, variáveis `NETCDF`/`PNETCDF`/`PIO`, PIO 2.x, `PIO_ENABLE_TIMING=OFF`, `io_type` padrão e formatos suportados | consultado em 2026-08-04; sustenta [[../decisions/0002-pio2-pnetcdf-with-serial-netcdf|ADR 0002]] |
+| DOC-METIS-001 | METIS histórico | [página first-party de George Karypis](https://karypis.github.io/glaros/software/metis/overview.html) | identidade, natureza serial, release estável histórica 5.1.0, manual e link de download | consultada em 2026-08-05; a página continua em 5.1.0 |
+| DOC-METIS-002 | METIS 5.1.0 | [manual oficial](https://karypis.github.io/glaros/files/sw/metis/manual.pdf) | formato do grafo, arquivo de partição, algoritmo multilevel e opções `gpmetis` `-minconn`, `-contig` e `-niter` | manual versão 5.1.0 consultado em 2026-08-05 |
+| DOC-METIS-003 | METIS 5.1.0 | `Install.txt` e `BUILD.txt` contidos no tarball first-party | requisitos C99/GNU make/CMake, `make config`, prefixo, static/shared e larguras | arquivos do artefato adotado lidos em 2026-08-05 |
+| DOC-METIS-004 | METIS 5.1.0 | `Makefile`, `CMakeLists.txt`, `include/metis.h`, `programs/CMakeLists.txt` e `GKlib/` contidos no tarball | defaults 32/32, GKlib incluída, biblioteca, executáveis e ausência de registro CTest formal | arquivos do artefato adotado inspecionados em 2026-08-05 |
+| DOC-METIS-005 | METIS 5.2.1 | [repositório moderno oficial](https://github.com/KarypisLab/METIS), [release v5.2.1](https://github.com/KarypisLab/METIS/releases/tag/v5.2.1) e [README da tag](https://github.com/KarypisLab/METIS/blob/v5.2.1/README.md) | existência da linha moderna, GKlib externa, configuração por `gklib_path` e preservação de `gpmetis` | consultados em 2026-08-05 apenas para alternativa futura; não implementados |
+| DOC-MPAS-002 | MPAS atual | [Preparing Meshes — Graph Partitioning with METIS](https://www2.mmm.ucar.edu/projects/mpas/site/documentation/users_guide/preparing_meshes.html) | fluxo offline `gpmetis -minconn -contig -niter=200 graph.info N`, arquivo `.part.N`, correspondência com tasks MPI e coexistência com particionamento online | consultada em 2026-08-05; sustenta [[../decisions/0003-metis-5.1.0-partitioning-baseline|ADR 0003]] |
+| DOC-MPAS-003 | MPAS atual | [Building MPAS — PT-Scotch](https://www2.mmm.ucar.edu/projects/mpas/site/documentation/users_guide/building_mpas.html) | particionamento online desde v8.4.0, PT-Scotch mínimo 7.0.8, build MPAS e compatibilidade com índices de 32 bits | consultada em 2026-08-05 apenas para [[../project/future-experiments|experimento futuro]] |
 
 ### Releases e artefatos usados pela implementação atual
 
@@ -62,6 +69,7 @@ verificação de cada artefato é informado individualmente na última coluna.
 | REL-PIO-001 | PIO 2.7.0 | [release oficial `pio2_7_0`](https://github.com/NCAR/ParallelIO/releases/tag/pio2_7_0) e [tarball da tag](https://github.com/NCAR/ParallelIO/archive/refs/tags/pio2_7_0.tar.gz) | SHA-256 local `cce83743156ae723e7890931c2b48dcfe7ea8a276962dc4429f839d8f58d4a5a` | API de releases, tag, artefato e hash conferidos em 2026-08-04; era a release estável atual, publicada em 2026-04-29 |
 | REL-CMAKE-FORTRAN-UTILS-001 | CMake_Fortran_utils | [repositório oficial](https://github.com/CESM-Development/CMake_Fortran_utils) | commit `05ff8d8e4c88786e94a02c853d3ff921113d785c` | commit efetivamente resolvido pelo probe PIO 2.7.0 e fixado no build em 2026-08-04 |
 | REL-GENF90-001 | genf90 | [repositório oficial PARALLELIO](https://github.com/PARALLELIO/genf90) | commit `4816965ba946731352bad195b7d946a5fe682ff5` | commit da dependência auxiliar observada e fixada no build em 2026-08-04 |
+| REL-METIS-001 | METIS 5.1.0 | [tarball first-party `metis-5.1.0.tar.gz`](https://karypis.github.io/glaros/files/sw/metis/metis-5.1.0.tar.gz) | SHA-256 local `76faebe03f6c963127dbb73c13eab58c9a3faeae48779f049066a21c087c5db2` | URL ligada pela página histórica first-party; dois downloads independentes de 4.984.968 bytes produziram o mesmo SHA-256 em 2026-08-05; nenhum SHA-256 upstream foi encontrado |
 
 ### Release PnetCDF 1.15.0
 
@@ -98,13 +106,34 @@ preferência textual: o CMake aceitou netCDF serial, registrou
 smoke explícito PnetCDF passaram. O resultado e a limitação dos IOTYPEs estão
 registrados em [[../testing/validation-matrix|validation-matrix.md]].
 
+### Release METIS 5.1.0 e linha moderna
+
+A página histórica first-party permanece em METIS 5.1.0 e aponta para o
+artefato adotado. Nenhum SHA-256 publicado pelo upstream foi encontrado nessa
+página, no manual ou junto ao download. O valor no `Dockerfile` foi calculado
+localmente e confirmado pelo segundo download do mesmo URL. Ele identifica o
+artefato first-party observado; não é apresentado como checksum oficial.
+
+Os arquivos de build do tarball mostram que a GKlib está incluída em
+`GKlib/` e é usada pelo próprio build 5.1.0. Logo, nenhuma GKlib externa foi
+introduzida. O repositório oficial moderno contém a release 5.2.1 e suas
+instruções exigem GKlib externa. Essa observação histórica não altera a versão
+adotada: 5.2.1 só poderá ser experimentada com revisão/release GKlib fixada,
+conforme [[../project/future-experiments|future-experiments.md]].
+
 Registrar uma URL aqui não autoriza download novo, mudança de versão ou
 alteração da stack. Para isso, a fonte deve ser consultada conforme o workflow,
 a compatibilidade deve ser avaliada e o usuário deve aprovar a proposta.
 
 ### Fontes secundárias
 
-Nenhuma fonte secundária está registrada.
+| ID | Fonte | Uso restrito | Verificação |
+|---|---|---|---|
+| SEC-METIS-001 | [EasyConfig METIS 5.1.0 da LUMI Software Library](https://lumi-supercomputer.github.io/LUMI-EasyBuild-docs/m/METIS/METIS-5.1.0-cpeGNU-22.08/) | cross-check secundário do SHA-256 e do tamanho; não define origem, versão, arquitetura ou flags do projeto | consultado em 2026-08-05; registra o mesmo SHA-256 `76faebe03f6c963127dbb73c13eab58c9a3faeae48779f049066a21c087c5db2` |
+
+A evidência adotada continua sendo o artefato first-party baixado e comparado
+localmente duas vezes. Nenhuma fonte secundária sustenta a arquitetura ou as
+alternativas deste ciclo.
 
 ### Fóruns e issues para troubleshooting
 

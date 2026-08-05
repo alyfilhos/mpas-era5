@@ -25,6 +25,7 @@ mantendo as dependências científicas sob `/opt/mpas`.
 | netCDF-Fortran | 4.6.3 | interface Fortran sobre netCDF-C |
 | PnetCDF | 1.15.0 | I/O paralelo dos formatos CDF por MPI-IO |
 | PIO | 2.7.0 | abstração de I/O paralelo usada pelo MPAS, com backend PnetCDF |
+| METIS | 5.1.0 | particionamento serial offline do grafo da mesh para os ranks MPI |
 
 ## PnetCDF 1.15.0
 
@@ -250,3 +251,138 @@ A instalação preserva `PIO=/opt/mpas`, `pio.h`, os módulos Fortran,
 Detalhes auditáveis estão em
 [[../testing/validation-matrix|validation-matrix.md]] e a decisão em
 [[../decisions/0002-pio2-pnetcdf-with-serial-netcdf|ADR 0002]].
+
+## METIS 5.1.0
+
+METIS particiona grafos. Uma mesh pode ser representada por um **grafo**:
+cada elemento relevante à decomposição é um **vértice**, e uma **aresta** liga
+dois vértices adjacentes. Particionar é distribuir os vértices entre grupos.
+Para execução paralela, cada grupo será associado a um rank MPI.
+
+Dois objetivos precisam ser equilibrados:
+
+- **balanceamento:** manter carga semelhante em cada partição;
+- **edge cut:** reduzir arestas cujas pontas pertencem a partições diferentes,
+  pois essas fronteiras tendem a exigir comunicação entre ranks.
+
+**Contiguidade** significa que os vértices de uma partição formam um subgrafo
+conectado. Ela facilita uma decomposição espacial coerente. Nenhuma dessas
+métricas, isoladamente e sobretudo em um fixture artificial, prova melhor
+desempenho do MPAS.
+
+### METIS serial versus MPI
+
+O executável `gpmetis` é serial e roda **antes** do modelo. Ele não substitui
+OpenMPI, não é ligado ao MPAS como implementação MPI e não determina como o
+modelo troca mensagens. Seu papel é preparar a atribuição:
+
+```text
+graph.info
+    ↓
+gpmetis -minconn -contig -niter=200 graph.info N
+    ↓
+graph.info.part.N
+    ↓
+MPAS executado futuramente com N ranks MPI
+```
+
+`graph.info` descreve a adjacência do grafo da mesh. O primeiro campo do
+cabeçalho é o número de vértices, o segundo é o número de arestas não
+direcionadas. Segue uma linha por vértice, na ordem 1..n, listando vizinhos
+também numerados a partir de 1. `graph.info.part.N` contém exatamente uma linha
+por vértice, com um ID de partição no intervalo 0..`N-1`.
+
+A relação operacional é uma invariável:
+
+```text
+N partições ↔ N tasks MPI
+```
+
+Assim, `graph.info.part.4` é a decomposição que futuramente acompanhará uma
+execução como `mpirun -np 4 atmosphere_model`. O modelo não foi compilado ou
+simulado neste ciclo.
+
+### Opções adotadas
+
+A documentação atual do MPAS recomenda:
+
+```sh
+gpmetis -minconn -contig -niter=200 graph.info N
+```
+
+- `-minconn` tenta minimizar o grau do grafo de conectividade entre
+  subdomínios;
+- `-contig` exige partições contíguas;
+- `-niter=200` permite até 200 iterações de refinamento em cada estágio,
+  acima do default 10 do METIS 5.1.0.
+
+### Release, build e larguras
+
+O tarball first-party histórico `metis-5.1.0.tar.gz` foi baixado da página
+Karypis e verificado antes da extração:
+
+```text
+SHA-256 76faebe03f6c963127dbb73c13eab58c9a3faeae48779f049066a21c087c5db2
+```
+
+O upstream não publicou ali um SHA-256. O valor foi calculado localmente sobre
+o artefato first-party e confirmado por dois downloads independentes
+idênticos; ele não é atribuído ao upstream.
+
+Os arquivos `Install.txt`, `BUILD.txt`, `Makefile` e `CMakeLists.txt` do
+próprio tarball definem a receita usada:
+
+```sh
+make config prefix=/opt/mpas
+make -j8
+make install
+```
+
+A release usa GNU make para dirigir CMake e requer compilador C99. Foi mantido
+o build estático default; `shared=1` não foi solicitado. A instalação normal
+preserva `libmetis.a`, `metis.h` e os executáveis `gpmetis`, `ndmetis`,
+`mpmetis`, `m2gmetis`, `graphchk` e `cmpfillin` em `/opt/mpas`.
+Não foi criada uma variável `METIS`, porque o workflow usa o executável
+descoberto por `PATH`.
+
+Os defaults do source foram preservados:
+
+| Macro | Valor | Significado |
+|---|---:|---|
+| `IDXTYPEWIDTH` | 32 | largura dos índices de vértices, arestas e partições do METIS |
+| `REALTYPEWIDTH` | 32 | largura do tipo real usado internamente pelo METIS |
+
+Não foram habilitados `i64=1` nem `r64=1`, pois não existe uma mesh aprovada
+que demonstre essa necessidade e a documentação atual do MPAS exige
+compatibilidade de particionadores com índices de 32 bits. `REALTYPEWIDTH`
+não define a precisão dos campos atmosféricos do MPAS.
+
+O tarball 5.1.0 contém o diretório `GKlib/`; o build o usa diretamente e
+compila essas fontes em `libmetis`. Por isso nenhuma GKlib externa foi
+baixada. Essa relação não deve ser inferida das instruções do METIS 5.2.1, que
+passou a exigir GKlib externa.
+
+### Validação
+
+O source 5.1.0 não fornece alvos `make check`, CTest/`add_test` ou uma suíte
+formal equivalente. O diretório `graphs/` fornece grafos de teste. Durante o
+build, `graphchk` e `gpmetis` foram executados sobre o `4elt.graph`
+upstream: 15.606 vértices, 45.878 arestas, quatro partições contíguas,
+`Edgecut: 341` e balanceamento 1.001.
+
+O fixture versionado, menor e independente de uma mesh MPAS, contém quatro
+cliques de quatro vértices ligadas por três arestas-ponte. A validação final
+produziu quatro partições não vazias, 4 vértices em cada, imbalance simples
+1.000 (0%), `edge cut` reportado e recalculado igual a 3 e conectividade
+confirmada em cada partição. O script também verifica uma linha por vértice,
+um único inteiro por linha, IDs 0..3 e ausência de linhas extras.
+
+O banner do programa instalado imprime `METIS 5.0`, texto legado codificado
+no programa da release. A versão exata 5.1.0 é verificada pelos macros
+`METIS_VER_MAJOR=5`, `METIS_VER_MINOR=1` e `METIS_VER_SUBMINOR=0` do
+`metis.h` instalado.
+
+Detalhes e limitações estão em
+[[../testing/validation-matrix|validation-matrix.md]], a decisão em
+[[../decisions/0003-metis-5.1.0-partitioning-baseline|ADR 0003]] e alternativas
+futuras em [[../project/future-experiments|future-experiments.md]].

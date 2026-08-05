@@ -30,13 +30,18 @@ compilação de software científico, MPI e ferramentas utilizadas em HPC.
 - netCDF-Fortran 4.6.3 ✅
 - PnetCDF 1.15.0 ✅
 - PIO2 2.7.0 ✅
-- METIS ⏳
+- METIS 5.1.0 ✅
 
 ## Roadmap
 
 Stack científica:
 
 `zlib → HDF5 → netCDF-C → netCDF-Fortran → PnetCDF → PIO2 → METIS`
+
+O METIS é usado offline: `gpmetis` transforma `graph.info` em
+`graph.info.part.N`, e `N` deve corresponder ao número de tasks MPI da futura
+execução MPAS. O backlog de alternativas de particionamento está em
+[`docs/project/future-experiments.md`](docs/project/future-experiments.md).
 
 Depois:
 

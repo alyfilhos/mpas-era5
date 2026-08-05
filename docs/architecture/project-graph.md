@@ -20,7 +20,7 @@ Stack científica
     │     ↓
     ├── PIO 2.7.0 ✅
     │     ↓
-    └── METIS
+    └── METIS 5.1.0 ✅
           │
           ▼
        MPAS build
@@ -40,8 +40,8 @@ Dockerfile
 → MPAS
 ```
 
-No ciclo 0003, a implementação termina em PIO 2.7.0. METIS, WPS e MPAS
-permanecem no grafo como destino do plano, não como componentes concluídos.
+No ciclo 0004, a implementação termina em METIS 5.1.0. WPS e MPAS permanecem
+no grafo como destino do plano, não como componentes concluídos.
 
 PnetCDF não depende da seta HDF5 → netCDF neste ciclo. A ordem no `Dockerfile`
 preserva a stack já construída, mas o caminho funcional novo é independente:
@@ -79,6 +79,23 @@ HDF5 e netCDF permanecem seriais. O PIO também disponibiliza o backend
 `PIO_IOTYPE_NETCDF`; `PIO_IOTYPE_NETCDF4C` e `PIO_IOTYPE_NETCDF4P` não são
 compilados nesta configuração.
 
+METIS não pertence ao caminho de I/O e não é uma implementação MPI. Seu fluxo
+é serial, externo e anterior ao modelo:
+
+```text
+tests/fixtures/metis/graph.info
+          ↓
+gpmetis -minconn -contig -niter=200 graph.info N
+          ↓
+graph.info.part.N
+          ↓
+MPAS futuro com N ranks MPI
+```
+
+O script `scripts/validate/metis.sh` copia o fixture para tmpfs, gera
+`graph.info.part.4` somente ali e valida estrutura, IDs, cobertura,
+balanceamento, `edge cut` e conectividade.
+
 ## Fluxo de governança
 
 ```text
@@ -88,6 +105,7 @@ docs/project/requirements.md
     ├── docs/references/source-registry.md
     ├── docs/references/versions.lock.md
     ├── docs/decisions/
+    ├── docs/project/future-experiments.md
     └── docs/testing/validation-matrix.md
             ↓
       implementação e testes
@@ -116,8 +134,9 @@ mpas-era5/
 │   │   └── scientific-stack.md       documentação técnica da stack
 │   ├── project/
 │   │   ├── requirements.md           escopo original versus decisões
-│   │   ├── current-state.md          somente estado e evidências atuais
-│   │   └── development-workflow.md   ciclo obrigatório de desenvolvimento
+│   │   ├── current-state.md          estado produzido e referência Git real
+│   │   ├── development-workflow.md   ciclo obrigatório de desenvolvimento
+│   │   └── future-experiments.md     backlog, não roadmap aprovado
 │   ├── references/
 │   │   ├── source-registry.md        classificação e proveniência das fontes
 │   │   └── versions.lock.md          versões adotadas e a decidir
@@ -125,8 +144,10 @@ mpas-era5/
 │   │   ├── README.md                 política e template de ADR
 │   │   ├── 0001-pnetcdf-mpiio-backend.md
 │   │   │                              decisão PnetCDF/GIO/MPI-IO
-│   │   └── 0002-pio2-pnetcdf-with-serial-netcdf.md
-│   │                                  arquitetura PIO2 e backends habilitados
+│   │   ├── 0002-pio2-pnetcdf-with-serial-netcdf.md
+│   │   │                              arquitetura PIO2 e backends habilitados
+│   │   └── 0003-metis-5.1.0-partitioning-baseline.md
+│   │                                  baseline offline e alternativas futuras
 │   ├── testing/
 │   │   └── validation-matrix.md      testes, status e evidências
 │   └── logs/                         reservado; atualmente vazio
@@ -136,13 +157,18 @@ mpas-era5/
 │   └── commits/
 │       ├── 0001-bootstrap-codex-workflow.md
 │       ├── 0002-add-pnetcdf.md         nota educacional do ciclo 0002
-│       └── 0003-add-pio2.md            nota educacional do ciclo 0003
+│       ├── 0003-add-pio2.md            nota educacional do ciclo 0003
+│       └── 0004-add-metis.md           nota educacional do ciclo 0004
 ├── scripts/
 │   ├── validate/
 │   │   ├── pnetcdf.sh                validação instalada MPI/Fortran
-│   │   └── pio.sh                    validação PIO/PnetCDF e IOTYPEs
+│   │   ├── pio.sh                    validação PIO/PnetCDF e IOTYPEs
+│   │   └── metis.sh                  partição e validação estrutural em tmpfs
 │   └── codex/                        automações de suporte a ciclos futuros
 ├── tests/
+│   ├── fixtures/
+│   │   └── metis/
+│   │       └── graph.info            grafo didático de 16 vértices
 │   └── smoke/
 │       ├── pnetcdf_mpi.f90           I/O coletivo CDF-5 em 4 ranks
 │       └── pio_pnetcdf.c             PIO explícito sobre PnetCDF em 4 ranks
@@ -151,8 +177,9 @@ mpas-era5/
 └── docker/                            suporte Docker futuro
 ```
 
-`scripts/validate/` contém validações instaladas e repetíveis para PnetCDF e
-PIO. `scripts/codex/` continua vazio e, por isso, não é preservado pelo Git.
+`scripts/validate/` contém validações instaladas e repetíveis para PnetCDF,
+PIO e METIS. `scripts/codex/` continua vazio e, por isso, não é preservado
+pelo Git.
 
 ## Responsabilidades e relações
 
@@ -166,6 +193,7 @@ PIO. `scripts/codex/` continua vazio e, por isso, não é preservado pelo Git.
 | `learning/` | explicar conceitos e raciocínio por baseline/commit | referencia estado, fontes, ADRs e testes sem substituí-los |
 | `scripts/validate/` | hospedar validações repetíveis | resultados resumidos alimentam `docs/testing/` |
 | `tests/smoke/` | hospedar fontes mínimas independentes do build upstream | compiladas pelos scripts contra a instalação final |
+| `tests/fixtures/` | manter entradas pequenas, deliberadas e versionadas | copiadas para espaço efêmero; nunca recebem saídas geradas |
 | `scripts/codex/` | hospedar automação de governança aprovada | deve respeitar `AGENTS.md` e o workflow |
 | `data/` | manter entradas locais do ERA5 e auxiliares | credenciais e dados grandes nunca devem entrar no Git |
 | `cases/` | manter configurações de execuções MPAS | depende de mesh, ERA5 e versões aprovadas |
@@ -177,8 +205,10 @@ PIO. `scripts/codex/` continua vazio e, por isso, não é preservado pelo Git.
 - [[../project/requirements|Requisitos do projeto]]
 - [[../project/current-state|Estado atual]]
 - [[../project/development-workflow|Workflow de desenvolvimento]]
+- [[../project/future-experiments|Experimentos técnicos futuros]]
 - [[../references/source-registry|Registro de fontes]]
 - [[../references/versions.lock|Versões adotadas e pendentes]]
 - [[../decisions/README|ADRs]]
+- [[../decisions/0003-metis-5.1.0-partitioning-baseline|ADR 0003 — METIS 5.1.0]]
 - [[../testing/validation-matrix|Matriz de validação]]
 - [[../../learning/README|Índice de aprendizado]]

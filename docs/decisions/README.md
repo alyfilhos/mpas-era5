@@ -16,6 +16,8 @@ evidência. Decisões novas são listadas abaixo.
   — aceito em 2026-08-04.
 - [[0002-pio2-pnetcdf-with-serial-netcdf|ADR 0002 — PIO 2.7.0 com PnetCDF e netCDF serial]]
   — aceito em 2026-08-04.
+- [[0003-metis-5.1.0-partitioning-baseline|ADR 0003 — METIS 5.1.0 como baseline de particionamento]]
+  — aceito em 2026-08-05.
 
 ## Quando criar um ADR
 

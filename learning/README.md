@@ -22,6 +22,8 @@ apontar para ele.
   educacional do build e da validação PnetCDF/MPI-IO;
 - [`commits/0003-add-pio2.md`](commits/0003-add-pio2.md): nota educacional
   da seleção, build e validação PIO2 sobre PnetCDF;
+- [`commits/0004-add-metis.md`](commits/0004-add-metis.md): nota educacional
+  sobre grafos e o particionamento offline com METIS 5.1.0;
 - `commits/NNNN-<descricao>.md`: uma nota por commit posterior ao bootstrap.
 
 ## O que cada nota por commit deve ensinar

@@ -15,7 +15,7 @@ não prova que a execução ocorreu nesta máquina nem preserva o resultado. Um
 componente só poderá receber status validado quando comando, resultado e
 evidência estiverem registrados.
 
-Última revisão: **2026-08-04**.
+Última revisão: **2026-08-05**.
 
 ## Ambiente e stack existente
 
@@ -29,12 +29,12 @@ evidência estiverem registrados.
 | netCDF-Fortran 4.6.3 | `make check` está definido; resultado histórico não preservado | Planejado: `nf-config` e programa Fortran que cria e relê um arquivo mínimo | Planejado: verificar módulos, linkagem com netCDF-C e runtime do prefixo | Teste exigido pela receita; smoke/integração e evidência ausentes | [`Dockerfile`](../../Dockerfile); nenhum relatório versionado |
 | PnetCDF 1.15.0 | `make check` e `make ptest` executados com código 0 | versão, prefixo, configuração, utilitários e shared/static conferidos na instalação | F90 → PnetCDF → MPI-IO/ROMIO → OpenMPI, escrita/leitura coletiva em 4 ranks | Implementado e validado no ciclo 0002 | [`Dockerfile`](../../Dockerfile), [`pnetcdf.sh`](../../scripts/validate/pnetcdf.sh), [`pnetcdf_mpi.f90`](../../tests/smoke/pnetcdf_mpi.f90) e evidência abaixo |
 | PIO 2.7.0 | CTest: 109/109 testes aprovados | versão, configuração, headers, módulos, bibliotecas e pacote CMake conferidos | C → PIO/PnetCDF → MPI-IO → OpenMPI; CDF-2 escrito e relido em 4 ranks com OMPIO e ROMIO | Implementado e validado no ciclo 0003 | [`Dockerfile`](../../Dockerfile), [`pio.sh`](../../scripts/validate/pio.sh), [`pio_pnetcdf.c`](../../tests/smoke/pio_pnetcdf.c) e evidência abaixo |
+| METIS 5.1.0 | não há `make check`/CTest formal; `graphchk` e `gpmetis` passaram no `4elt.graph` fornecido upstream | versão por macros, ferramentas, biblioteca, help e opções conferidos | fixture → `gpmetis` → `graph.info.part.4`; estrutura, IDs, quatro partições, edge cut e conectividade validados | Implementado e validado no ciclo 0004 | [`Dockerfile`](../../Dockerfile), [`metis.sh`](../../scripts/validate/metis.sh), [`graph.info`](../../tests/fixtures/metis/graph.info) e evidência abaixo |
 
 ## Componentes futuros
 
 | Componente | Upstream test | Smoke test | Integration test | Status | Evidência |
 |---|---|---|---|---|---|
-| METIS | Planejado: suite ou testes oficiais disponíveis para a release | Planejado: executar particionamento mínimo de um grafo conhecido | Planejado: verificar consumo pelo build/fluxo do MPAS aprovado | Não implementado; versão a decidir | [[../references/versions.lock|versions.lock.md]] |
 | WPS/ungrib | Planejado: testes oficiais disponíveis para a release | Planejado: executar `ungrib` sobre amostra pequena e controlada | Planejado: transformar campos ERA5 aprovados para o formato consumido pelo `init_atmosphere` | Não implementado; versão a decidir | [[../project/requirements|REQ-PRE-001]] |
 | MPAS `init_atmosphere` | Planejado: testes upstream disponíveis para a release | Planejado: validar inicialização mínima na mesh aprovada | Planejado: WPS/ERA5 + mesh → `static.nc`, `init.nc` e LBC quando aplicável | Não implementado; versão a decidir | [[../project/requirements|REQ-MPAS-001]] |
 | MPAS `atmosphere` | Planejado: testes upstream disponíveis para a release | Planejado: integração curta e determinística do caso aprovado | Planejado: ler artefatos do `init_atmosphere` e produzir saída MPAS | Não implementado; versão a decidir | [[../project/requirements|REQ-MPAS-002]] |
@@ -123,6 +123,56 @@ evidência estiverem registrados.
 - os logs completos ficaram em `/tmp/mpas-era5-pio-build.log`,
   `/tmp/mpas-era5-pio-validation-final.log` e
   `/tmp/mpas-era5-pio-pnetcdf-regression.log`; não foram versionados.
+
+## Evidência do ciclo 0004 — METIS 5.1.0
+
+| Campo | Evidência real |
+|---|---|
+| Data | 2026-08-05 |
+| Base do ciclo | `7e1d672696e6b892ca36b57ec53a1b3041aeedcf` (`build: add PIO2 with PnetCDF backend`); mudanças do ciclo sem commit |
+| Imagem | `mpas-era5:metis-5.1.0` |
+| ID/digest local da imagem | `sha256:4d1cd35469cf12c710643d78a93448924dcd5bb1af6155846dd1e4f213af53b3`; 337.756.200 bytes |
+| Build | `docker build --progress=plain --build-arg BUILD_JOBS=8 -t mpas-era5:metis-5.1.0 .`; execução final terminou com código 0 |
+| Preservação da stack | todas as etapas zlib, HDF5, netCDF-C, netCDF-Fortran, PnetCDF e PIO apareceram como `CACHED`; somente a nova camada METIS foi construída |
+| Origem | `https://karypis.github.io/glaros/files/sw/metis/metis-5.1.0.tar.gz`, ligada pela página histórica first-party de George Karypis |
+| Integridade | dois downloads independentes, 4.984.968 bytes cada, produziram SHA-256 local `76faebe03f6c963127dbb73c13eab58c9a3faeae48779f049066a21c087c5db2`; conferido antes da extração; upstream não publicou esse SHA-256 |
+| Configuração | GNU make dirigindo CMake: `make config prefix=/opt/mpas`, `make -j8`, `make install`; build estático default, sem `shared=1`, `i64=1` ou `r64=1` |
+| Larguras | header instalado confirmou `IDXTYPEWIDTH=32` e `REALTYPEWIDTH=32`; versão por macros 5.1.0 |
+| GKlib | diretório `GKlib/` incluído no source 5.1.0 e compilado em `libmetis`; nenhum download externo |
+| Instalação | `gpmetis`, `ndmetis`, `mpmetis`, `m2gmetis`, `graphchk`, `cmpfillin`, `metis.h` e `libmetis.a` presentes em `/opt/mpas`; símbolo `METIS_PartGraphKway` confirmado |
+| Teste upstream disponível | não há alvos `make check`, CTest/`add_test` ou suíte formal no source; o diretório `graphs/` contém grafos de teste |
+| Validação upstream aplicável | `graphchk graphs/4elt.graph` e `gpmetis -minconn -contig -niter=200 graphs/4elt.graph 4`; 15.606 vértices, 45.878 arestas, `Edgecut: 341`, balanceamento 1.001 e quatro partições contíguas |
+| Smoke da instalação | `command -v` para seis executáveis; `gpmetis -help` confirmou `-minconn`, `-contig` e `-niter`; o banner legado informa `METIS 5.0`, enquanto os macros instalados comprovam 5.1.0 |
+| Fixture | 16 vértices e 27 arestas: quatro cliques K4 ligadas em cadeia por três arestas-ponte; grafo não ponderado, conectado e independente de mesh MPAS |
+| Comando funcional | `gpmetis -minconn -contig -niter=200 graph.info 4`; código 0 em tmpfs, com o repositório montado read-only |
+| Arquivo gerado | `graph.info.part.4` criado apenas no diretório temporário; 16 linhas, exatamente uma atribuição por vértice, sem linha extra |
+| IDs e cobertura | todas as linhas contêm um único inteiro em 0..3; partições 0, 1, 2 e 3 presentes; nenhum vértice sem atribuição |
+| Contagem/balanceamento | 4 vértices em cada partição; média 4, mínimo 4, máximo 4; imbalance simples máximo/média 1.000, ou 0% |
+| Edge cut | `gpmetis` reportou 3; recálculo independente sobre as 27 arestas também encontrou 3 |
+| Contiguidade | `gpmetis` reportou cada partição contígua; busca independente confirmou quatro subgrafos conectados de 4 vértices |
+| Invariável demonstrada | quatro partições produzem `graph.info.part.4`, correspondente a quatro tasks MPI futuras; MPAS não foi executado |
+| Regressão PnetCDF | `PNETCDF_IMAGE=mpas-era5:metis-5.1.0 ./scripts/validate/pnetcdf.sh`; código 0; `nc-config` 4.10.1, `nf-config` 4.6.3, PnetCDF 1.15.0, F90/CDF-5 com 4 ranks e valores 0..3 |
+| Regressão PIO | `PIO_IMAGE=mpas-era5:metis-5.1.0 ./scripts/validate/pio.sh`; código 0; PIO 2.7.0/PnetCDF, CDF-2 com 4 ranks e valores 1000..1003 passaram com OMPIO e ROMIO |
+
+### Limitações, avisos e testes não executados
+
+- não foi inventada uma suíte upstream: a release não registra `make check`
+  ou testes CTest; os grafos upstream e o fixture funcional cobrem as
+  validações aplicáveis;
+- o CMake atual emite aviso de depreciação para compatibilidade antiga, e o
+  compilador emite avisos `-Wmisleading-indentation` em fontes legadas da
+  GKlib incluída; não houve erro de compilação;
+- o build reportou aviso de jobserver ao forçar `-j8` no submake;
+- o banner `METIS 5.0` é texto legado da release; a receita não o apresenta
+  como prova de subversão e valida os macros 5.1.0 do header;
+- nenhuma mesh MPAS real, MPAS, WPS, ERA5, METIS 5.2.1, GKlib externa ou
+  PT-Scotch foi construída ou executada;
+- as métricas do fixture didático não são conclusões de performance;
+- logs completos permanecem temporariamente em
+  `/tmp/mpas-era5-metis-build.log`,
+  `/tmp/mpas-era5-metis-validation.log`,
+  `/tmp/mpas-era5-metis-pnetcdf-regression.log` e
+  `/tmp/mpas-era5-metis-pio-regression.log`; eles não serão versionados.
 
 ## Evidência mínima de um resultado futuro
 

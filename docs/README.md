@@ -12,6 +12,7 @@ Este diretório centraliza a documentação técnica e científica do projeto.
 - [[project/requirements|Requisitos do projeto]]
 - [[project/current-state|Estado atual]]
 - [[project/development-workflow|Workflow de desenvolvimento]]
+- [[project/future-experiments|Experimentos técnicos futuros]]
 
 ### Rastreabilidade
 
@@ -20,6 +21,7 @@ Este diretório centraliza a documentação técnica e científica do projeto.
 - [[decisions/README|Registros de Decisão Arquitetural (ADRs)]]
 - [[decisions/0001-pnetcdf-mpiio-backend|ADR 0001 — PnetCDF com MPI-IO]]
 - [[decisions/0002-pio2-pnetcdf-with-serial-netcdf|ADR 0002 — PIO2 com PnetCDF e netCDF serial]]
+- [[decisions/0003-metis-5.1.0-partitioning-baseline|ADR 0003 — METIS 5.1.0 como baseline de particionamento]]
 - [[testing/validation-matrix|Matriz de validação]]
 
 ### Aprendizado
@@ -29,6 +31,7 @@ Este diretório centraliza a documentação técnica e científica do projeto.
 - [[../learning/commits/0001-bootstrap-codex-workflow|Ciclo 0001 — bootstrap do workflow Codex]]
 - [[../learning/commits/0002-add-pnetcdf|Ciclo 0002 — adicionar PnetCDF]]
 - [[../learning/commits/0003-add-pio2|Ciclo 0003 — adicionar PIO2]]
+- [[../learning/commits/0004-add-metis|Ciclo 0004 — adicionar METIS]]
 
 ## Blocos do projeto
 

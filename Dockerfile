@@ -279,4 +279,47 @@ ENV PIO=${MPAS_PREFIX}
 
 WORKDIR /workspace
 
+# ------------------------------------------------------------
+# METIS
+# ------------------------------------------------------------
+
+ARG METIS_VERSION=5.1.0
+ARG METIS_SHA256=76faebe03f6c963127dbb73c13eab58c9a3faeae48779f049066a21c087c5db2
+
+WORKDIR /tmp
+
+RUN curl -fL \
+    https://karypis.github.io/glaros/files/sw/metis/metis-${METIS_VERSION}.tar.gz \
+    -o metis.tar.gz \
+    && echo "${METIS_SHA256}  metis.tar.gz" | sha256sum -c - \
+    && tar -xzf metis.tar.gz \
+    && cd metis-${METIS_VERSION} \
+    && make config prefix=${MPAS_PREFIX} \
+    && make -j${BUILD_JOBS} \
+    && make install \
+    && for tool in gpmetis ndmetis mpmetis m2gmetis graphchk cmpfillin; do \
+         command -v "${tool}"; \
+       done \
+    && gpmetis -help > /tmp/gpmetis-help.txt 2>&1 \
+    && grep -F -- "-minconn" /tmp/gpmetis-help.txt \
+    && grep -F -- "-contig" /tmp/gpmetis-help.txt \
+    && grep -F -- "-niter" /tmp/gpmetis-help.txt \
+    && test -f ${MPAS_PREFIX}/include/metis.h \
+    && grep -F "#define IDXTYPEWIDTH 32" ${MPAS_PREFIX}/include/metis.h \
+    && grep -F "#define REALTYPEWIDTH 32" ${MPAS_PREFIX}/include/metis.h \
+    && grep -F "#define METIS_VER_MAJOR         5" ${MPAS_PREFIX}/include/metis.h \
+    && grep -F "#define METIS_VER_MINOR         1" ${MPAS_PREFIX}/include/metis.h \
+    && grep -F "#define METIS_VER_SUBMINOR      0" ${MPAS_PREFIX}/include/metis.h \
+    && test -f ${MPAS_PREFIX}/lib/libmetis.a \
+    && nm ${MPAS_PREFIX}/lib/libmetis.a | grep -F "METIS_PartGraphKway" \
+    && graphchk graphs/4elt.graph \
+    && gpmetis -minconn -contig -niter=200 graphs/4elt.graph 4 \
+       > /tmp/gpmetis-sample.txt \
+    && cat /tmp/gpmetis-sample.txt \
+    && grep -F "METIS 5.0" /tmp/gpmetis-sample.txt \
+    && test -s graphs/4elt.graph.part.4 \
+    && rm -rf /tmp/metis*
+
+WORKDIR /workspace
+
 CMD ["bash"]

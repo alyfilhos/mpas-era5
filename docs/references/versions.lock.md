@@ -7,7 +7,7 @@ comprovadas pelo repositório e destaca explicitamente o que ainda depende de
 decisão. Ele não substitui hashes de artefatos, digest da imagem, lock de
 pacotes do sistema ou testes de compatibilidade.
 
-Última conferência: **2026-08-04**.
+Última conferência: **2026-08-05**.
 
 ## Ambiente e versões adotadas
 
@@ -23,6 +23,7 @@ pacotes do sistema ou testes de compatibilidade.
 | netCDF-Fortran | 4.6.3 | adotada | `NETCDF_FORTRAN_VERSION=4.6.3`; SHA-256 registrado no `Dockerfile` |
 | PnetCDF | 1.15.0 | adotada | tarball oficial; SHA-256 local verificado; MPI-IO/OpenMPI; GIO desabilitado; Fortran e shared/static; [[../decisions/0001-pnetcdf-mpiio-backend|ADR 0001]] |
 | PIO | 2.7.0 (`pio2_7_0`) | adotada e validada | release oficial atual; SHA-256 local verificado; CMake; C/Fortran; timing desabilitado; PnetCDF habilitado; [[../decisions/0002-pio2-pnetcdf-with-serial-netcdf|ADR 0002]] |
+| METIS | 5.1.0 | adotada e validada | tarball first-party histórico; SHA-256 local confirmado em dois downloads; static; `IDXTYPEWIDTH=32`; `REALTYPEWIDTH=32`; GKlib incluída; `gpmetis` offline; [[../decisions/0003-metis-5.1.0-partitioning-baseline|ADR 0003]] |
 | CMake_Fortran_utils | commit `05ff8d8e4c88786e94a02c853d3ff921113d785c` | auxiliar de build PIO fixado | checkout detached antes da configuração; evita clone sem pin executado internamente pelo PIO |
 | genf90 | commit `4816965ba946731352bad195b7d946a5fe682ff5` | auxiliar de build PIO fixado | checkout detached passado por `GENF90_PATH`; evita resolução mutável durante o build |
 
@@ -30,7 +31,6 @@ pacotes do sistema ou testes de compatibilidade.
 
 | Componente | Versão | Estado | Próximo gate |
 |---|---|---|---|
-| METIS | a decidir | não implementado | requisitos do MPAS escolhido → release oficial → proposta → decisão do usuário |
 | WPS | a decidir | não implementado | compatibilidade com `ungrib`, formato ERA5 e stack aprovada → decisão do usuário |
 | MPAS | a decidir | não implementado | release oficial, compatibilidade da stack e estratégia do primeiro caso → decisão do usuário |
 
@@ -41,6 +41,9 @@ pacotes do sistema ou testes de compatibilidade.
 - checksum do HDF5 1.14.6;
 - necessidade e arquitetura de HDF5/netCDF paralelo para um caso futuro que
   exija NetCDF-4 paralelo;
+- eventual experimento com METIS 5.2.1 + GKlib fixada ou PT-Scotch online;
+  essas alternativas não são versões adotadas e estão somente em
+  [[../project/future-experiments|future-experiments.md]];
 - release e tabelas auxiliares do WPS;
 - mesh pública exata;
 - período, área, níveis e variáveis ERA5.
