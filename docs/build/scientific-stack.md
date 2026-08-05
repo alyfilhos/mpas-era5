@@ -27,6 +27,10 @@ mantendo as dependências científicas sob `/opt/mpas`.
 | PIO | 2.7.0 | abstração de I/O paralelo usada pelo MPAS, com backend PnetCDF |
 | METIS | 5.1.0 | particionamento serial offline do grafo da mesh para os ranks MPI |
 
+WPS não é uma biblioteca da stack. A instalação separada
+`/opt/wps-4.7.0` fornece somente `ungrib.exe`; MPAS-Model 8.4.1 está fixado,
+mas ainda não foi instalado.
+
 ## PnetCDF 1.15.0
 
 PnetCDF fornece APIs paralelas semelhantes às APIs clássicas do netCDF para
@@ -386,3 +390,131 @@ Detalhes e limitações estão em
 [[../testing/validation-matrix|validation-matrix.md]], a decisão em
 [[../decisions/0003-metis-5.1.0-partitioning-baseline|ADR 0003]] e alternativas
 futuras em [[../project/future-experiments|future-experiments.md]].
+
+## WPS 4.7.0 — somente ungrib
+
+WPS, o WRF Preprocessing System, reúne ferramentas de preparação de entradas;
+WRF é o modelo atmosférico separado. Os três programas principais do WPS têm
+responsabilidades diferentes:
+
+- `geogrid` define domínio e interpola dados geográficos estáticos;
+- `ungrib` decodifica GRIB1/GRIB2 segundo uma Vtable e escreve o formato
+  intermediário do WPS;
+- `metgrid` interpola os campos intermediários para a grade do modelo.
+
+O pipeline MPAS usa `ungrib` para chegar ao formato intermediário que o futuro
+`init_atmosphere` consumirá. Este ciclo não precisa de WRF, `geogrid` ou
+`metgrid`; por isso eles não foram construídos.
+
+### Layout e isolamento
+
+```text
+/opt/mpas                       bibliotecas científicas validadas
+/opt/wps-4.7.0                  source e build WPS 4.7.0
+/opt/wps -> /opt/wps-4.7.0      link estável
+
+/opt/mpas-model-8.4.1           reservado ao futuro MPAS-Model
+/opt/mpas-model                 futuro link estável
+```
+
+`ungrib.exe` permanece no layout upstream:
+
+```text
+/opt/wps-4.7.0/ungrib.exe -> ungrib/src/ungrib.exe
+/opt/wps/ungrib.exe       -> /opt/wps-4.7.0/ungrib/src/ungrib.exe
+```
+
+Ele não é copiado para `/opt/mpas/bin`. Essa separação impede que o source do
+WPS e suas dependências privadas sejam confundidos com a ABI da stack
+científica compartilhada.
+
+### Configuração e build
+
+A release usa `configure`/`configure.wps` e um script `compile` em csh. A
+imagem anterior já continha compiladores, `make`, Perl, `file` e netCDF; o
+único pacote de sistema acrescentado foi `csh`, que fornece `/bin/csh`. A
+versão APT observada foi `20230828-1`, mas o índice APT continua sem lock.
+
+O comando de configuração foi:
+
+```sh
+./configure --nowrf --build-grib2-libs
+```
+
+`--nowrf` permite configurar o componente independente `ungrib` sem uma árvore
+WRF compilada e marca `WRF_DIR=none`. `--build-grib2-libs` compila os sources
+incluídos de zlib 1.2.11, libpng 1.6.37 e JasPer 1.900.29 sob:
+
+```text
+/opt/wps-4.7.0/grib2/include
+/opt/wps-4.7.0/grib2/lib
+```
+
+Essas bibliotecas estáticas habilitam PNG e JPEG2000 para GRIB2 e não alteram
+zlib 1.3.2 ou qualquer biblioteca em `/opt/mpas`.
+
+A opção GNU serial não é tratada como número fixo. Um `awk` reproduz a ordem
+de plataformas que `arch/Config.pl` deriva de `arch/configure.defaults`,
+localiza exatamente `Linux x86_64, gfortran` com marca `serial`, exige uma
+única correspondência e envia o índice calculado ao `configure`. Depois,
+`configure.wps` precisa comprovar:
+
+- `SFC=gfortran` e `SCC=gcc`;
+- `FC=$(SFC)` e `CC=$(SCC)`;
+- cabeçalho Linux x86_64/gfortran serial;
+- ausência de `-D_MPI` em `CPPFLAGS`;
+- `WRF_DIR=none`;
+- `INTERNAL_GRIB2_PATH=/opt/wps-4.7.0/grib2`;
+- `-DUSE_JPEG2000 -DUSE_PNG`.
+
+Somente o alvo aprovado é executado:
+
+```sh
+./compile ungrib
+```
+
+Executar `./compile` sem alvo tentaria construir todos os componentes e não
+faz parte da receita.
+
+### Proveniência e integridade
+
+O build usa a tag oficial `v4.7.0`, commit
+`5feccecd63384381b6942371c7a837f66e4ccb84`, e o archive da própria tag. Não
+foi encontrado SHA-256 publicado pelo upstream. Dois downloads independentes,
+cada um com 4.544.769 bytes, produziram:
+
+```text
+SHA-256 5232d20d7556338391b66aba45824d4fcd6c42712ebe9325f359f3c6cf043808
+```
+
+O valor é explicitamente local, não oficial. A imagem guarda versão, tag,
+commit, URL, hash e origem do hash em
+`/opt/wps-4.7.0/.mpas-era5-provenance`.
+
+### Validação e limite funcional
+
+O build terminou com código 0. `file` confirmou ELF 64-bit x86-64 dinâmico;
+`ldd` encontrou `libgfortran`, `libm`, `libgcc_s` e `libc`, sem `not found`.
+As bibliotecas GRIB2 são ligadas estaticamente. O smoke offline e read-only
+também valida links, configuração, proveniência, diretórios GRIB2 e a
+existência de:
+
+- `Vtable.ECMWF`;
+- `Vtable.ECMWF_sigma`;
+- `Vtable.ERA-interim.ml`;
+- `Vtable.ERA-interim.pl`.
+
+Esses nomes foram inspecionados, não selecionados. Em especial, tabelas
+ERA-Interim não se tornam automaticamente corretas para ERA5. A integração
+funcional `ERA5 GRIB → ungrib → WPS intermediate` permanece pendente até que
+variáveis, níveis, amostra real e Vtable sejam aprovados. Não foi criado GRIB
+falso nem baixado dataset aleatório.
+
+O build das bibliotecas internas e do código legado produziu avisos de
+formatação, `tmpnam`, uso após `realloc`, tipos/ranks Fortran e receitas make
+sobrescritas. Não houve erro de compilação ou linkagem; esses avisos continuam
+como dívida técnica a observar quando dados reais forem processados.
+
+Detalhes auditáveis estão em
+[[../testing/validation-matrix|validation-matrix.md]] e a decisão de versão e
+layout em [[../decisions/0004-wps-mpas-version-and-layout|ADR 0004]].

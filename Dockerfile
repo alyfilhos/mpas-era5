@@ -322,4 +322,105 @@ RUN curl -fL \
 
 WORKDIR /workspace
 
+# ------------------------------------------------------------
+# WPS / ungrib
+# ------------------------------------------------------------
+
+ARG WPS_VERSION=4.7.0
+ARG WPS_TAG=v4.7.0
+ARG WPS_COMMIT=5feccecd63384381b6942371c7a837f66e4ccb84
+ARG WPS_SOURCE_URL=https://github.com/wrf-model/WPS/archive/refs/tags/v4.7.0.tar.gz
+ARG WPS_SHA256=5232d20d7556338391b66aba45824d4fcd6c42712ebe9325f359f3c6cf043808
+
+ENV WPS_PREFIX=/opt/wps-${WPS_VERSION}
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends csh \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /tmp
+
+RUN curl -fL "${WPS_SOURCE_URL}" -o wps.tar.gz \
+    && echo "${WPS_SHA256}  wps.tar.gz" | sha256sum -c - \
+    && tar -xzf wps.tar.gz \
+    && mv "WPS-${WPS_VERSION}" "${WPS_PREFIX}" \
+    && cd "${WPS_PREFIX}" \
+    && WPS_CONFIG_OPTION="$( \
+         awk ' \
+             BEGIN { \
+                 option = 0; \
+                 matches = 0; \
+                 target = "Linux x86_64, gfortran"; \
+             } \
+             /^#ARCH/ && index($0, "Linux") && index($0, "x86_64") { \
+                 label = $0; \
+                 sub(/^#ARCH[[:space:]]*/, "", label); \
+                 sub(/[[:space:]]*#.*/, "", label); \
+                 if (index($0, "serial")) { \
+                     option++; \
+                     if (label == target) { \
+                         selected = option; \
+                         matches++; \
+                     } \
+                 } \
+                 if (index($0, "dmpar")) { \
+                     option++; \
+                 } \
+             } \
+             END { \
+                 if (matches != 1) exit 1; \
+                 print selected; \
+             } \
+         ' arch/configure.defaults \
+       )" \
+    && test -n "${WPS_CONFIG_OPTION}" \
+    && printf 'Selected WPS configure option: %s\n' "${WPS_CONFIG_OPTION}" \
+    && printf '%s\n' "${WPS_CONFIG_OPTION}" \
+       | ./configure --nowrf --build-grib2-libs \
+    && grep -E \
+       '^#.*Settings for Linux x86_64, gfortran[[:space:]]+[(]serial[)]' \
+       configure.wps \
+    && grep -E '^SFC[[:space:]]*=[[:space:]]*gfortran[[:space:]]*$' \
+       configure.wps \
+    && grep -E '^SCC[[:space:]]*=[[:space:]]*gcc[[:space:]]*$' \
+       configure.wps \
+    && grep -E '^FC[[:space:]]*=[[:space:]]*[$][(]SFC[)]' configure.wps \
+    && grep -E '^CC[[:space:]]*=[[:space:]]*[$][(]SCC[)]' configure.wps \
+    && test -z "$(grep -E '^CPPFLAGS.*-D_MPI' configure.wps)" \
+    && grep -E '^WRF_DIR[[:space:]]*=[[:space:]]*none[[:space:]]*$' \
+       configure.wps \
+    && grep -E \
+       "^INTERNAL_GRIB2_PATH[[:space:]]*=[[:space:]]*${WPS_PREFIX}/grib2[[:space:]]*$" \
+       configure.wps \
+    && grep -F -- '-DUSE_JPEG2000 -DUSE_PNG' configure.wps \
+    && ./compile ungrib \
+    && test -x ungrib.exe \
+    && test -x ungrib/src/ungrib.exe \
+    && test -d grib2/include \
+    && test -f grib2/lib/libz.a \
+    && test -e grib2/lib/libpng.a \
+    && test -f grib2/lib/libjasper.a \
+    && test -f ungrib/Variable_Tables/Vtable.ECMWF \
+    && test -f ungrib/Variable_Tables/Vtable.ECMWF_sigma \
+    && test -f ungrib/Variable_Tables/Vtable.ERA-interim.ml \
+    && test -f ungrib/Variable_Tables/Vtable.ERA-interim.pl \
+    && grep -F "WRF Pre-Processing System Version ${WPS_VERSION}" README \
+    && file -L ungrib.exe \
+    && ldd ungrib.exe \
+    && test -z "$(ldd ungrib.exe | grep -F 'not found')" \
+    && printf '%s\n' \
+       "WPS_VERSION=${WPS_VERSION}" \
+       "WPS_TAG=${WPS_TAG}" \
+       "WPS_COMMIT=${WPS_COMMIT}" \
+       "WPS_SOURCE_URL=${WPS_SOURCE_URL}" \
+       "WPS_SHA256=${WPS_SHA256}" \
+       "WPS_SHA256_ORIGIN=locally calculated from two independent downloads on 2026-08-05; no upstream SHA-256 was found" \
+       > .mpas-era5-provenance \
+    && ln -s "${WPS_PREFIX}" /opt/wps \
+    && test "$(readlink /opt/wps)" = "${WPS_PREFIX}" \
+    && test "$(readlink -f /opt/wps)" = "${WPS_PREFIX}" \
+    && rm -f /tmp/wps.tar.gz
+
+WORKDIR /workspace
+
 CMD ["bash"]

@@ -32,11 +32,21 @@ compilação de software científico, MPI e ferramentas utilizadas em HPC.
 - PIO2 2.7.0 ✅
 - METIS 5.1.0 ✅
 
+### Pré-processamento e modelo
+
+- WPS 4.7.0 / `ungrib.exe` GNU serial ✅
+- MPAS-Model 8.4.1: versão fixada; build pendente
+
 ## Roadmap
 
 Stack científica:
 
 `zlib → HDF5 → netCDF-C → netCDF-Fortran → PnetCDF → PIO2 → METIS`
+
+O prefixo `/opt/mpas` permanece reservado às bibliotecas científicas. O WPS
+fica separado em `/opt/wps-4.7.0`, com `/opt/wps` como link estável. Neste
+ciclo foram usados `--nowrf`, `--build-grib2-libs` e `./compile ungrib`; WRF,
+`geogrid` e `metgrid` não foram instalados ou compilados.
 
 O METIS é usado offline: `gpmetis` transforma `graph.info` em
 `graph.info.part.N`, e `N` deve corresponder ao número de tasks MPI da futura
@@ -45,7 +55,10 @@ execução MPAS. O backlog de alternativas de particionamento está em
 
 Depois:
 
-`WPS/ungrib → MPAS init_atmosphere → MPAS atmosphere → ERA5 → mesh → primeira simulação`
+`ERA5 GRIB → Vtable → ungrib → WPS intermediate → MPAS init_atmosphere → MPAS atmosphere`
+
+A Vtable ERA5 definitiva e a integração funcional com dados reais ainda
+dependem de um ciclo próprio.
 
 ## Documentação
 
@@ -67,4 +80,6 @@ O material didático e as notas de aprendizado por ciclo estão em:
 - Parallel-NetCDF
 - PIO
 - METIS
+- WPS
+- MPAS-Model
 - ECMWF Climate Data Store

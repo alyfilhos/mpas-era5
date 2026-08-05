@@ -19,29 +19,26 @@ A partir do ciclo 0004, cada atualização distingue:
 Consequentemente, a referência abaixo é uma observação datada, não uma
 declaração eterna do `HEAD`.
 
-## Referência do ciclo 0004
+## Referência do ciclo 0005
 
-Estado atualizado em **2026-08-05** depois da implementação, build, testes e
-regressões do METIS 5.1.0:
+Estado atualizado em **2026-08-05** depois da implementação, build, smoke e
+regressões do WPS 4.7.0/ungrib:
 
 - branch inspecionada: `main`;
 - base do ciclo:
-  `7e1d672696e6b892ca36b57ec53a1b3041aeedcf`
-  (`build: add PIO2 with PnetCDF backend`);
+  `7eb81e8d7a566ee16d79d9d8abdca1b6d09aadad`
+  (`build: add METIS 5.1.0 partitioning support`);
 - relação observada antes das mudanças: `main` alinhada com `origin/main`;
-- estado produzido: mudanças do ciclo 0004 no worktree, sem commit e sem push,
+- estado produzido: mudanças do ciclo 0005 no worktree, sem commit e sem push,
   aguardando relatório pré-commit e aprovação;
 - commit que materializa este estado: **consultar Git**; nenhum SHA futuro foi
   escrito;
 - `HEAD` observado ao atualizar este documento:
-  `7e1d672696e6b892ca36b57ec53a1b3041aeedcf`;
+  `7eb81e8d7a566ee16d79d9d8abdca1b6d09aadad`;
 - comando normativo para o `HEAD` atual: `git rev-parse HEAD`.
 
-O documento anterior ainda registrava o `HEAD` do ciclo 0002 enquanto
-descrevia o worktree do ciclo 0003. O estado real conferido no início deste
-ciclo mostrou que o ciclo 0003 já estava materializado no commit base acima.
-A nova convenção elimina a tentativa de fazer o documento antecipar o próprio
-commit.
+O ciclo começou com o ciclo 0004 já materializado no commit base acima. A
+referência continua sem antecipar o hash do futuro commit 0005.
 
 ## Ambiente definido no repositório
 
@@ -53,11 +50,12 @@ O [`Dockerfile`](../../Dockerfile) define:
 - prefixo científico `/opt/mpas`;
 - `PATH`, `LD_LIBRARY_PATH`, `CPPFLAGS` e `LDFLAGS` para o prefixo;
 - `NETCDF=/opt/mpas`, `PNETCDF=/opt/mpas` e `PIO=/opt/mpas`.
+- WPS separado em `/opt/wps-4.7.0`, com `/opt/wps` como link estável.
 
 Não foi criada uma variável `METIS`: o workflow usa
 `/opt/mpas/bin/gpmetis` descoberto por `PATH`.
 
-## Stack científica implementada
+## Componentes implementados
 
 | Componente | Versão | Estado e evidência atual |
 |---|---:|---|
@@ -68,22 +66,39 @@ Não foi criada uma variável `METIS`: o workflow usa
 | PnetCDF | 1.15.0 | camada MPI-IO preservada; F90/CDF-5 em quatro ranks aprovado |
 | PIO | 2.7.0 | C/Fortran static, PnetCDF habilitado; integração CDF-2 aprovada com OMPIO e ROMIO |
 | METIS | 5.1.0 | static, índices/reais 32 bits, GKlib incluída; `gpmetis` offline validado |
+| WPS/ungrib | 4.7.0 | GNU serial; sem WRF; GRIB2 privado; build e smoke offline aprovados |
 
-A imagem validada é `mpas-era5:metis-5.1.0`, com ID/digest local
-`sha256:4d1cd35469cf12c710643d78a93448924dcd5bb1af6155846dd1e4f213af53b3`
-e tamanho reportado de 337.756.200 bytes. Todas as camadas anteriores ao METIS
-foram recuperadas do cache; nenhuma versão anterior foi reconstruída ou
-alterada.
+A imagem validada é `mpas-era5:wps-4.7.0`, com ID/digest local
+`sha256:437fb5d327aaeb1a2d79d4b2c9c0024a471f123f9416fa8e3bf1762d3b07267a`
+e tamanho reportado de 359.179.447 bytes. Todas as camadas até METIS foram
+recuperadas do cache; nenhuma versão ou configuração científica anterior foi
+reconstruída ou alterada.
 
-Os logs completos da sessão permanecem temporariamente em:
+A evidência resumida está em
+[[../testing/validation-matrix|validation-matrix.md]]; nenhum log de build ou
+validação é versionado.
 
-- `/tmp/mpas-era5-metis-build.log`;
-- `/tmp/mpas-era5-metis-validation.log`;
-- `/tmp/mpas-era5-metis-pnetcdf-regression.log`;
-- `/tmp/mpas-era5-metis-pio-regression.log`.
+## WPS e versão MPAS no ciclo 0005
 
-Eles não são versionados. A evidência resumida está em
-[[../testing/validation-matrix|validation-matrix.md]].
+- WPS 4.7.0, tag `v4.7.0`, commit
+  `5feccecd63384381b6942371c7a837f66e4ccb84`;
+- archive oficial da tag e SHA-256 local
+  `5232d20d7556338391b66aba45824d4fcd6c42712ebe9325f359f3c6cf043808`,
+  confirmado por dois downloads independentes;
+- configuração `--nowrf --build-grib2-libs`, GNU/GCC/GFortran, Linux x86_64,
+  serial;
+- seleção não interativa derivada de `arch/configure.defaults`, sem número de
+  menu fixado por suposição;
+- somente `./compile ungrib` executado;
+- `ungrib.exe` em `/opt/wps-4.7.0`, acessível por `/opt/wps/ungrib.exe`;
+- zlib 1.2.11, libpng 1.6.37 e JasPer 1.900.29 privados em
+  `/opt/wps-4.7.0/grib2`;
+- Vtables ECMWF, ECMWF sigma e ERA-Interim presentes, sem escolha ERA5;
+- único pacote de sistema novo: `csh`, observado como `20230828-1`.
+
+MPAS-Model está fixado em 8.4.1, tag `v8.4.1`, hotfix/commit
+`91c5eac175eebeaf4206bacd5cb50c39dff3c152`. Nenhum source MPAS foi baixado e
+nenhum núcleo foi compilado neste ciclo.
 
 ## METIS validado no ciclo 0004
 
@@ -148,6 +163,9 @@ quatro partições ↔ quatro tasks MPI, sem compilar ou executar MPAS.
   ranks preservados;
 - `scripts/validate/pio.sh` executado com a imagem final: código 0,
   PIO 2.7.0/PnetCDF e CDF-2 em quatro ranks passaram com OMPIO e ROMIO;
+- `scripts/validate/metis.sh` executado com a imagem final: código 0,
+  METIS 5.1.0 produziu quatro partições conectadas, imbalance 1.000 e edge cut
+  reportado/recalculado 3;
 - valores funcionais preservados: `0, 1, 2, 3` no smoke PnetCDF e
   `1000, 1001, 1002, 1003` no smoke PIO.
 
@@ -168,6 +186,7 @@ mesh futura → graph.info → METIS 5.1.0 serial → graph.info.part.N
 As decisões e alternativas estão em
 [[../decisions/0002-pio2-pnetcdf-with-serial-netcdf|ADR 0002]],
 [[../decisions/0003-metis-5.1.0-partitioning-baseline|ADR 0003]] e
+[[../decisions/0004-wps-mpas-version-and-layout|ADR 0004]], além de
 [[future-experiments|future-experiments.md]].
 
 ## Artefatos do ciclo 0004
@@ -179,11 +198,16 @@ As decisões e alternativas estão em
 - `docs/project/future-experiments.md`: backlog não aprovado de comparações;
 - `learning/commits/0004-add-metis.md`: nota educacional do ciclo.
 
+## Artefatos do ciclo 0005
+
+- `scripts/validate/wps-ungrib.sh`: smoke final sem rede ou dados;
+- `docs/decisions/0004-wps-mpas-version-and-layout.md`: decisão aceita;
+- `learning/commits/0005-add-wps-ungrib.md`: nota educacional do ciclo.
+
 ## Componentes ainda não implementados
 
 - METIS 5.2.1 e GKlib externa;
 - PT-Scotch;
-- WPS/ungrib;
 - MPAS `init_atmosphere` e `atmosphere`;
 - aquisição ou preparação ERA5;
 - seleção e preparação da primeira mesh;
@@ -201,7 +225,12 @@ As decisões e alternativas estão em
 - CMake emitiu aviso de depreciação e a GKlib incluída produziu avisos
   `-Wmisleading-indentation`; não houve erro;
 - a imagem Ubuntu e as versões APT não possuem digest/lock completos;
+- `csh` foi acrescentado por APT, mas sua versão não está fixada na receita;
 - o checksum HDF5 continua ausente;
 - HDF5 e netCDF continuam seriais por decisão anterior;
 - METIS 5.2.1 + GKlib fixada e PT-Scotch online são somente hipóteses futuras,
-  sem conclusão de superioridade.
+  sem conclusão de superioridade;
+- a Vtable ERA5 não foi escolhida e nenhum GRIB real foi processado;
+- avisos de código legado em libpng, JasPer e Fortran permanecem, apesar do
+  build e da linkagem bem-sucedidos;
+- o build e a integração do MPAS-Model 8.4.1 continuam pendentes.

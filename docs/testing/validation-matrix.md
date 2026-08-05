@@ -30,14 +30,14 @@ evidência estiverem registrados.
 | PnetCDF 1.15.0 | `make check` e `make ptest` executados com código 0 | versão, prefixo, configuração, utilitários e shared/static conferidos na instalação | F90 → PnetCDF → MPI-IO/ROMIO → OpenMPI, escrita/leitura coletiva em 4 ranks | Implementado e validado no ciclo 0002 | [`Dockerfile`](../../Dockerfile), [`pnetcdf.sh`](../../scripts/validate/pnetcdf.sh), [`pnetcdf_mpi.f90`](../../tests/smoke/pnetcdf_mpi.f90) e evidência abaixo |
 | PIO 2.7.0 | CTest: 109/109 testes aprovados | versão, configuração, headers, módulos, bibliotecas e pacote CMake conferidos | C → PIO/PnetCDF → MPI-IO → OpenMPI; CDF-2 escrito e relido em 4 ranks com OMPIO e ROMIO | Implementado e validado no ciclo 0003 | [`Dockerfile`](../../Dockerfile), [`pio.sh`](../../scripts/validate/pio.sh), [`pio_pnetcdf.c`](../../tests/smoke/pio_pnetcdf.c) e evidência abaixo |
 | METIS 5.1.0 | não há `make check`/CTest formal; `graphchk` e `gpmetis` passaram no `4elt.graph` fornecido upstream | versão por macros, ferramentas, biblioteca, help e opções conferidos | fixture → `gpmetis` → `graph.info.part.4`; estrutura, IDs, quatro partições, edge cut e conectividade validados | Implementado e validado no ciclo 0004 | [`Dockerfile`](../../Dockerfile), [`metis.sh`](../../scripts/validate/metis.sh), [`graph.info`](../../tests/fixtures/metis/graph.info) e evidência abaixo |
+| WPS 4.7.0 / ungrib | não foi identificada suíte formal para este recorte; build aplicável `configure` + `compile ungrib` passou | executável, links, `file`, `ldd`, `configure.wps`, proveniência, GRIB2 privado e Vtables conferidos offline | ERA5 GRIB → ungrib → WPS intermediate pendente; nenhum dado artificial ou aleatório foi usado | Build e smoke validados no ciclo 0005; integração funcional pendente | [`Dockerfile`](../../Dockerfile), [`wps-ungrib.sh`](../../scripts/validate/wps-ungrib.sh) e evidência abaixo |
 
 ## Componentes futuros
 
 | Componente | Upstream test | Smoke test | Integration test | Status | Evidência |
 |---|---|---|---|---|---|
-| WPS/ungrib | Planejado: testes oficiais disponíveis para a release | Planejado: executar `ungrib` sobre amostra pequena e controlada | Planejado: transformar campos ERA5 aprovados para o formato consumido pelo `init_atmosphere` | Não implementado; versão a decidir | [[../project/requirements|REQ-PRE-001]] |
-| MPAS `init_atmosphere` | Planejado: testes upstream disponíveis para a release | Planejado: validar inicialização mínima na mesh aprovada | Planejado: WPS/ERA5 + mesh → `static.nc`, `init.nc` e LBC quando aplicável | Não implementado; versão a decidir | [[../project/requirements|REQ-MPAS-001]] |
-| MPAS `atmosphere` | Planejado: testes upstream disponíveis para a release | Planejado: integração curta e determinística do caso aprovado | Planejado: ler artefatos do `init_atmosphere` e produzir saída MPAS | Não implementado; versão a decidir | [[../project/requirements|REQ-MPAS-002]] |
+| MPAS 8.4.1 `init_atmosphere` | Planejado: testes upstream disponíveis para a release | Planejado: validar inicialização mínima na mesh aprovada | Planejado: WPS/ERA5 + mesh → `static.nc`, `init.nc` e LBC quando aplicável | Versão fixada; source e build não implementados | [[../project/requirements|REQ-MPAS-001]] |
+| MPAS 8.4.1 `atmosphere` | Planejado: testes upstream disponíveis para a release | Planejado: integração curta e determinística do caso aprovado | Planejado: ler artefatos do `init_atmosphere` e produzir saída MPAS | Versão fixada; source e build não implementados | [[../project/requirements|REQ-MPAS-002]] |
 | ERA5 | Não se aplica como suite de software única; validar cliente e esquema segundo fontes oficiais | Planejado: baixar uma amostra mínima sem registrar credenciais e conferir metadados/unidades | Planejado: amostra ERA5 → `ungrib` → `init_atmosphere` | Período/área/variáveis a decidir | [[../project/requirements|REQ-DATA-001]] |
 | Mesh pública inicial | Validar com ferramentas/recomendações oficiais da release MPAS escolhida | Planejado: conferir dimensões, conectividade e metadados da mesh | Planejado: mesh aceita pelo `init_atmosphere` e pelo caso curto | Mesh a decidir | [[../project/requirements|REQ-MESH-001]] |
 | `static.nc` | Não se aplica | Planejado: inspecionar dimensões, variáveis, atributos, valores ausentes e faixas plausíveis | Planejado: arquivo aceito na geração do estado inicial | Não gerado | [[../project/requirements|REQ-CASE-001]] |
@@ -173,6 +173,52 @@ evidência estiverem registrados.
   `/tmp/mpas-era5-metis-validation.log`,
   `/tmp/mpas-era5-metis-pnetcdf-regression.log` e
   `/tmp/mpas-era5-metis-pio-regression.log`; eles não serão versionados.
+
+## Evidência do ciclo 0005 — WPS 4.7.0 / ungrib
+
+| Campo | Evidência real |
+|---|---|
+| Data | 2026-08-05 |
+| Base do ciclo | `7eb81e8d7a566ee16d79d9d8abdca1b6d09aadad` (`build: add METIS 5.1.0 partitioning support`); mudanças do ciclo sem commit |
+| Imagem | `mpas-era5:wps-4.7.0` |
+| ID/digest local da imagem | `sha256:437fb5d327aaeb1a2d79d4b2c9c0024a471f123f9416fa8e3bf1762d3b07267a`; 359.179.447 bytes |
+| Build | `docker build --progress=plain --build-arg BUILD_JOBS=8 -t mpas-era5:wps-4.7.0 .`; código 0 |
+| Preservação da stack | todas as etapas até METIS apareceram como `CACHED`; nenhuma versão/configuração científica anterior foi alterada |
+| Origem | release/tag oficial `v4.7.0`, archive `https://github.com/wrf-model/WPS/archive/refs/tags/v4.7.0.tar.gz`, commit `5feccecd63384381b6942371c7a837f66e4ccb84` |
+| Integridade | dois downloads independentes de 4.544.769 bytes produziram SHA-256 local `5232d20d7556338391b66aba45824d4fcd6c42712ebe9325f359f3c6cf043808`; conferido antes da extração; nenhum SHA-256 upstream foi encontrado |
+| Dependência nova | somente pacote `csh`, que fornece `/bin/csh`; versão observada `20230828-1`, não fixada no APT |
+| Configuração | `./configure --nowrf --build-grib2-libs`; Linux x86_64, GCC/GFortran, serial, `WRF_DIR=none`, sem `-D_MPI` |
+| Seleção não interativa | `awk` deriva a numeração a partir de `arch/configure.defaults`, exige uma única entrada `Linux x86_64, gfortran` serial e envia o índice calculado; no source 4.7.0 observado, o resultado foi 1 |
+| Build classificado | BUILD: `configure` + `./compile ungrib`; somente o alvo `ungrib` foi executado, com código 0 |
+| Instalação | `/opt/wps-4.7.0/ungrib.exe` → `ungrib/src/ungrib.exe`; `/opt/wps` → `/opt/wps-4.7.0`; ausência de `geogrid.exe`, `metgrid.exe` e `/opt/mpas/bin/ungrib.exe` |
+| Binário/linkagem | `file -L`: ELF 64-bit LSB PIE x86-64, dinâmico; `ldd`: `libgfortran.so.5`, `libm.so.6`, `libgcc_s.so.1`, `libc.so.6` e loader, sem `not found` |
+| GRIB2 interno | zlib 1.2.11, libpng 1.6.37 e JasPer 1.900.29 construídos sob `/opt/wps-4.7.0/grib2`; `libz.a`, `libpng.a` e `libjasper.a` presentes; nenhuma JasPer em `/opt/mpas` |
+| Vtables inspecionadas | `Vtable.ECMWF`, `Vtable.ECMWF_sigma`, `Vtable.ERA-interim.ml` e `Vtable.ERA-interim.pl` presentes; nenhum link `/opt/wps-4.7.0/Vtable` criado e nenhuma escolha ERA5 feita |
+| Proveniência na imagem | `.mpas-era5-provenance` confirma versão, tag, commit, URL, SHA-256 e sua origem local |
+| Smoke classificado | `scripts/validate/wps-ungrib.sh`; código 0; executado com `--network none`, raiz read-only e tmpfs, sem dados meteorológicos |
+| Regressão PnetCDF | código 0; netCDF-C 4.10.1, netCDF-Fortran 4.6.3, PnetCDF 1.15.0 e F90/CDF-5 com quatro ranks preservados |
+| Regressão PIO | código 0; PIO 2.7.0/PnetCDF e CDF-2 com quatro ranks passaram com OMPIO e ROMIO |
+| Regressão METIS | código 0; METIS 5.1.0, quatro partições conectadas de 4 vértices, imbalance 1.000 e edge cut 3 conferido |
+| Integração funcional | PENDENTE: ERA5 GRIB → Vtable aprovada → ungrib → WPS intermediate; ERA5 não foi baixado e nenhum GRIB falso foi criado |
+| MPAS | 8.4.1/tag `v8.4.1`/commit `91c5eac175eebeaf4206bacd5cb50c39dff3c152` fixados documentalmente; source e build ausentes |
+
+### Limitações, avisos e testes não executados
+
+- a release não forneceu, para o recorte `ungrib`, uma suíte formal adicional
+  identificada; build bem-sucedido não é apresentado como teste funcional de
+  dados;
+- a primeira execução do smoke falhou porque o teste esperava um texto de
+  versão que não existe no `compile`; a segunda revelou que o README descreve
+  Vtables genericamente. As asserções foram alinhadas ao source da tag e a
+  execução final passou sem remover verificações de instalação;
+- libpng e JasPer emitiram avisos de código legado, inclusive formatação,
+  `tmpnam` e possível uso após `realloc`; código Fortran antigo emitiu avisos
+  de tipo/rank e make registrou receitas sobrescritas; não houve erro;
+- não foram testados GRIB1 ou GRIB2 reais, cobertura de variáveis ERA5,
+  níveis, unidades, tempos, Vtable ou consumo por `init_atmosphere`;
+- `csh` e demais pacotes APT não possuem lock completo;
+- o source WPS e seus binários existem somente na imagem; não são versionados
+  no repositório.
 
 ## Evidência mínima de um resultado futuro
 

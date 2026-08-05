@@ -18,6 +18,8 @@ evidência. Decisões novas são listadas abaixo.
   — aceito em 2026-08-04.
 - [[0003-metis-5.1.0-partitioning-baseline|ADR 0003 — METIS 5.1.0 como baseline de particionamento]]
   — aceito em 2026-08-05.
+- [[0004-wps-mpas-version-and-layout|ADR 0004 — versões e layout de WPS/MPAS]]
+  — aceito em 2026-08-05.
 
 ## Quando criar um ADR
 

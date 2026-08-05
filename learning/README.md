@@ -24,6 +24,8 @@ apontar para ele.
   da seleção, build e validação PIO2 sobre PnetCDF;
 - [`commits/0004-add-metis.md`](commits/0004-add-metis.md): nota educacional
   sobre grafos e o particionamento offline com METIS 5.1.0;
+- [`commits/0005-add-wps-ungrib.md`](commits/0005-add-wps-ungrib.md): nota
+  educacional sobre WPS, GRIB, Vtables e o build isolado do `ungrib`;
 - `commits/NNNN-<descricao>.md`: uma nota por commit posterior ao bootstrap.
 
 ## O que cada nota por commit deve ensinar

@@ -21,9 +21,12 @@ Stack científica
     ├── PIO 2.7.0 ✅
     │     ↓
     └── METIS 5.1.0 ✅
-          │
-          ▼
-       MPAS build
+
+WPS 4.7.0 / ungrib ✅ ──→ WPS intermediate
+                                  │
+                                  ▼
+                         MPAS-Model 8.4.1
+                         versão fixada; build pendente
 ```
 
 ## Stack científica
@@ -37,11 +40,18 @@ Dockerfile
 → PnetCDF
 → PIO2
 → METIS
-→ MPAS
+
+/opt/wps-4.7.0 → ungrib.exe
+/opt/wps       → /opt/wps-4.7.0
+
+/opt/mpas-model-8.4.1 → futuro MPAS
+/opt/mpas-model       → futuro link estável
 ```
 
-No ciclo 0004, a implementação termina em METIS 5.1.0. WPS e MPAS permanecem
-no grafo como destino do plano, não como componentes concluídos.
+No ciclo 0005, a stack científica continua terminando em METIS 5.1.0 sob
+`/opt/mpas`. WPS 4.7.0 foi acrescentado em prefixo próprio e somente
+`ungrib.exe` foi construído. MPAS-Model 8.4.1 foi fixado, mas não foi baixado
+nem compilado.
 
 PnetCDF não depende da seta HDF5 → netCDF neste ciclo. A ordem no `Dockerfile`
 preserva a stack já construída, mas o caminho funcional novo é independente:
@@ -96,6 +106,26 @@ O script `scripts/validate/metis.sh` copia o fixture para tmpfs, gera
 `graph.info.part.4` somente ali e valida estrutura, IDs, cobertura,
 balanceamento, `edge cut` e conectividade.
 
+WPS prepara dados meteorológicos por um caminho distinto da stack científica:
+
+```text
+ERA5 GRIB (futuro)
+       ↓
+Vtable aprovada (pendente)
+       ↓
+/opt/wps/ungrib.exe
+       ↓
+WPS intermediate
+       ↓
+MPAS init_atmosphere (futuro)
+```
+
+`scripts/validate/wps-ungrib.sh` valida a instalação sem rede e sem dados.
+As bibliotecas zlib, libpng e JasPer construídas por
+`--build-grib2-libs` ficam em `/opt/wps-4.7.0/grib2`, separadas das versões da
+stack em `/opt/mpas`. A integração funcional exige ERA5 GRIB e permanece
+pendente.
+
 ## Fluxo de governança
 
 ```text
@@ -139,15 +169,17 @@ mpas-era5/
 │   │   └── future-experiments.md     backlog, não roadmap aprovado
 │   ├── references/
 │   │   ├── source-registry.md        classificação e proveniência das fontes
-│   │   └── versions.lock.md          versões adotadas e a decidir
+│   │   └── versions.lock.md          versões adotadas e pendências
 │   ├── decisions/
 │   │   ├── README.md                 política e template de ADR
 │   │   ├── 0001-pnetcdf-mpiio-backend.md
 │   │   │                              decisão PnetCDF/GIO/MPI-IO
 │   │   ├── 0002-pio2-pnetcdf-with-serial-netcdf.md
 │   │   │                              arquitetura PIO2 e backends habilitados
-│   │   └── 0003-metis-5.1.0-partitioning-baseline.md
+│   │   ├── 0003-metis-5.1.0-partitioning-baseline.md
 │   │                                  baseline offline e alternativas futuras
+│   │   └── 0004-wps-mpas-version-and-layout.md
+│   │                                  versões, flags e prefixos separados
 │   ├── testing/
 │   │   └── validation-matrix.md      testes, status e evidências
 │   └── logs/                         reservado; atualmente vazio
@@ -158,12 +190,14 @@ mpas-era5/
 │       ├── 0001-bootstrap-codex-workflow.md
 │       ├── 0002-add-pnetcdf.md         nota educacional do ciclo 0002
 │       ├── 0003-add-pio2.md            nota educacional do ciclo 0003
-│       └── 0004-add-metis.md           nota educacional do ciclo 0004
+│       ├── 0004-add-metis.md           nota educacional do ciclo 0004
+│       └── 0005-add-wps-ungrib.md      nota educacional do ciclo 0005
 ├── scripts/
 │   ├── validate/
 │   │   ├── pnetcdf.sh                validação instalada MPI/Fortran
 │   │   ├── pio.sh                    validação PIO/PnetCDF e IOTYPEs
-│   │   └── metis.sh                  partição e validação estrutural em tmpfs
+│   │   ├── metis.sh                  partição e validação estrutural em tmpfs
+│   │   └── wps-ungrib.sh             smoke WPS offline e read-only
 │   └── codex/                        automações de suporte a ciclos futuros
 ├── tests/
 │   ├── fixtures/
@@ -178,8 +212,8 @@ mpas-era5/
 ```
 
 `scripts/validate/` contém validações instaladas e repetíveis para PnetCDF,
-PIO e METIS. `scripts/codex/` continua vazio e, por isso, não é preservado
-pelo Git.
+PIO, METIS e WPS/ungrib. `scripts/codex/` continua vazio e, por isso, não é
+preservado pelo Git.
 
 ## Responsabilidades e relações
 
@@ -210,5 +244,6 @@ pelo Git.
 - [[../references/versions.lock|Versões adotadas e pendentes]]
 - [[../decisions/README|ADRs]]
 - [[../decisions/0003-metis-5.1.0-partitioning-baseline|ADR 0003 — METIS 5.1.0]]
+- [[../decisions/0004-wps-mpas-version-and-layout|ADR 0004 — WPS/MPAS e layout]]
 - [[../testing/validation-matrix|Matriz de validação]]
 - [[../../learning/README|Índice de aprendizado]]

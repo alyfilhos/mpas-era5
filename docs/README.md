@@ -22,6 +22,7 @@ Este diretório centraliza a documentação técnica e científica do projeto.
 - [[decisions/0001-pnetcdf-mpiio-backend|ADR 0001 — PnetCDF com MPI-IO]]
 - [[decisions/0002-pio2-pnetcdf-with-serial-netcdf|ADR 0002 — PIO2 com PnetCDF e netCDF serial]]
 - [[decisions/0003-metis-5.1.0-partitioning-baseline|ADR 0003 — METIS 5.1.0 como baseline de particionamento]]
+- [[decisions/0004-wps-mpas-version-and-layout|ADR 0004 — versões e layout de WPS/MPAS]]
 - [[testing/validation-matrix|Matriz de validação]]
 
 ### Aprendizado
@@ -32,6 +33,7 @@ Este diretório centraliza a documentação técnica e científica do projeto.
 - [[../learning/commits/0002-add-pnetcdf|Ciclo 0002 — adicionar PnetCDF]]
 - [[../learning/commits/0003-add-pio2|Ciclo 0003 — adicionar PIO2]]
 - [[../learning/commits/0004-add-metis|Ciclo 0004 — adicionar METIS]]
+- [[../learning/commits/0005-add-wps-ungrib|Ciclo 0005 — adicionar WPS/ungrib]]
 
 ## Blocos do projeto
 

@@ -32,6 +32,13 @@ usada; autoridade e utilidade não são a mesma coisa.
 
 | ID | Projeto/versão | Fonte oficial | Finalidade e resultado | Verificação |
 |---|---|---|---|---|
+| DOC-WPS-001 | WPS | [repositório oficial wrf-model/WPS](https://github.com/wrf-model/WPS) | identidade do projeto, tags e histórico oficial | consultado em 2026-08-05 |
+| DOC-WPS-002 | WPS 4.7.0 | [`README` da tag](https://github.com/wrf-model/WPS/blob/v4.7.0/README) | versão 4.7.0, papéis de geogrid/ungrib/metgrid, execução serial do ungrib, GRIB1/GRIB2, Vtables e build básico | lido no source da própria tag em 2026-08-05 |
+| DOC-WPS-003 | WPS 4.7.0 | [`configure` da tag](https://github.com/wrf-model/WPS/blob/v4.7.0/configure) | `--nowrf`, `--build-grib2-libs`, requisitos de WRF e diretório GRIB2 interno | lido integralmente e exercitado em 2026-08-05 |
+| DOC-WPS-004 | WPS 4.7.0 | [`compile` da tag](https://github.com/wrf-model/WPS/blob/v4.7.0/compile) | shebang csh, targets aceitos e confirmação de `./compile ungrib` | lido integralmente e exercitado em 2026-08-05 |
+| DOC-WPS-005 | WPS 4.7.0 | [`arch/Config.pl`](https://github.com/wrf-model/WPS/blob/v4.7.0/arch/Config.pl) e [`arch/configure.defaults`](https://github.com/wrf-model/WPS/blob/v4.7.0/arch/configure.defaults) | geração do menu, plataforma Linux x86_64/GFortran serial, compiladores e flags | inspecionados na tag e usados na seleção reproduzível em 2026-08-05 |
+| DOC-WPS-006 | WPS 4.7.0 | `external/Makefile`, `arch/preamble` e `ungrib/Makefile` contidos no archive da tag | versões e instalação privada de zlib/libpng/JasPer, flags GRIB2 e alvo ungrib | inspecionados no artefato adotado em 2026-08-05 |
+| DOC-MPAS-004 | MPAS-Model 8.4.1 | [`README.md` da tag](https://github.com/MPAS-Dev/MPAS-Model/blob/v8.4.1/README.md) | heading `MPAS-v8.4.1` no próprio source da tag | lido em 2026-08-05; versão somente documental neste ciclo |
 | DOC-PNETCDF-001 | PnetCDF | [repositório oficial](https://github.com/Parallel-NetCDF/PnetCDF) | identidade do projeto, release atual, formatos e interfaces | consultado em 2026-08-04 |
 | DOC-PNETCDF-002 | PnetCDF | [página oficial](https://parallel-netcdf.github.io/) | relação entre PnetCDF, CDF e MPI-IO | consultada em 2026-08-04 |
 | DOC-PNETCDF-003 | PnetCDF 1.15.0 | `INSTALL` dentro do tarball oficial `pnetcdf-1.15.0.tar.gz` | requisitos MPI/m4, wrappers, defaults Fortran, `make check`, `make ptest`, `make ptests` e `TESTMPIRUN` | 381 linhas lidas integralmente em 2026-08-04; corresponde ao artefato, não à branch master |
@@ -52,11 +59,12 @@ usada; autoridade e utilidade não são a mesma coisa.
 | DOC-MPAS-002 | MPAS atual | [Preparing Meshes — Graph Partitioning with METIS](https://www2.mmm.ucar.edu/projects/mpas/site/documentation/users_guide/preparing_meshes.html) | fluxo offline `gpmetis -minconn -contig -niter=200 graph.info N`, arquivo `.part.N`, correspondência com tasks MPI e coexistência com particionamento online | consultada em 2026-08-05; sustenta [[../decisions/0003-metis-5.1.0-partitioning-baseline|ADR 0003]] |
 | DOC-MPAS-003 | MPAS atual | [Building MPAS — PT-Scotch](https://www2.mmm.ucar.edu/projects/mpas/site/documentation/users_guide/building_mpas.html) | particionamento online desde v8.4.0, PT-Scotch mínimo 7.0.8, build MPAS e compatibilidade com índices de 32 bits | consultada em 2026-08-05 apenas para [[../project/future-experiments|experimento futuro]] |
 
-### Releases e artefatos usados pela implementação atual
+### Releases, artefatos e versões fixadas pela implementação atual
 
-As URLs de build abaixo são reproduzidas literalmente do
-[`Dockerfile`](../../Dockerfile), portanto não são URLs inferidas. O estado de
-verificação de cada artefato é informado individualmente na última coluna.
+As URLs usadas pelo build são reproduzidas literalmente do
+[`Dockerfile`](../../Dockerfile), portanto não são inferidas. A entrada MPAS é
+explicitamente documental e não aparece na receita. O estado de cada artefato
+ou pin é informado individualmente na última coluna.
 
 | ID | Componente | Release/artefato registrado | Integridade no build | Estado da verificação |
 |---|---|---|---|---|
@@ -70,6 +78,8 @@ verificação de cada artefato é informado individualmente na última coluna.
 | REL-CMAKE-FORTRAN-UTILS-001 | CMake_Fortran_utils | [repositório oficial](https://github.com/CESM-Development/CMake_Fortran_utils) | commit `05ff8d8e4c88786e94a02c853d3ff921113d785c` | commit efetivamente resolvido pelo probe PIO 2.7.0 e fixado no build em 2026-08-04 |
 | REL-GENF90-001 | genf90 | [repositório oficial PARALLELIO](https://github.com/PARALLELIO/genf90) | commit `4816965ba946731352bad195b7d946a5fe682ff5` | commit da dependência auxiliar observada e fixada no build em 2026-08-04 |
 | REL-METIS-001 | METIS 5.1.0 | [tarball first-party `metis-5.1.0.tar.gz`](https://karypis.github.io/glaros/files/sw/metis/metis-5.1.0.tar.gz) | SHA-256 local `76faebe03f6c963127dbb73c13eab58c9a3faeae48779f049066a21c087c5db2` | URL ligada pela página histórica first-party; dois downloads independentes de 4.984.968 bytes produziram o mesmo SHA-256 em 2026-08-05; nenhum SHA-256 upstream foi encontrado |
+| REL-WPS-001 | WPS 4.7.0 | [release oficial `v4.7.0`](https://github.com/wrf-model/WPS/releases/tag/v4.7.0), [archive da tag](https://github.com/wrf-model/WPS/archive/refs/tags/v4.7.0.tar.gz) e [commit da tag](https://github.com/wrf-model/WPS/commit/5feccecd63384381b6942371c7a837f66e4ccb84) | SHA-256 local `5232d20d7556338391b66aba45824d4fcd6c42712ebe9325f359f3c6cf043808` | release, source da tag e [histórico oficial](https://github.com/wrf-model/WPS/releases) cruzados em 2026-08-05; dois downloads independentes de 4.544.769 bytes produziram o mesmo hash; nenhum SHA-256 upstream foi encontrado |
+| REL-MPAS-001 | MPAS-Model 8.4.1 | [release oficial `v8.4.1`](https://github.com/MPAS-Dev/MPAS-Model/releases/tag/v8.4.1), [tag](https://github.com/MPAS-Dev/MPAS-Model/tree/v8.4.1) e [hotfix/commit](https://github.com/MPAS-Dev/MPAS-Model/commit/91c5eac175eebeaf4206bacd5cb50c39dff3c152) | tag/commit fixados documentalmente; nenhum artefato baixado pelo build | release, README do source da tag e [histórico oficial](https://github.com/MPAS-Dev/MPAS-Model/releases) cruzados em 2026-08-05; nenhuma release estável posterior encontrada |
 
 ### Release PnetCDF 1.15.0
 
@@ -120,6 +130,26 @@ introduzida. O repositório oficial moderno contém a release 5.2.1 e suas
 instruções exigem GKlib externa. Essa observação histórica não altera a versão
 adotada: 5.2.1 só poderá ser experimentada com revisão/release GKlib fixada,
 conforme [[../project/future-experiments|future-experiments.md]].
+
+### Releases WPS 4.7.0 e MPAS-Model 8.4.1
+
+A checagem inicial do WPS partiu de 4.6.0, mas o cruzamento entre release,
+source da tag e histórico oficial encontrou a release estável posterior
+4.7.0. O ciclo parou no gate de versão; depois o usuário aprovou explicitamente
+4.7.0. A tag aponta para
+`5feccecd63384381b6942371c7a837f66e4ccb84`, o README da própria tag declara
+4.7.0 e nenhuma release estável posterior foi encontrada em 2026-08-05.
+
+O GitHub não publicou SHA-256 para o archive gerado da tag WPS. O hash adotado
+foi calculado localmente e confirmado por dois downloads independentes do URL
+oficial. Ele identifica o artefato observado, mas não é apresentado como hash
+publicado pelo upstream.
+
+Para MPAS, 8.4.0 chegou a ser considerado. A verificação direta mostrou a tag
+oficial `v8.4.1`, o heading `MPAS-v8.4.1` no README dessa tag e o hotfix
+`91c5eac175eebeaf4206bacd5cb50c39dff3c152`; o histórico não mostrou release
+estável posterior. Essa verificação fixa a versão do ciclo futuro, sem
+autorizar download, configuração ou build do modelo agora.
 
 Registrar uma URL aqui não autoriza download novo, mudança de versão ou
 alteração da stack. Para isso, a fonte deve ser consultada conforme o workflow,
