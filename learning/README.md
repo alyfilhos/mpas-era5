@@ -20,6 +20,8 @@ apontar para ele.
   nota educacional do ciclo de governança 0001;
 - [`commits/0002-add-pnetcdf.md`](commits/0002-add-pnetcdf.md): nota
   educacional do build e da validação PnetCDF/MPI-IO;
+- [`commits/0003-add-pio2.md`](commits/0003-add-pio2.md): nota educacional
+  da seleção, build e validação PIO2 sobre PnetCDF;
 - `commits/NNNN-<descricao>.md`: uma nota por commit posterior ao bootstrap.
 
 ## O que cada nota por commit deve ensinar

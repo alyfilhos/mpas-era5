@@ -2,19 +2,22 @@
 
 ## Referência da inspeção
 
-Estado atualizado em **2026-08-04** ao final da validação técnica do ciclo
-0002, a partir do Git real, do build Docker e dos testes executados.
+Estado atualizado em **2026-08-04** ao final da implementação e validação
+técnica do ciclo 0003, a partir do Git real, do build Docker e dos testes
+executados.
 
 - branch: `main`;
-- `HEAD`: `e1f86a4f29b10421946b054b85e2aea1f40c725c`
-  (`docs: bootstrap Codex governance workflow`);
+- `HEAD`: `2d6c5eec92766c6a7ca4018070e2aa6a21adc192`
+  (`build: add PnetCDF MPI-IO support`);
 - relação observada antes das mudanças: `main` alinhada com `origin/main`;
-- estado atual: alterações do ciclo 0002 permanecem no worktree, sem commit e
-  sem push, aguardando o relatório e a aprovação do usuário.
+- estado atual: mudanças do ciclo 0003 no worktree, sem commit e sem push,
+  aguardando relatório pré-commit e aprovação.
 
-O SHA `0f5fed1` descrito anteriormente era o estado anterior ao commit do
-ciclo 0001. O ciclo 0001 está efetivamente no `HEAD`; não está apenas no
-worktree.
+O valor anterior deste documento ainda descrevia o estado pré-commit do ciclo
+0002: apontava para `e1f86a4` e dizia que PnetCDF permanecia no worktree. A
+inspeção real mostrou que o ciclo 0002 já é o `HEAD` `2d6c5ee`. Essa pendência
+documental conhecida foi corrigida neste ciclo; o Git, e não o texto antigo,
+foi usado como fonte do estado inicial.
 
 ## Ambiente definido no repositório
 
@@ -24,8 +27,9 @@ O [`Dockerfile`](../../Dockerfile) define:
 - toolchain GNU por `build-essential` e `gfortran`;
 - OpenMPI pelos pacotes `openmpi-bin` e `libopenmpi-dev`;
 - prefixo científico `/opt/mpas`;
-- `PATH`, `LD_LIBRARY_PATH`, `CPPFLAGS` e `LDFLAGS` apontando para o prefixo;
-- `NETCDF=/opt/mpas` e, no ciclo 0002, `PNETCDF=/opt/mpas`.
+- `PATH`, `LD_LIBRARY_PATH`, `CPPFLAGS` e `LDFLAGS` apontando para o
+  prefixo;
+- `NETCDF=/opt/mpas`, `PNETCDF=/opt/mpas` e `PIO=/opt/mpas`.
 
 O build validado reportou GCC/GFortran 13.3.0, OpenMPI 4.1.6 e MPI 3.1. As
 versões dos pacotes APT continuam sem lock; são a resolução obtida do Ubuntu
@@ -35,43 +39,77 @@ versões dos pacotes APT continuam sem lock; são a resolução obtida do Ubuntu
 
 | Componente | Versão | Estado e evidência atual |
 |---|---:|---|
-| zlib | 1.3.2 | camada existente preservada; recuperada do cache no build do ciclo 0002 |
-| HDF5 | 1.14.6 | camada existente preservada; recuperada do cache, sem mudança de estratégia serial/paralela |
-| netCDF-C | 4.10.1 | camada existente preservada; `nc-config --version` reconfirmado |
-| netCDF-Fortran | 4.6.3 | camada existente preservada; `nf-config --version` reconfirmado |
-| PnetCDF | 1.15.0 | implementado e validado com MPI-IO, GIO desabilitado, Fortran, shared/static, `make check`, `make ptest` e integração em 4 ranks |
+| zlib | 1.3.2 | camada existente preservada; recuperada do cache no build do ciclo 0003 |
+| HDF5 | 1.14.6 | camada serial existente preservada e recuperada do cache |
+| netCDF-C | 4.10.1 | camada existente preservada; NetCDF-4 presente, parallel I/O desabilitado |
+| netCDF-Fortran | 4.6.3 | camada existente preservada e versão reconfirmada |
+| PnetCDF | 1.15.0 | camada MPI-IO preservada; regressão F90/CDF-5 em 4 ranks aprovada |
+| PIO | 2.7.0 | C/Fortran static, timing desligado, PnetCDF habilitado, 109/109 testes e integração C em 4 ranks aprovados |
 
-A imagem validada é `mpas-era5:pnetcdf-1.15.0`, com ID
-`sha256:c31e25c9e36aa66a528203ff1edf9f2b6753ff54b7bdc69c15905f72e6295d03`.
-O build e a validação finalizaram com código 0. Os logs completos usados na
-sessão ficaram em `/tmp` e não são artefatos versionados; a evidência resumida
-e auditável está em
+A imagem validada é `mpas-era5:pio-2.7.0`, com ID/digest local
+`sha256:0a54e71725fbdcbe44dee5f4012198ae504ddf191e4cf79fe2b7630c5bfe1c91`
+e tamanho reportado de 336876391 bytes. O build e as duas validações
+versionadas terminaram com código 0.
+
+Os logs completos desta sessão estão temporariamente em:
+
+- `/tmp/mpas-era5-pio-build.log`;
+- `/tmp/mpas-era5-pio-validation-final.log`;
+- `/tmp/mpas-era5-pio-pnetcdf-regression.log`.
+
+Eles não são artefatos versionados. A evidência resumida e auditável está em
 [[../testing/validation-matrix|validation-matrix.md]].
 
-## PnetCDF validado no ciclo 0002
+## PIO validado no ciclo 0003
 
-- artefato oficial `pnetcdf-1.15.0.tar.gz`, verificado antes da extração pelo
-  SHA-256 calculado localmente
-  `39813fe91ec901c7cfca3212731edbb5201029ebf55caeaaaa08d9e33c6bad65`;
-- configuração: `/opt/mpas`, `--disable-gio`, `--enable-shared` e
-  `--enable-static`;
-- wrappers: `/usr/bin/mpicc`, `/usr/bin/mpicxx`, `/usr/bin/mpif77` e
-  `/usr/bin/mpifort`;
-- recursos opcionais NetCDF-4, ADIOS, subfiling, profiling e thread safety
-  permaneceram desabilitados;
-- `make check`: todas as suítes sequenciais terminaram com sucesso;
-- `make ptest`: grupos C, C++, F77, F90, exemplos e benchmarks passaram em
-  4 ranks com o componente ROMIO já incluído no OpenMPI;
-- instalação: `pnetcdf_version`, `pnetcdf-config`, `ncmpidump`, biblioteca
-  shared e biblioteca static verificadas;
-- integração instalada: programa Fortran criou e releu CDF-5 coletivamente;
-  `ncmpidump` mostrou `rank_value = 0, 1, 2, 3`;
-- linkagem: `libpnetcdf.so.8` veio de `/opt/mpas/lib` e `libmpi.so.40` do
-  OpenMPI do Ubuntu.
+- release oficial atual: tag `pio2_7_0`, publicada em 2026-04-29;
+- tarball verificado antes da extração pelo SHA-256 local
+  `cce83743156ae723e7890931c2b48dcfe7ea8a276962dc4429f839d8f58d4a5a`;
+- auxiliares CMake fixados nos commits
+  `05ff8d8e4c88786e94a02c853d3ff921113d785c` e
+  `4816965ba946731352bad195b7d946a5fe682ff5`;
+- configuração CMake com `CC=mpicc`, `FC=mpifort`,
+  `CMAKE_PREFIX_PATH=/opt/mpas`, Fortran/testes/exemplos/PnetCDF habilitados
+  e `PIO_ENABLE_TIMING=OFF`;
+- o CMake encontrou netCDF-C 4.10.1, netCDF-Fortran 4.6.3, PnetCDF, MPI C e
+  MPI Fortran; `HAVE_NETCDF4` passou e `HAVE_NETCDF_PAR` falhou como
+  esperado para a stack serial;
+- todas as camadas até PnetCDF apareceram como `CACHED`: HDF5, netCDF-C,
+  netCDF-Fortran e PnetCDF não foram reconstruídos;
+- CTest upstream: 109/109 testes aprovados em 37,12 segundos;
+- instalação: `pio.h`, módulos Fortran, `libpioc.a`, `libpiof.a`,
+  `libpio.settings` e pacote CMake conferidos;
+- IOTYPEs em runtime:
+  `PNETCDF=1 NETCDF=1 NETCDF4C=0 NETCDF4P=0`;
+- integração instalada: programa C criou e releu CDF-2 explicitamente por
+  `PIO_IOTYPE_PNETCDF` em quatro ranks;
+- valores conferidos por `ncmpidump`:
+  `rank_value = 1000, 1001, 1002, 1003`;
+- o smoke passou com OMPIO padrão e com seleção ROMIO apenas no comando;
+- linkagem: o executável contém `PIOc_Init_Intracomm`, carrega PnetCDF e
+  netCDF de `/opt/mpas/lib` e MPI do OpenMPI do Ubuntu;
+- regressão da camada anterior: o smoke PnetCDF/Fortran passou em quatro ranks,
+  criou CDF-5 e preservou as versões netCDF/PnetCDF.
+
+## Arquitetura de I/O adotada
+
+O primeiro caso MPAS usará `USE_PIO2=true` e o `io_type=pnetcdf` padrão.
+Seu caminho de I/O paralelo é:
+
+```text
+MPAS → PIO 2.7.0 → PnetCDF 1.15.0 → MPI-IO → OpenMPI
+```
+
+HDF5 e netCDF permanecem seriais. Essa arquitetura suporta os backends PIO
+PnetCDF e NetCDF clássico. Não oferece `PIO_IOTYPE_NETCDF4C` nem
+`PIO_IOTYPE_NETCDF4P` na release/configuração atual. O primeiro caso não tem
+necessidade comprovada de NetCDF-4 paralelo.
+
+A decisão, alternativas e consequências estão em
+[[../decisions/0002-pio2-pnetcdf-with-serial-netcdf|ADR 0002]].
 
 ## Componentes ainda não implementados
 
-- PIO2;
 - METIS;
 - WPS/ungrib;
 - MPAS `init_atmosphere`;
@@ -82,27 +120,35 @@ e auditável está em
 - primeira execução MPAS;
 - validação física do caso.
 
-PIO2 permanece sem versão ou decisão registrada. Nenhum item desta lista foi
-alterado ou antecipado no ciclo 0002.
-
 ## Novos artefatos do ciclo
 
-- `tests/smoke/pnetcdf_mpi.f90`: smoke/integration test pela interface F90;
-- `scripts/validate/pnetcdf.sh`: validação reproduzível da instalação, versão,
-  linkagem, regressões netCDF, 4 ranks e `ncmpidump`;
-- `docs/decisions/0001-pnetcdf-mpiio-backend.md`: decisão aceita;
-- `learning/commits/0002-add-pnetcdf.md`: nota educacional do ciclo.
+- `tests/smoke/pio_pnetcdf.c`: integração C, PIO e PnetCDF em quatro ranks;
+- `scripts/validate/pio.sh`: validação da instalação, IOTYPEs, linkagem,
+  OMPIO/ROMIO e CDF-2;
+- `docs/decisions/0002-pio2-pnetcdf-with-serial-netcdf.md`: decisão aceita;
+- `learning/commits/0003-add-pio2.md`: nota educacional do ciclo.
 
 ## Lacunas e limitações atuais
 
-- `make ptests`, que usa 3, 4, 6 e 8 processos, não foi executado; o escopo
-  aprovado usa `make check` e `make ptest`;
-- OMPIO, componente MPI-IO padrão deste OpenMPI, produziu escrita incompleta
-  nos testes PnetCDF locais; os comandos PnetCDF selecionam ROMIO localmente,
-  sem configuração global;
-- o `INSTALL` da release e o `configure --help` gerado divergem sobre o default
-  de shared; o build usa `--enable-shared --enable-static` explicitamente;
-- o SHA-256 do PnetCDF foi calculado localmente duas vezes sobre o artefato
-  oficial; o upstream publica SHA-1, não SHA-256;
-- HDF5 continua sem checksum registrado e as versões APT/digest Ubuntu não
-  estão totalmente fixados, dívidas herdadas que este ciclo não alterou.
+- o MPAS ainda não foi compilado; a compatibilidade foi estabelecida por
+  documentação oficial e pela cadeia PIO/PnetCDF, mas a integração
+  `USE_PIO2=true` será um teste obrigatório do próximo ciclo aplicável;
+- o CMake 2.7.0 associa a macro interna `_NETCDF4` a
+  `HAVE_NETCDF_PAR`; por isso o backend NetCDF-4 serial também fica ausente.
+  Mudar essa lógica localmente não foi aprovado nem necessário;
+- o alvo upstream `tests` é construído com `--parallel 1` para evitar uma
+  corrida entre dois arquivos-fonte Fortran gerados com o mesmo nome de módulo;
+- `PIO_ENABLE_NETCDF_INTEGRATION=OFF` desliga a camada opcional que apresenta
+  PIO como implementação interna da API netCDF; não desliga o backend
+  `PIO_IOTYPE_NETCDF`;
+- PIO é instalado somente como bibliotecas estáticas, a forma selecionada para
+  o futuro link do MPAS; shared PIO não foi validado;
+- o SHA-256 PIO foi calculado localmente sobre o artefato oficial; não foi
+  encontrado checksum SHA-256 publicado pelo upstream;
+- o probe PIO 2.6.5 teve uma falha persistente em `pio_rearr_opts`; 2.7.0
+  corrigiu o comportamento observado e foi adotado;
+- a falha OMPIO do ciclo 0002 permanece relevante para testes PnetCDF
+  upstream, embora o smoke PIO deste ciclo tenha passado tanto com OMPIO quanto
+  com ROMIO;
+- HDF5 continua sem checksum registrado, e as versões APT/digest Ubuntu não
+  estão totalmente fixadas; são dívidas herdadas e não alteradas neste ciclo.

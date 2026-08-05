@@ -28,12 +28,12 @@ evidência estiverem registrados.
 | netCDF-C 4.10.1 | `make check` está definido; resultado histórico não preservado | Planejado: `nc-config` e programa C que cria e relê um arquivo mínimo | Planejado: verificar linkagem com HDF5/zlib do prefixo | Teste exigido pela receita; smoke/integração e evidência ausentes | [`Dockerfile`](../../Dockerfile); nenhum relatório versionado |
 | netCDF-Fortran 4.6.3 | `make check` está definido; resultado histórico não preservado | Planejado: `nf-config` e programa Fortran que cria e relê um arquivo mínimo | Planejado: verificar módulos, linkagem com netCDF-C e runtime do prefixo | Teste exigido pela receita; smoke/integração e evidência ausentes | [`Dockerfile`](../../Dockerfile); nenhum relatório versionado |
 | PnetCDF 1.15.0 | `make check` e `make ptest` executados com código 0 | versão, prefixo, configuração, utilitários e shared/static conferidos na instalação | F90 → PnetCDF → MPI-IO/ROMIO → OpenMPI, escrita/leitura coletiva em 4 ranks | Implementado e validado no ciclo 0002 | [`Dockerfile`](../../Dockerfile), [`pnetcdf.sh`](../../scripts/validate/pnetcdf.sh), [`pnetcdf_mpi.f90`](../../tests/smoke/pnetcdf_mpi.f90) e evidência abaixo |
+| PIO 2.7.0 | CTest: 109/109 testes aprovados | versão, configuração, headers, módulos, bibliotecas e pacote CMake conferidos | C → PIO/PnetCDF → MPI-IO → OpenMPI; CDF-2 escrito e relido em 4 ranks com OMPIO e ROMIO | Implementado e validado no ciclo 0003 | [`Dockerfile`](../../Dockerfile), [`pio.sh`](../../scripts/validate/pio.sh), [`pio_pnetcdf.c`](../../tests/smoke/pio_pnetcdf.c) e evidência abaixo |
 
 ## Componentes futuros
 
 | Componente | Upstream test | Smoke test | Integration test | Status | Evidência |
 |---|---|---|---|---|---|
-| PIO2 | Planejado: suite oficial da versão aprovada | Planejado: exemplo mínimo do upstream | Planejado: MPI + backend(s) aprovado(s), incluindo PnetCDF/netCDF quando aplicável | Não implementado; versão a decidir | [[../references/versions.lock|versions.lock.md]] |
 | METIS | Planejado: suite ou testes oficiais disponíveis para a release | Planejado: executar particionamento mínimo de um grafo conhecido | Planejado: verificar consumo pelo build/fluxo do MPAS aprovado | Não implementado; versão a decidir | [[../references/versions.lock|versions.lock.md]] |
 | WPS/ungrib | Planejado: testes oficiais disponíveis para a release | Planejado: executar `ungrib` sobre amostra pequena e controlada | Planejado: transformar campos ERA5 aprovados para o formato consumido pelo `init_atmosphere` | Não implementado; versão a decidir | [[../project/requirements|REQ-PRE-001]] |
 | MPAS `init_atmosphere` | Planejado: testes upstream disponíveis para a release | Planejado: validar inicialização mínima na mesh aprovada | Planejado: WPS/ERA5 + mesh → `static.nc`, `init.nc` e LBC quando aplicável | Não implementado; versão a decidir | [[../project/requirements|REQ-MPAS-001]] |
@@ -83,6 +83,46 @@ evidência estiverem registrados.
 - O primeiro smoke em diretório bind-mounted terminou corretamente, mas com
   latência anormal. A execução final usa tmpfs efêmero e timeout localizado de
   2 minutos e terminou com código 0 em aproximadamente 1,7 segundo.
+
+## Evidência do ciclo 0003 — PIO 2.7.0
+
+| Campo | Evidência real |
+|---|---|
+| Data | 2026-08-04 |
+| `HEAD` usado | `2d6c5eec92766c6a7ca4018070e2aa6a21adc192`; mudanças do ciclo ainda sem commit |
+| Imagem | `mpas-era5:pio-2.7.0` |
+| ID/digest local da imagem | `sha256:0a54e71725fbdcbe44dee5f4012198ae504ddf191e4cf79fe2b7630c5bfe1c91` |
+| Build | `docker build --progress=plain --build-arg BUILD_JOBS=8 -t mpas-era5:pio-2.7.0 .`; código 0 |
+| Preservação da stack | etapas zlib, HDF5, netCDF-C, netCDF-Fortran e PnetCDF reportaram `CACHED`; nenhuma dessas camadas foi reconstruída |
+| Integridade | SHA-256 do tarball PIO conferido antes da extração: `cce83743156ae723e7890931c2b48dcfe7ea8a276962dc4429f839d8f58d4a5a` |
+| Auxiliares CMake | `CMake_Fortran_utils` em `05ff8d8e4c88786e94a02c853d3ff921113d785c`; `genf90` em `4816965ba946731352bad195b7d946a5fe682ff5`; ambos conferidos por `git rev-parse HEAD` |
+| Configuração | CMake Release, `/opt/mpas`, `CC=mpicc`, `FC=mpifort`, Fortran/testes/exemplos/PnetCDF ON, timing/logging/docs/netCDF integration/GDAL OFF, static PIO |
+| Descoberta | netCDF-C 4.10.1, netCDF-Fortran 4.6.3, MPI C/Fortran 3.1 e PnetCDF encontrados; `HAVE_NETCDF4` passou; `HAVE_NETCDF_PAR` falhou sem abortar |
+| Suite upstream | `cmake --build pio-build --target tests --parallel 1` e CTest serial; 109/109 passaram, 0 falharam, em 37,12 s |
+| Instalação | `pio.h`, `pio.mod`, `libpioc.a`, `libpiof.a`, `libpio.settings` e `PIOConfig.cmake` conferidos; PIO 2.7.0, Fortran e PnetCDF registrados |
+| IOTYPEs | consulta runtime: `PNETCDF=1 NETCDF=1 NETCDF4C=0 NETCDF4P=0` |
+| Integração versionada | `scripts/validate/pio.sh`; código 0; compilou `tests/smoke/pio_pnetcdf.c` contra a instalação final e executou 4 ranks em tmpfs |
+| Resultado funcional | `PIO_IOTYPE_PNETCDF` permaneceu selecionado na criação/abertura; cada rank escreveu e releu `1000 + rank` |
+| MPI-IO | teste passou uma vez com OMPIO padrão e uma vez com `--mca io romio321`, sem configuração global |
+| `ncmpidump` | CDF-2/`64-bit offset`, dimensão `rank = 4`, `rank_value = 1000, 1001, 1002, 1003` |
+| Linkagem | `nm` encontrou `PIOc_Init_Intracomm`; `ldd` encontrou `/opt/mpas/lib/libpnetcdf.so.8`, `/opt/mpas/lib/libnetcdf.so.22` e `libmpi.so.40` |
+| Regressão PnetCDF | `PNETCDF_IMAGE=mpas-era5:pio-2.7.0 scripts/validate/pnetcdf.sh`; código 0; F90/CDF-5 em 4 ranks e versões netCDF-C 4.10.1, netCDF-Fortran 4.6.3, PnetCDF 1.15.0 preservadas |
+
+### Limitações e testes ainda pendentes
+
+- a integração real com MPAS e `USE_PIO2=true` aguarda o ciclo de build do
+  MPAS;
+- `PIO_IOTYPE_NETCDF4C` e `PIO_IOTYPE_NETCDF4P` não foram compilados, por
+  consequência da stack netCDF/HDF5 serial e da condicional `_NETCDF4` do
+  CMake PIO 2.7.0;
+- `PIO_IOTYPE_NETCDF` foi confirmado como disponível, mas não recebeu neste
+  ciclo um smoke funcional dedicado de criação/leitura;
+- o alvo de testes foi construído serialmente para evitar a corrida upstream
+  entre `pio_rearr_opts.F90.in` e `pio_rearr_opts2.F90.in`, que geram o mesmo
+  módulo Fortran;
+- os logs completos ficaram em `/tmp/mpas-era5-pio-build.log`,
+  `/tmp/mpas-era5-pio-validation-final.log` e
+  `/tmp/mpas-era5-pio-pnetcdf-regression.log`; não foram versionados.
 
 ## Evidência mínima de um resultado futuro
 

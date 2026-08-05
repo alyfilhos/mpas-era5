@@ -24,6 +24,7 @@ mantendo as dependências científicas sob `/opt/mpas`.
 | netCDF-C | 4.10.1 | API C e ferramentas netCDF |
 | netCDF-Fortran | 4.6.3 | interface Fortran sobre netCDF-C |
 | PnetCDF | 1.15.0 | I/O paralelo dos formatos CDF por MPI-IO |
+| PIO | 2.7.0 | abstração de I/O paralelo usada pelo MPAS, com backend PnetCDF |
 
 ## PnetCDF 1.15.0
 
@@ -124,3 +125,128 @@ build/validação do container, cujo usuário é root. Ele não recomenda nem
 configura execuções HPC normais como root. `make ptests`, a suíte paralela mais
 extensa com múltiplas contagens de ranks, não foi executada; `make check` e
 `make ptest` são a validação upstream aprovada deste ciclo.
+
+## PIO 2.7.0
+
+PIO organiza a decomposição dos dados e encaminha operações a um backend de
+arquivo. O futuro MPAS será compilado com `USE_PIO2=true` e encontrará
+`NETCDF`, `PNETCDF` e `PIO` no mesmo prefixo `/opt/mpas`.
+
+A arquitetura aprovada preserva HDF5 1.14.6 e netCDF-C 4.10.1 seriais. O
+primeiro caso MPAS usa o `io_type=pnetcdf` padrão, de modo que o caminho
+paralelo validado é independente de HDF5:
+
+```text
+MPAS (futuro, USE_PIO2=true)
+    ↓
+PIO 2.7.0 — PIO_IOTYPE_PNETCDF
+    ↓
+PnetCDF 1.15.0
+    ↓
+MPI-IO
+    ↓
+OpenMPI 4.1.6
+```
+
+### Compatibilidade da stack serial
+
+As fontes oficiais 2.7.0 contêm uma divergência textual. O `README.md` afirma
+que netCDF-C deve ser construído com MPI e HDF5 paralelo; o
+`doc/source/Installing.txt` diz que isso é ideal. O CMake e o teste empírico
+resolvem a compatibilidade efetiva:
+
+- `CMakeLists.txt` exige netCDF, testa NetCDF-4 e testa separadamente
+  `HAVE_NETCDF_PAR`;
+- `cmake/TryNetCDF_PARALLEL.c` consulta `NC_HAS_PARALLEL` de
+  `netcdf_meta.h`; não chama `nc_create_par` nem `nc_open_par`;
+- falhar `HAVE_NETCDF_PAR` não aborta a configuração;
+- `_NETCDF4` só é definido quando `HAVE_NETCDF_PAR` é verdadeiro. Por isso,
+  nesta release, a mesma condição remove tanto `PIO_IOTYPE_NETCDF4P` quanto
+  `PIO_IOTYPE_NETCDF4C`, mesmo que o netCDF-4 serial exista;
+- os caminhos `PIO_IOTYPE_PNETCDF` e `PIO_IOTYPE_NETCDF` permanecem
+  compilados em `src/clib/pio_file.c` e `src/clib/pio_nc.c`.
+
+O build permanente confirmou `HAVE_NETCDF4` com sucesso e
+`HAVE_NETCDF_PAR` com falha esperada. A consulta em runtime confirmou:
+
+```text
+PNETCDF=1 NETCDF=1 NETCDF4C=0 NETCDF4P=0
+```
+
+Logo, NetCDF/HDF5 paralelo é requisito específico dos IOTYPEs NetCDF-4 na
+implementação atual do PIO, não do backend PnetCDF nem do backend NetCDF
+clássico. Adicioná-lo futuramente exigiria reconstruir HDF5 e netCDF, novo gate
+de arquitetura e regressão de toda a cadeia.
+
+### Release, integridade e auxiliares de build
+
+O build usa a tag oficial `pio2_7_0` e verifica antes da extração:
+
+```text
+SHA-256 cce83743156ae723e7890931c2b48dcfe7ea8a276962dc4429f839d8f58d4a5a
+```
+
+O CMake upstream obtém `CMake_Fortran_utils` e `genf90` durante a configuração
+quando eles não são fornecidos. Para evitar dependências mutáveis, o
+`Dockerfile` faz checkout detached dos commits observados e aprovados no
+probe, verifica cada `HEAD` e passa os caminhos por
+`USER_CMAKE_MODULE_PATH` e `GENF90_PATH`:
+
+```text
+CMake_Fortran_utils 05ff8d8e4c88786e94a02c853d3ff921113d785c
+genf90              4816965ba946731352bad195b7d946a5fe682ff5
+```
+
+### Configuração CMake
+
+O CMake foi escolhido porque a documentação oficial do MPAS recomenda
+explicitamente `PIO_ENABLE_TIMING=OFF`, a release oferece descoberta separada
+das dependências e a suíte pode ser dirigida por CTest.
+
+```sh
+CC=mpicc FC=mpifort cmake \
+  -S pio-src \
+  -B pio-build \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_INSTALL_PREFIX=/opt/mpas \
+  -DCMAKE_PREFIX_PATH=/opt/mpas \
+  -DUSER_CMAKE_MODULE_PATH=/tmp/pio-build/CMake_Fortran_utils \
+  -DGENF90_PATH=/tmp/pio-genf90 \
+  -DPIO_ENABLE_FORTRAN=ON \
+  -DPIO_ENABLE_TIMING=OFF \
+  -DPIO_ENABLE_LOGGING=OFF \
+  -DPIO_ENABLE_DOC=OFF \
+  -DPIO_ENABLE_EXAMPLES=ON \
+  -DPIO_ENABLE_NETCDF_INTEGRATION=OFF \
+  -DPIO_ENABLE_TESTS=ON \
+  -DPIO_USE_GDAL=OFF \
+  -DWITH_PNETCDF=ON \
+  -DBUILD_SHARED_LIBS=OFF
+```
+
+`pioc` e `piof` são construídos em paralelo. O alvo `tests` usa
+`--parallel 1` porque dois arquivos-fonte Fortran gerados pela release produzem o
+mesmo nome de módulo e apresentam corrida quando compilados simultaneamente.
+Isso não reduz a cobertura: os 109 testes foram construídos e executados.
+
+### Instalação e testes executados
+
+A instalação preserva `PIO=/opt/mpas`, `pio.h`, os módulos Fortran,
+`libpioc.a`, `libpiof.a`, `libpio.settings` e os arquivos de pacote CMake.
+
+- CTest upstream: 109/109 aprovados, incluindo C, Fortran, async, decomposição,
+  rearranjo e exemplos;
+- smoke C instalado: compilado com `mpicc` contra `libpioc.a`, PnetCDF e
+  netCDF do prefixo;
+- integração: quatro ranks criaram e reabriram CDF-2 explicitamente por
+  `PIO_IOTYPE_PNETCDF`, escrevendo `1000, 1001, 1002, 1003`;
+- MPI-IO: o mesmo teste passou com OMPIO padrão e com seleção local
+  `--mca io romio321`;
+- linkagem: `nm` encontrou `PIOc_Init_Intracomm`; `ldd` encontrou PnetCDF e
+  netCDF em `/opt/mpas/lib` e MPI no OpenMPI esperado;
+- regressão: o smoke PnetCDF/Fortran do ciclo 0002 passou na imagem PIO e
+  preservou netCDF-C 4.10.1, netCDF-Fortran 4.6.3 e PnetCDF 1.15.0.
+
+Detalhes auditáveis estão em
+[[../testing/validation-matrix|validation-matrix.md]] e a decisão em
+[[../decisions/0002-pio2-pnetcdf-with-serial-netcdf|ADR 0002]].

@@ -22,12 +22,14 @@ pacotes do sistema ou testes de compatibilidade.
 | netCDF-C | 4.10.1 | adotada | `NETCDF_C_VERSION=4.10.1`; SHA-256 registrado no `Dockerfile` |
 | netCDF-Fortran | 4.6.3 | adotada | `NETCDF_FORTRAN_VERSION=4.6.3`; SHA-256 registrado no `Dockerfile` |
 | PnetCDF | 1.15.0 | adotada | tarball oficial; SHA-256 local verificado; MPI-IO/OpenMPI; GIO desabilitado; Fortran e shared/static; [[../decisions/0001-pnetcdf-mpiio-backend|ADR 0001]] |
+| PIO | 2.7.0 (`pio2_7_0`) | adotada e validada | release oficial atual; SHA-256 local verificado; CMake; C/Fortran; timing desabilitado; PnetCDF habilitado; [[../decisions/0002-pio2-pnetcdf-with-serial-netcdf|ADR 0002]] |
+| CMake_Fortran_utils | commit `05ff8d8e4c88786e94a02c853d3ff921113d785c` | auxiliar de build PIO fixado | checkout detached antes da configuração; evita clone sem pin executado internamente pelo PIO |
+| genf90 | commit `4816965ba946731352bad195b7d946a5fe682ff5` | auxiliar de build PIO fixado | checkout detached passado por `GENF90_PATH`; evita resolução mutável durante o build |
 
 ## Versões ainda não decididas
 
 | Componente | Versão | Estado | Próximo gate |
 |---|---|---|---|
-| PIO2 | a decidir | não implementado | requisitos → fontes oficiais → compatibilidade com MPI/PnetCDF/netCDF → proposta → decisão do usuário |
 | METIS | a decidir | não implementado | requisitos do MPAS escolhido → release oficial → proposta → decisão do usuário |
 | WPS | a decidir | não implementado | compatibilidade com `ungrib`, formato ERA5 e stack aprovada → decisão do usuário |
 | MPAS | a decidir | não implementado | release oficial, compatibilidade da stack e estratégia do primeiro caso → decisão do usuário |
@@ -37,7 +39,8 @@ pacotes do sistema ou testes de compatibilidade.
 - digest da imagem Ubuntu;
 - versões dos pacotes APT, incluindo GCC, GFortran e OpenMPI;
 - checksum do HDF5 1.14.6;
-- estratégia formal HDF5 serial/paralela para a stack completa;
+- necessidade e arquitetura de HDF5/netCDF paralelo para um caso futuro que
+  exija NetCDF-4 paralelo;
 - release e tabelas auxiliares do WPS;
 - mesh pública exata;
 - período, área, níveis e variáveis ERA5.

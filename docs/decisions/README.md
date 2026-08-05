@@ -14,6 +14,8 @@ evidência. Decisões novas são listadas abaixo.
 
 - [[0001-pnetcdf-mpiio-backend|ADR 0001 — PnetCDF 1.15.0 com backend MPI-IO]]
   — aceito em 2026-08-04.
+- [[0002-pio2-pnetcdf-with-serial-netcdf|ADR 0002 — PIO 2.7.0 com PnetCDF e netCDF serial]]
+  — aceito em 2026-08-04.
 
 ## Quando criar um ADR
 

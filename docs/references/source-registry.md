@@ -37,12 +37,19 @@ usada; autoridade e utilidade não são a mesma coisa.
 | DOC-PNETCDF-003 | PnetCDF 1.15.0 | `INSTALL` dentro do tarball oficial `pnetcdf-1.15.0.tar.gz` | requisitos MPI/m4, wrappers, defaults Fortran, `make check`, `make ptest`, `make ptests` e `TESTMPIRUN` | 381 linhas lidas integralmente em 2026-08-04; corresponde ao artefato, não à branch master |
 | DOC-PNETCDF-004 | PnetCDF 1.15.0 | `./configure --help` gerado pelo tarball oficial | flags disponíveis e recursos opcionais; confirmou `--disable-gio`, shared/static e ausência de flags redundantes | executado em 2026-08-04 |
 | DOC-OPENMPI-001 | OpenMPI | [Modular Component Architecture](https://docs.open-mpi.org/en/main/mca.html) | mecanismo `--mca framework component` para selecionar componentes em runtime | consultado em 2026-08-04; disponibilidade local confirmada por `ompi_info` 4.1.6 |
+| DOC-PIO-001 | PIO | [repositório oficial NCAR/ParallelIO](https://github.com/NCAR/ParallelIO) | identidade do projeto, releases, interfaces C/Fortran e backends NetCDF/PnetCDF | consultado em 2026-08-04 |
+| DOC-PIO-002 | PIO 2.7.0 | [`README.md` da tag](https://github.com/NCAR/ParallelIO/blob/pio2_7_0/README.md) | requisitos declarados, Autotools, CMake, NetCDF 4.6.1+, PnetCDF 1.9.0+ e afirmação de NetCDF-C com MPI | lido na própria tag em 2026-08-04 |
+| DOC-PIO-003 | PIO 2.7.0 | [`doc/source/Installing.txt` da tag](https://github.com/NCAR/ParallelIO/blob/pio2_7_0/doc/source/Installing.txt) | instalação, wrappers MPI, testes, GPTL/timing, CMake e formulação de NetCDF paralelo como ideal | lido na própria tag em 2026-08-04 |
+| DOC-PIO-004 | PIO 2.7.0 | [`CMakeLists.txt` da tag](https://github.com/NCAR/ParallelIO/blob/pio2_7_0/CMakeLists.txt) | opções, descoberta de dependências, testes de recursos, auxiliares CMake e condicionais de compilação | inspecionado e exercitado em 2026-08-04 |
+| DOC-PIO-005 | PIO 2.7.0 | [`cmake/TryNetCDF_PARALLEL.c`](https://github.com/NCAR/ParallelIO/blob/pio2_7_0/cmake/TryNetCDF_PARALLEL.c) | teste explícito de `NC_HAS_PARALLEL`; não chama `nc_create_par` ou `nc_open_par` | inspecionado em 2026-08-04 |
+| DOC-PIO-006 | PIO 2.7.0 | [`src/clib/pio_file.c`](https://github.com/NCAR/ParallelIO/blob/pio2_7_0/src/clib/pio_file.c), [`pio_nc.c`](https://github.com/NCAR/ParallelIO/blob/pio2_7_0/src/clib/pio_nc.c) e [`pio_nc4.c`](https://github.com/NCAR/ParallelIO/blob/pio2_7_0/src/clib/pio_nc4.c) | despacho dos IOTYPEs PnetCDF, NetCDF clássico e NetCDF-4; blocos NetCDF-4 protegidos por `_NETCDF4` | inspecionados em 2026-08-04; comportamento confirmado pelo smoke em runtime |
+| DOC-MPAS-001 | MPAS-Atmosphere 8.4.0 | [User's Guide oficial](https://www2.mmm.ucar.edu/projects/mpas/mpas_atmosphere_users_guide_8.4.0.pdf) | `USE_PIO2=true`, variáveis `NETCDF`/`PNETCDF`/`PIO`, PIO 2.x, `PIO_ENABLE_TIMING=OFF`, `io_type` padrão e formatos suportados | consultado em 2026-08-04; sustenta [[../decisions/0002-pio2-pnetcdf-with-serial-netcdf|ADR 0002]] |
 
 ### Releases e artefatos usados pela implementação atual
 
-As URLs abaixo são reproduzidas literalmente do [`Dockerfile`](../../Dockerfile),
-portanto não são URLs inferidas. Elas foram verificadas **no repositório**, mas
-não revalidadas pela rede neste ciclo de governança.
+As URLs de build abaixo são reproduzidas literalmente do
+[`Dockerfile`](../../Dockerfile), portanto não são URLs inferidas. O estado de
+verificação de cada artefato é informado individualmente na última coluna.
 
 | ID | Componente | Release/artefato registrado | Integridade no build | Estado da verificação |
 |---|---|---|---|---|
@@ -52,6 +59,9 @@ não revalidadas pela rede neste ciclo de governança.
 | REL-NETCDF-C-001 | netCDF-C 4.10.1 | `https://downloads.unidata.ucar.edu/netcdf-c/4.10.1/netcdf-c-4.10.1.tar.gz` | SHA-256 `db3b69ff4a5ee1a7d79a5c36664d2128b752c266e966369fcf7311ec5f927564` | URL e hash confirmados no `Dockerfile`; autoridade externa não revalidada neste ciclo |
 | REL-NETCDF-F-001 | netCDF-Fortran 4.6.3 | `https://downloads.unidata.ucar.edu/netcdf-fortran/4.6.3/netcdf-fortran-4.6.3.tar.gz` | SHA-256 `f642050e90025e7bb25848cc8f818545e1d3bdeb73fe6d103a6f8dc000a1a3d6` | URL e hash confirmados no `Dockerfile`; autoridade externa não revalidada neste ciclo |
 | REL-PNETCDF-001 | PnetCDF 1.15.0 | [tarball oficial `pnetcdf-1.15.0.tar.gz`](https://parallel-netcdf.github.io/Release/pnetcdf-1.15.0.tar.gz) | SHA-256 `39813fe91ec901c7cfca3212731edbb5201029ebf55caeaaaa08d9e33c6bad65` | baixado duas vezes e calculado localmente com o mesmo resultado em 2026-08-04; o upstream não publica SHA-256 |
+| REL-PIO-001 | PIO 2.7.0 | [release oficial `pio2_7_0`](https://github.com/NCAR/ParallelIO/releases/tag/pio2_7_0) e [tarball da tag](https://github.com/NCAR/ParallelIO/archive/refs/tags/pio2_7_0.tar.gz) | SHA-256 local `cce83743156ae723e7890931c2b48dcfe7ea8a276962dc4429f839d8f58d4a5a` | API de releases, tag, artefato e hash conferidos em 2026-08-04; era a release estável atual, publicada em 2026-04-29 |
+| REL-CMAKE-FORTRAN-UTILS-001 | CMake_Fortran_utils | [repositório oficial](https://github.com/CESM-Development/CMake_Fortran_utils) | commit `05ff8d8e4c88786e94a02c853d3ff921113d785c` | commit efetivamente resolvido pelo probe PIO 2.7.0 e fixado no build em 2026-08-04 |
+| REL-GENF90-001 | genf90 | [repositório oficial PARALLELIO](https://github.com/PARALLELIO/genf90) | commit `4816965ba946731352bad195b7d946a5fe682ff5` | commit da dependência auxiliar observada e fixada no build em 2026-08-04 |
 
 ### Release PnetCDF 1.15.0
 
@@ -73,13 +83,28 @@ gerado pela release 1.15.0 exibiu shared e static habilitados por padrão. A
 decisão já aprovada usa `--enable-shared --enable-static` explicitamente, o que
 torna o build determinístico sem escolher um dos defaults conflitantes.
 
+### Release PIO 2.7.0 e conflito documental
+
+A API oficial do GitHub e a página de releases apontavam `pio2_7_0` como
+release estável atual em 2026-08-04. `pio2_6_5` foi tratada apenas como
+candidata inicial. O probe 2.6.5 deixou uma falha no teste `pio_rearr_opts` em
+OMPIO e ROMIO, enquanto 2.7.0 executou 109/109 testes; não surgiu razão técnica
+para adotar a release anterior.
+
+O `README.md` 2.7.0 diz que netCDF-C deve usar MPI/HDF5 paralelo. O
+`Installing.txt` da mesma tag diz “ideally”. O conflito não foi resolvido por
+preferência textual: o CMake aceitou netCDF serial, registrou
+`HAVE_NETCDF_PAR` como falso e manteve PnetCDF/NetCDF clássico. A suíte e o
+smoke explícito PnetCDF passaram. O resultado e a limitação dos IOTYPEs estão
+registrados em [[../testing/validation-matrix|validation-matrix.md]].
+
 Registrar uma URL aqui não autoriza download novo, mudança de versão ou
 alteração da stack. Para isso, a fonte deve ser consultada conforme o workflow,
 a compatibilidade deve ser avaliada e o usuário deve aprovar a proposta.
 
 ### Fontes secundárias
 
-Nenhuma fonte secundária está registrada até o ciclo 0001.
+Nenhuma fonte secundária está registrada.
 
 ### Fóruns e issues para troubleshooting
 

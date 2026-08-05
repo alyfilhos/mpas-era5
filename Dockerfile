@@ -198,4 +198,85 @@ ENV PNETCDF=${MPAS_PREFIX}
 
 WORKDIR /workspace
 
+# ------------------------------------------------------------
+# ParallelIO (PIO2)
+# ------------------------------------------------------------
+
+ARG PIO_VERSION=2.7.0
+ARG PIO_TAG=pio2_7_0
+ARG PIO_SHA256=cce83743156ae723e7890931c2b48dcfe7ea8a276962dc4429f839d8f58d4a5a
+ARG CMAKE_FORTRAN_UTILS_COMMIT=05ff8d8e4c88786e94a02c853d3ff921113d785c
+ARG GENF90_COMMIT=4816965ba946731352bad195b7d946a5fe682ff5
+
+WORKDIR /tmp
+
+RUN curl -fL \
+    https://github.com/NCAR/ParallelIO/archive/refs/tags/${PIO_TAG}.tar.gz \
+    -o pio.tar.gz \
+    && echo "${PIO_SHA256}  pio.tar.gz" | sha256sum -c - \
+    && tar -xzf pio.tar.gz \
+    && mv ParallelIO-${PIO_TAG} pio-src \
+    && mkdir -p pio-build \
+    && git clone \
+       https://github.com/CESM-Development/CMake_Fortran_utils \
+       pio-build/CMake_Fortran_utils \
+    && git -C pio-build/CMake_Fortran_utils \
+       checkout --detach "${CMAKE_FORTRAN_UTILS_COMMIT}" \
+    && test "$(git -C pio-build/CMake_Fortran_utils rev-parse HEAD)" = \
+       "${CMAKE_FORTRAN_UTILS_COMMIT}" \
+    && git clone https://github.com/PARALLELIO/genf90 pio-genf90 \
+    && git -C pio-genf90 checkout --detach "${GENF90_COMMIT}" \
+    && test "$(git -C pio-genf90 rev-parse HEAD)" = "${GENF90_COMMIT}" \
+    && CC=mpicc FC=mpifort cmake \
+       -S pio-src \
+       -B pio-build \
+       -DCMAKE_BUILD_TYPE=Release \
+       -DCMAKE_INSTALL_PREFIX=${MPAS_PREFIX} \
+       -DCMAKE_PREFIX_PATH=${MPAS_PREFIX} \
+       -DUSER_CMAKE_MODULE_PATH=/tmp/pio-build/CMake_Fortran_utils \
+       -DGENF90_PATH=/tmp/pio-genf90 \
+       -DPIO_ENABLE_FORTRAN=ON \
+       -DPIO_ENABLE_TIMING=OFF \
+       -DPIO_ENABLE_LOGGING=OFF \
+       -DPIO_ENABLE_DOC=OFF \
+       -DPIO_ENABLE_EXAMPLES=ON \
+       -DPIO_ENABLE_NETCDF_INTEGRATION=OFF \
+       -DPIO_ENABLE_TESTS=ON \
+       -DPIO_USE_GDAL=OFF \
+       -DWITH_PNETCDF=ON \
+       -DBUILD_SHARED_LIBS=OFF \
+    && cmake --build pio-build \
+       --target pioc piof \
+       --parallel ${BUILD_JOBS} \
+    && cmake --build pio-build \
+       --target tests \
+       --parallel 1 \
+    && OMPI_ALLOW_RUN_AS_ROOT=1 \
+       OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1 \
+       OMPI_MCA_rmaps_base_oversubscribe=1 \
+       ctest \
+       --test-dir pio-build \
+       --output-on-failure \
+       --timeout 120 \
+       --parallel 1 \
+    && cmake --install pio-build \
+    && test -f ${MPAS_PREFIX}/include/pio.h \
+    && test -f ${MPAS_PREFIX}/include/pio.mod \
+    && test -f ${MPAS_PREFIX}/lib/libpioc.a \
+    && test -f ${MPAS_PREFIX}/lib/libpiof.a \
+    && test -f ${MPAS_PREFIX}/lib/libpio.settings \
+    && test -f ${MPAS_PREFIX}/lib/cmake/PIO/PIOConfig.cmake \
+    && grep -F "PIO Version:" ${MPAS_PREFIX}/lib/libpio.settings \
+    && grep -F "${PIO_VERSION}" ${MPAS_PREFIX}/lib/libpio.settings \
+    && grep -F "PnetCDF Support:" ${MPAS_PREFIX}/lib/libpio.settings \
+       | grep -F "yes" \
+    && grep -F "NetCDF/HDF5 Par I/O:" ${MPAS_PREFIX}/lib/libpio.settings \
+       | grep -F "no" \
+    && rm -rf /tmp/pio.tar.gz /tmp/pio-src /tmp/pio-build /tmp/pio-genf90
+
+# Variável usada pelo sistema de build do MPAS
+ENV PIO=${MPAS_PREFIX}
+
+WORKDIR /workspace
+
 CMD ["bash"]

@@ -18,7 +18,7 @@ Stack científica
     │     ↓
     ├── PnetCDF 1.15.0 ✅
     │     ↓
-    ├── PIO2
+    ├── PIO 2.7.0 ✅
     │     ↓
     └── METIS
           │
@@ -40,9 +40,8 @@ Dockerfile
 → MPAS
 ```
 
-No ciclo 0002, a implementação termina em PnetCDF 1.15.0. PIO2, METIS, WPS e
-MPAS permanecem no grafo como destino do plano, não como componentes
-concluídos.
+No ciclo 0003, a implementação termina em PIO 2.7.0. METIS, WPS e MPAS
+permanecem no grafo como destino do plano, não como componentes concluídos.
 
 PnetCDF não depende da seta HDF5 → netCDF neste ciclo. A ordem no `Dockerfile`
 preserva a stack já construída, mas o caminho funcional novo é independente:
@@ -58,6 +57,27 @@ tests/smoke/pnetcdf_mpi.f90
           ↓
      OpenMPI 4.1.6
 ```
+
+PIO preserva esse caminho paralelo e acrescenta a camada de abstração usada
+pelo futuro MPAS:
+
+```text
+tests/smoke/pio_pnetcdf.c
+          ↓
+   API C do PIO 2.7.0
+          ↓
+  PIO_IOTYPE_PNETCDF
+          ↓
+   PnetCDF 1.15.0
+          ↓
+ MPI-IO (OMPIO ou ROMIO local)
+          ↓
+     OpenMPI 4.1.6
+```
+
+HDF5 e netCDF permanecem seriais. O PIO também disponibiliza o backend
+`PIO_IOTYPE_NETCDF`; `PIO_IOTYPE_NETCDF4C` e `PIO_IOTYPE_NETCDF4P` não são
+compilados nesta configuração.
 
 ## Fluxo de governança
 
@@ -103,8 +123,10 @@ mpas-era5/
 │   │   └── versions.lock.md          versões adotadas e a decidir
 │   ├── decisions/
 │   │   ├── README.md                 política e template de ADR
-│   │   └── 0001-pnetcdf-mpiio-backend.md
-│   │                                  decisão PnetCDF/GIO/MPI-IO
+│   │   ├── 0001-pnetcdf-mpiio-backend.md
+│   │   │                              decisão PnetCDF/GIO/MPI-IO
+│   │   └── 0002-pio2-pnetcdf-with-serial-netcdf.md
+│   │                                  arquitetura PIO2 e backends habilitados
 │   ├── testing/
 │   │   └── validation-matrix.md      testes, status e evidências
 │   └── logs/                         reservado; atualmente vazio
@@ -113,21 +135,24 @@ mpas-era5/
 │   ├── baseline.md                   explicação da stack já construída
 │   └── commits/
 │       ├── 0001-bootstrap-codex-workflow.md
-│       └── 0002-add-pnetcdf.md         nota educacional do ciclo 0002
+│       ├── 0002-add-pnetcdf.md         nota educacional do ciclo 0002
+│       └── 0003-add-pio2.md            nota educacional do ciclo 0003
 ├── scripts/
 │   ├── validate/
-│   │   └── pnetcdf.sh                validação instalada MPI/Fortran
+│   │   ├── pnetcdf.sh                validação instalada MPI/Fortran
+│   │   └── pio.sh                    validação PIO/PnetCDF e IOTYPEs
 │   └── codex/                        automações de suporte a ciclos futuros
 ├── tests/
 │   └── smoke/
-│       └── pnetcdf_mpi.f90           I/O coletivo CDF-5 em 4 ranks
+│       ├── pnetcdf_mpi.f90           I/O coletivo CDF-5 em 4 ranks
+│       └── pio_pnetcdf.c             PIO explícito sobre PnetCDF em 4 ranks
 ├── data/                              entradas locais; dados grandes fora do Git
 ├── cases/                             configurações futuras de experimentos
 └── docker/                            suporte Docker futuro
 ```
 
-`scripts/validate/` passa a ser rastreável pelo script PnetCDF no ciclo 0002.
-`scripts/codex/` continua vazio e, por isso, não é preservado pelo Git.
+`scripts/validate/` contém validações instaladas e repetíveis para PnetCDF e
+PIO. `scripts/codex/` continua vazio e, por isso, não é preservado pelo Git.
 
 ## Responsabilidades e relações
 
