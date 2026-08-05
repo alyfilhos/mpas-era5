@@ -28,8 +28,9 @@ mantendo as dependências científicas sob `/opt/mpas`.
 | METIS | 5.1.0 | particionamento serial offline do grafo da mesh para os ranks MPI |
 
 WPS não é uma biblioteca da stack. A instalação separada
-`/opt/wps-4.7.0` fornece somente `ungrib.exe`; MPAS-Model 8.4.1 está fixado,
-mas ainda não foi instalado.
+`/opt/wps-4.7.0` fornece somente `ungrib.exe`. MPAS-Model também usa prefixo
+separado: `/opt/mpas-model-8.4.1` contém somente o core `init_atmosphere`
+compilado neste ciclo.
 
 ## PnetCDF 1.15.0
 
@@ -134,15 +135,15 @@ extensa com múltiplas contagens de ranks, não foi executada; `make check` e
 ## PIO 2.7.0
 
 PIO organiza a decomposição dos dados e encaminha operações a um backend de
-arquivo. O futuro MPAS será compilado com `USE_PIO2=true` e encontrará
-`NETCDF`, `PNETCDF` e `PIO` no mesmo prefixo `/opt/mpas`.
+arquivo. O `init_atmosphere_model` foi compilado com `USE_PIO2=true` e
+encontrou `NETCDF`, `PNETCDF` e `PIO` no mesmo prefixo `/opt/mpas`.
 
 A arquitetura aprovada preserva HDF5 1.14.6 e netCDF-C 4.10.1 seriais. O
 primeiro caso MPAS usa o `io_type=pnetcdf` padrão, de modo que o caminho
 paralelo validado é independente de HDF5:
 
 ```text
-MPAS (futuro, USE_PIO2=true)
+MPAS init_atmosphere (USE_PIO2=true)
     ↓
 PIO 2.7.0 — PIO_IOTYPE_PNETCDF
     ↓
@@ -402,9 +403,9 @@ responsabilidades diferentes:
   intermediário do WPS;
 - `metgrid` interpola os campos intermediários para a grade do modelo.
 
-O pipeline MPAS usa `ungrib` para chegar ao formato intermediário que o futuro
-`init_atmosphere` consumirá. Este ciclo não precisa de WRF, `geogrid` ou
-`metgrid`; por isso eles não foram construídos.
+O pipeline MPAS usa `ungrib` para chegar ao formato intermediário que
+`init_atmosphere` consumirá em um ciclo funcional. O build atual não precisa
+de WRF, `geogrid` ou `metgrid`; por isso eles não foram construídos.
 
 ### Layout e isolamento
 
@@ -413,8 +414,8 @@ O pipeline MPAS usa `ungrib` para chegar ao formato intermediário que o futuro
 /opt/wps-4.7.0                  source e build WPS 4.7.0
 /opt/wps -> /opt/wps-4.7.0      link estável
 
-/opt/mpas-model-8.4.1           reservado ao futuro MPAS-Model
-/opt/mpas-model                 futuro link estável
+/opt/mpas-model-8.4.1           source e build MPAS-Model 8.4.1
+/opt/mpas-model -> /opt/mpas-model-8.4.1
 ```
 
 `ungrib.exe` permanece no layout upstream:
@@ -518,3 +519,108 @@ como dívida técnica a observar quando dados reais forem processados.
 Detalhes auditáveis estão em
 [[../testing/validation-matrix|validation-matrix.md]] e a decisão de versão e
 layout em [[../decisions/0004-wps-mpas-version-and-layout|ADR 0004]].
+
+## MPAS-Model 8.4.1 — somente init_atmosphere
+
+MPAS é um framework que compartilha infraestrutura entre cores. O core
+`init_atmosphere` prepara campos estáticos, condições iniciais e, quando
+aplicável, condições laterais; o core `atmosphere` integra a evolução do
+estado. Eles geram executáveis separados. Neste ciclo somente
+`init_atmosphere_model` foi construído.
+
+### Proveniência, layout e comando
+
+O source é um clone Git da tag oficial `v8.4.1`, preservado dentro da imagem
+para que o `git describe` executado pelo Makefile registre a versão. Antes do
+build, `git rev-parse HEAD` precisa ser exatamente:
+
+```text
+91c5eac175eebeaf4206bacd5cb50c39dff3c152
+```
+
+O layout mantém bibliotecas e modelo sem ambiguidade:
+
+```text
+/opt/mpas                         NETCDF, PNETCDF e PIO
+/opt/mpas-model-8.4.1             source e artefatos MPAS
+/opt/mpas-model -> /opt/mpas-model-8.4.1
+```
+
+O comando executado na imagem final foi:
+
+```sh
+make -j8 gnu \
+    CORE=init_atmosphere \
+    USE_PIO2=true \
+    MPAS_ESMF=embedded
+```
+
+O target `gnu` usa os wrappers MPI `mpif90`, `mpicc` e `mpicxx`, que
+encaminham compilação e linkagem ao GNU e às bibliotecas OpenMPI. O MPAS não
+produz neste target um executável serial alternativo: MPI é parte da
+arquitetura escolhida, embora uma execução futura possa usar um único rank.
+
+Na release 8.4.1, `USE_PIO2` é mantido por compatibilidade, mas o Makefile
+avisa que a variável é ignorada e detecta PIO2 por compilação/linkagem. A
+receita ainda passa `USE_PIO2=true` para tornar a intenção explícita. A
+evidência efetiva vem do resumo final, de `-DMPAS_PIO_SUPPORT`, das bibliotecas
+`-lpiof -lpioc` e de símbolos PIO no executável. `NETCDF`, `PNETCDF` e
+`PIO` apontam para `/opt/mpas`.
+
+### Configuração comprovada
+
+O resumo do próprio build e `.build_opts.framework`/
+`.build_opts.init_atmosphere` comprovaram:
+
+- core `init_atmosphere`, target GNU e MPI/`mpi_f08` habilitados;
+- single precision default, `-DSINGLE_PRECISION`, sem `PRECISION=double`;
+- otimização `-O3`, debugging desligado;
+- OpenMP, offload OpenMP e OpenACC desligados;
+- PIO 2.x detectado e PnetCDF presente;
+- ESMF timekeeping embedded;
+- MUSICA e PT-Scotch ausentes.
+
+O build usou apenas componentes incluídos no source necessários a esse core,
+como ESMF timekeeping embedded, SMIOL e ezXML. Não houve download ou
+configuração manual de MMM-physics, UGWP, MUSICA, PT-Scotch ou outro externo.
+
+### Artefatos e linkagem
+
+A instalação preserva:
+
+```text
+init_atmosphere_model
+namelist.init_atmosphere
+streams.init_atmosphere
+default_inputs/namelist.init_atmosphere
+default_inputs/streams.init_atmosphere
+```
+
+`file` identificou ELF 64-bit PIE x86-64 dinâmico. `ldd` resolveu netCDF,
+PnetCDF, MPI, GFortran, HDF5, zlib e bibliotecas de sistema, sem `not found`.
+PIO 2.7.0 foi construído static; por isso sua ausência no `ldd` é esperada.
+`nm` confirmou símbolos definidos `PIOc_Init_Intracomm`, `PIOc_createfile` e
+`PIOc_openfile`, enquanto `ncmpi_create`/`ncmpi_open` aparecem como
+referências resolvidas pela `libpnetcdf.so.8` vista no `ldd`.
+
+### Validação e limites
+
+O [`mpas-init.sh`](../../scripts/validate/mpas-init.sh) roda sem rede, com
+raiz read-only e tmpfs. Ele valida proveniência Git, layout, defaults,
+configuração, interfaces, `file`, `ldd` e símbolos. A classificação é
+deliberada:
+
+- BUILD: PASS;
+- STRUCTURAL/INSTALL SMOKE: PASS;
+- FUNCTIONAL, mesh → `init_atmosphere`: PENDENTE;
+- SCIENTIFIC/REAL-DATA, mesh + static data + WPS/ERA5 → `init.nc`: PENDENTE.
+
+A tag não fornece uma suíte autocontida aplicável a esse recorte sem entradas;
+os helpers upstream de setup também requerem configuração e dados. Nenhuma
+mesh, GRIB, ERA5, `static.nc`, `init.nc` ou LBC foi criada para fabricar um
+resultado funcional.
+
+O compilador emitiu avisos de código legado no ESMF embedded e nas ferramentas
+de Registry, além de avisos make; não houve erro. A árvore Git completa aumenta
+o tamanho da imagem, trade-off aceito para preservar `git describe` e a
+proveniência solicitada.

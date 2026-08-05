@@ -35,7 +35,9 @@ compilação de software científico, MPI e ferramentas utilizadas em HPC.
 ### Pré-processamento e modelo
 
 - WPS 4.7.0 / `ungrib.exe` GNU serial ✅
-- MPAS-Model 8.4.1: versão fixada; build pendente
+- MPAS-Model 8.4.1 / `init_atmosphere_model` GNU + MPI ✅ build e smoke
+  estrutural
+- MPAS-Model 8.4.1 / `atmosphere_model` ⏳ pendente
 
 ## Roadmap
 
@@ -43,10 +45,11 @@ Stack científica:
 
 `zlib → HDF5 → netCDF-C → netCDF-Fortran → PnetCDF → PIO2 → METIS`
 
-O prefixo `/opt/mpas` permanece reservado às bibliotecas científicas. O WPS
-fica separado em `/opt/wps-4.7.0`, com `/opt/wps` como link estável. Neste
-ciclo foram usados `--nowrf`, `--build-grib2-libs` e `./compile ungrib`; WRF,
-`geogrid` e `metgrid` não foram instalados ou compilados.
+O prefixo `/opt/mpas` permanece reservado às bibliotecas científicas. WPS e
+MPAS-Model usam árvores separadas: `/opt/wps-4.7.0` com `/opt/wps`, e
+`/opt/mpas-model-8.4.1` com `/opt/mpas-model`. Somente `ungrib.exe` e
+`init_atmosphere_model` foram construídos; WRF, `geogrid`, `metgrid` e o core
+MPAS `atmosphere` continuam fora da imagem.
 
 O METIS é usado offline: `gpmetis` transforma `graph.info` em
 `graph.info.part.N`, e `N` deve corresponder ao número de tasks MPI da futura
@@ -57,8 +60,9 @@ Depois:
 
 `ERA5 GRIB → Vtable → ungrib → WPS intermediate → MPAS init_atmosphere → MPAS atmosphere`
 
-A Vtable ERA5 definitiva e a integração funcional com dados reais ainda
-dependem de um ciclo próprio.
+A Vtable ERA5 definitiva e as integrações funcionais com mesh e dados reais
+ainda dependem de ciclos próprios. O ciclo atual prova build, configuração e
+instalação do `init_atmosphere`; não afirma funcionamento científico.
 
 ## Documentação
 
@@ -74,7 +78,6 @@ O material didático e as notas de aprendizado por ciclo estão em:
 
 ## Referências principais
 
-- MPAS-Model
 - NSF Unidata netCDF
 - HDF Group
 - Parallel-NetCDF

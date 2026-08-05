@@ -31,12 +31,12 @@ evidência estiverem registrados.
 | PIO 2.7.0 | CTest: 109/109 testes aprovados | versão, configuração, headers, módulos, bibliotecas e pacote CMake conferidos | C → PIO/PnetCDF → MPI-IO → OpenMPI; CDF-2 escrito e relido em 4 ranks com OMPIO e ROMIO | Implementado e validado no ciclo 0003 | [`Dockerfile`](../../Dockerfile), [`pio.sh`](../../scripts/validate/pio.sh), [`pio_pnetcdf.c`](../../tests/smoke/pio_pnetcdf.c) e evidência abaixo |
 | METIS 5.1.0 | não há `make check`/CTest formal; `graphchk` e `gpmetis` passaram no `4elt.graph` fornecido upstream | versão por macros, ferramentas, biblioteca, help e opções conferidos | fixture → `gpmetis` → `graph.info.part.4`; estrutura, IDs, quatro partições, edge cut e conectividade validados | Implementado e validado no ciclo 0004 | [`Dockerfile`](../../Dockerfile), [`metis.sh`](../../scripts/validate/metis.sh), [`graph.info`](../../tests/fixtures/metis/graph.info) e evidência abaixo |
 | WPS 4.7.0 / ungrib | não foi identificada suíte formal para este recorte; build aplicável `configure` + `compile ungrib` passou | executável, links, `file`, `ldd`, `configure.wps`, proveniência, GRIB2 privado e Vtables conferidos offline | ERA5 GRIB → ungrib → WPS intermediate pendente; nenhum dado artificial ou aleatório foi usado | Build e smoke validados no ciclo 0005; integração funcional pendente | [`Dockerfile`](../../Dockerfile), [`wps-ungrib.sh`](../../scripts/validate/wps-ungrib.sh) e evidência abaixo |
+| MPAS 8.4.1 `init_atmosphere` | a tag não contém suíte autocontida aplicável sem mesh/configuração; o build real do core passou | executável, defaults, proveniência, opções, `file`, `ldd`, símbolos e interfaces conferidos offline | mesh → `init_atmosphere` e mesh + WPS/ERA5 → `init.nc` pendentes | Build e smoke estrutural validados no ciclo 0006; funcional/científico pendentes | [`Dockerfile`](../../Dockerfile), [`mpas-init.sh`](../../scripts/validate/mpas-init.sh) e evidência abaixo |
 
 ## Componentes futuros
 
 | Componente | Upstream test | Smoke test | Integration test | Status | Evidência |
 |---|---|---|---|---|---|
-| MPAS 8.4.1 `init_atmosphere` | Planejado: testes upstream disponíveis para a release | Planejado: validar inicialização mínima na mesh aprovada | Planejado: WPS/ERA5 + mesh → `static.nc`, `init.nc` e LBC quando aplicável | Versão fixada; source e build não implementados | [[../project/requirements|REQ-MPAS-001]] |
 | MPAS 8.4.1 `atmosphere` | Planejado: testes upstream disponíveis para a release | Planejado: integração curta e determinística do caso aprovado | Planejado: ler artefatos do `init_atmosphere` e produzir saída MPAS | Versão fixada; source e build não implementados | [[../project/requirements|REQ-MPAS-002]] |
 | ERA5 | Não se aplica como suite de software única; validar cliente e esquema segundo fontes oficiais | Planejado: baixar uma amostra mínima sem registrar credenciais e conferir metadados/unidades | Planejado: amostra ERA5 → `ungrib` → `init_atmosphere` | Período/área/variáveis a decidir | [[../project/requirements|REQ-DATA-001]] |
 | Mesh pública inicial | Validar com ferramentas/recomendações oficiais da release MPAS escolhida | Planejado: conferir dimensões, conectividade e metadados da mesh | Planejado: mesh aceita pelo `init_atmosphere` e pelo caso curto | Mesh a decidir | [[../project/requirements|REQ-MESH-001]] |
@@ -110,8 +110,8 @@ evidência estiverem registrados.
 
 ### Limitações e testes ainda pendentes
 
-- a integração real com MPAS e `USE_PIO2=true` aguarda o ciclo de build do
-  MPAS;
+- o build de `init_atmosphere` confirmou descoberta/link do PIO2; execução de
+  I/O pelo modelo ainda aguarda mesh e configuração representativas;
 - `PIO_IOTYPE_NETCDF4C` e `PIO_IOTYPE_NETCDF4P` não foram compilados, por
   consequência da stack netCDF/HDF5 serial e da condicional `_NETCDF4` do
   CMake PIO 2.7.0;
@@ -200,7 +200,7 @@ evidência estiverem registrados.
 | Regressão PIO | código 0; PIO 2.7.0/PnetCDF e CDF-2 com quatro ranks passaram com OMPIO e ROMIO |
 | Regressão METIS | código 0; METIS 5.1.0, quatro partições conectadas de 4 vértices, imbalance 1.000 e edge cut 3 conferido |
 | Integração funcional | PENDENTE: ERA5 GRIB → Vtable aprovada → ungrib → WPS intermediate; ERA5 não foi baixado e nenhum GRIB falso foi criado |
-| MPAS | 8.4.1/tag `v8.4.1`/commit `91c5eac175eebeaf4206bacd5cb50c39dff3c152` fixados documentalmente; source e build ausentes |
+| MPAS no estado do ciclo 0005 | 8.4.1/tag `v8.4.1`/commit `91c5eac175eebeaf4206bacd5cb50c39dff3c152` estavam fixados documentalmente; source e build ainda ausentes naquele ciclo |
 
 ### Limitações, avisos e testes não executados
 
@@ -219,6 +219,49 @@ evidência estiverem registrados.
 - `csh` e demais pacotes APT não possuem lock completo;
 - o source WPS e seus binários existem somente na imagem; não são versionados
   no repositório.
+
+## Evidência do ciclo 0006 — MPAS-Model 8.4.1 / init_atmosphere
+
+| Campo | Evidência real |
+|---|---|
+| Data | 2026-08-05 |
+| Base do ciclo | `5ed474e0fcdd1a111b0220ce64badc817c4bd244` (`build: add WPS ungrib support`); worktree inicial limpo, mudanças do ciclo sem commit |
+| Imagem base | `mpas-era5:wps-4.7.0`, ID `sha256:437fb5d327aaeb1a2d79d4b2c9c0024a471f123f9416fa8e3bf1762d3b07267a` |
+| Imagem final | `mpas-era5:mpas-init-8.4.1`, ID local `sha256:f5e6040cec6de2f0f9af14f1d37a091cbdbdf315cedce1c8f1cbc37a1b936193`, 411.742.970 bytes |
+| Build da imagem | `docker build --progress=plain --build-arg BUILD_JOBS=8 -t mpas-era5:mpas-init-8.4.1 .`; código 0 |
+| Preservação | todas as etapas até WPS apareceram como `CACHED`; nenhuma versão ou configuração anterior foi alterada |
+| Source | clone Git oficial `--branch v8.4.1 --single-branch`; `git rev-parse HEAD` = `91c5eac175eebeaf4206bacd5cb50c39dff3c152`; metadata Git preservada |
+| Probe | imagem WPS validada, ferramentas/variáveis/interfaces conferidas; build descartável passou antes da edição definitiva |
+| Comando MPAS | `make -j8 gnu CORE=init_atmosphere USE_PIO2=true MPAS_ESMF=embedded`; código 0 |
+| Arquitetura | GNU, wrappers MPI e `mpi_f08`; single precision; `-O3`; DEBUG off; OpenMP/offload/OpenACC off; PIO 2.x; ESMF embedded; MUSICA/PT-Scotch off |
+| Artefatos | `/opt/mpas-model-8.4.1/init_atmosphere_model`, `namelist.init_atmosphere`, `streams.init_atmosphere` e cópias em `default_inputs/`; symlink `/opt/mpas-model` |
+| Ausências deliberadas | nenhum `atmosphere_model`; nenhum download/configuração manual de MMM-physics, UGWP, MUSICA ou PT-Scotch |
+| Binário | `file`: ELF 64-bit LSB PIE x86-64, dinâmico, não stripped; `ldd`: netCDF, PnetCDF, MPI, GFortran, HDF5, zlib e sistema resolvidos, sem `not found` |
+| Evidência PIO2/PnetCDF | resumo “Using the PIO 2.x library”; `-DMPAS_PIO_SUPPORT`, `-lpiof -lpioc -lpnetcdf`; símbolos definidos `PIOc_Init_Intracomm`/`PIOc_createfile`/`PIOc_openfile`; `libpnetcdf.so.8` no `ldd` |
+| Smoke | `scripts/validate/mpas-init.sh`; sem rede, raiz read-only e tmpfs; código 0 |
+| Classificação | BUILD: PASS; STRUCTURAL/INSTALL SMOKE: PASS; FUNCTIONAL: PENDENTE; SCIENTIFIC/REAL-DATA: PENDENTE |
+| Regressão PnetCDF | código 0; F90/CDF-5 em quatro ranks, valores 0–3 |
+| Regressão PIO | código 0; PIO/PnetCDF CDF-2 com OMPIO e ROMIO, valores 1000–1003 |
+| Regressão WPS | código 0; instalação/configuração/GRIB2/Vtables preservadas; funcional ERA5 ainda pendente |
+| METIS | não reexecutado: nenhuma camada, configuração ou código de particionamento mudou; a etapa anterior foi recuperada do cache |
+
+### Limitações, avisos e testes não executados
+
+- o primeiro probe encontrou a proteção Git “dubious ownership” porque o
+  source bind-mounted tinha UID diferente; a árvore descartável foi marcada
+  como safe directory. O clone permanente é root-owned e não precisou disso;
+- `USE_PIO2=true` é aceito, mas ignorado como seletor na 8.4.1; PIO2 é
+  autodetectado. A configuração foi provada pelo resumo, opções e símbolos;
+- ESMF embedded, Registry e make emitiram avisos de código legado, tabs,
+  possível truncamento e regras antigas; não houve erro de compilação/linkagem;
+- não se executou o binário porque a tag não fornece mesh/configuração/entradas
+  autocontidas para este recorte;
+- nenhuma mesh, ERA5, GRIB, NetCDF, `static.nc`, `init.nc`, LBC ou saída
+  científica foi criada;
+- o source e o binário MPAS existem somente na imagem e não são versionados no
+  Git; logs completos também não são versionados;
+- a árvore `.git` na imagem é intencional para `git describe` e
+  proveniência, com custo de tamanho.
 
 ## Evidência mínima de um resultado futuro
 

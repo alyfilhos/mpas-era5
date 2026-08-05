@@ -19,26 +19,25 @@ A partir do ciclo 0004, cada atualização distingue:
 Consequentemente, a referência abaixo é uma observação datada, não uma
 declaração eterna do `HEAD`.
 
-## Referência do ciclo 0005
+## Referência do ciclo 0006
 
 Estado atualizado em **2026-08-05** depois da implementação, build, smoke e
-regressões do WPS 4.7.0/ungrib:
+regressões do MPAS-Model 8.4.1/`init_atmosphere`:
 
 - branch inspecionada: `main`;
-- base do ciclo:
-  `7eb81e8d7a566ee16d79d9d8abdca1b6d09aadad`
-  (`build: add METIS 5.1.0 partitioning support`);
-- relação observada antes das mudanças: `main` alinhada com `origin/main`;
-- estado produzido: mudanças do ciclo 0005 no worktree, sem commit e sem push,
+- base e `HEAD` observados antes das mudanças:
+  `5ed474e0fcdd1a111b0220ce64badc817c4bd244`
+  (`build: add WPS ungrib support`);
+- relação observada: `main` alinhada com `origin/main`;
+- worktree inicial: limpo;
+- estado produzido: mudanças do ciclo 0006 no worktree, sem commit e sem push,
   aguardando relatório pré-commit e aprovação;
 - commit que materializa este estado: **consultar Git**; nenhum SHA futuro foi
   escrito;
-- `HEAD` observado ao atualizar este documento:
-  `7eb81e8d7a566ee16d79d9d8abdca1b6d09aadad`;
 - comando normativo para o `HEAD` atual: `git rev-parse HEAD`.
 
-O ciclo começou com o ciclo 0004 já materializado no commit base acima. A
-referência continua sem antecipar o hash do futuro commit 0005.
+O ciclo começou com o WPS finalizado no commit base acima. Esta referência não
+antecipa o hash de um possível commit 0006.
 
 ## Ambiente definido no repositório
 
@@ -50,7 +49,9 @@ O [`Dockerfile`](../../Dockerfile) define:
 - prefixo científico `/opt/mpas`;
 - `PATH`, `LD_LIBRARY_PATH`, `CPPFLAGS` e `LDFLAGS` para o prefixo;
 - `NETCDF=/opt/mpas`, `PNETCDF=/opt/mpas` e `PIO=/opt/mpas`.
-- WPS separado em `/opt/wps-4.7.0`, com `/opt/wps` como link estável.
+- WPS separado em `/opt/wps-4.7.0`, com `/opt/wps` como link estável;
+- MPAS-Model separado em `/opt/mpas-model-8.4.1`, com `/opt/mpas-model` como
+  link estável; `/opt/mpas` continua sendo somente o prefixo científico.
 
 Não foi criada uma variável `METIS`: o workflow usa
 `/opt/mpas/bin/gpmetis` descoberto por `PATH`.
@@ -67,18 +68,19 @@ Não foi criada uma variável `METIS`: o workflow usa
 | PIO | 2.7.0 | C/Fortran static, PnetCDF habilitado; integração CDF-2 aprovada com OMPIO e ROMIO |
 | METIS | 5.1.0 | static, índices/reais 32 bits, GKlib incluída; `gpmetis` offline validado |
 | WPS/ungrib | 4.7.0 | GNU serial; sem WRF; GRIB2 privado; build e smoke offline aprovados |
+| MPAS/init_atmosphere | 8.4.1 | GNU/MPI, single precision, PIO2 e ESMF embedded; build e smoke estrutural aprovados |
 
-A imagem validada é `mpas-era5:wps-4.7.0`, com ID/digest local
-`sha256:437fb5d327aaeb1a2d79d4b2c9c0024a471f123f9416fa8e3bf1762d3b07267a`
-e tamanho reportado de 359.179.447 bytes. Todas as camadas até METIS foram
-recuperadas do cache; nenhuma versão ou configuração científica anterior foi
-reconstruída ou alterada.
+A imagem validada é `mpas-era5:mpas-init-8.4.1`, com ID local
+`sha256:f5e6040cec6de2f0f9af14f1d37a091cbdbdf315cedce1c8f1cbc37a1b936193`
+e tamanho reportado de 411.742.970 bytes. Todas as etapas até WPS foram
+recuperadas do cache; nenhuma versão ou configuração anterior foi reconstruída
+ou alterada.
 
 A evidência resumida está em
 [[../testing/validation-matrix|validation-matrix.md]]; nenhum log de build ou
 validação é versionado.
 
-## WPS e versão MPAS no ciclo 0005
+## WPS preservado e MPAS init_atmosphere no ciclo 0006
 
 - WPS 4.7.0, tag `v4.7.0`, commit
   `5feccecd63384381b6942371c7a837f66e4ccb84`;
@@ -96,9 +98,21 @@ validação é versionado.
 - Vtables ECMWF, ECMWF sigma e ERA-Interim presentes, sem escolha ERA5;
 - único pacote de sistema novo: `csh`, observado como `20230828-1`.
 
-MPAS-Model está fixado em 8.4.1, tag `v8.4.1`, hotfix/commit
-`91c5eac175eebeaf4206bacd5cb50c39dff3c152`. Nenhum source MPAS foi baixado e
-nenhum núcleo foi compilado neste ciclo.
+MPAS-Model 8.4.1 foi clonado da tag oficial `v8.4.1`; o build falha se
+`git rev-parse HEAD` não for
+`91c5eac175eebeaf4206bacd5cb50c39dff3c152`. A metadata Git foi preservada
+para `git describe`. O comando real foi:
+
+```sh
+make -j8 gnu CORE=init_atmosphere USE_PIO2=true MPAS_ESMF=embedded
+```
+
+Somente `init_atmosphere_model` foi produzido, com
+`namelist.init_atmosphere`, `streams.init_atmosphere` e seus defaults. O
+resumo comprovou GNU/MPI, `mpi_f08`, single precision, otimização, PIO 2.x e
+ESMF embedded; DEBUG, OpenMP, OpenMP offload, OpenACC, MUSICA e PT-Scotch estão
+desligados. O source não solicitou downloads manuais de MMM-physics, UGWP ou
+outros externos para esse core.
 
 ## METIS validado no ciclo 0004
 
@@ -153,28 +167,26 @@ graph.info.part.N
 MPAS com N ranks MPI
 ```
 
-METIS não é a implementação MPI do modelo. O ciclo demonstra a invariável
-quatro partições ↔ quatro tasks MPI, sem compilar ou executar MPAS.
+METIS não é a implementação MPI do modelo. A validação do ciclo 0004
+demonstrou a invariável quatro partições ↔ quatro tasks MPI sem executar MPAS.
 
 ## Regressão da stack anterior
 
-- `scripts/validate/pnetcdf.sh` executado com a imagem final: código 0,
-  netCDF-C 4.10.1, netCDF-Fortran 4.6.3, PnetCDF 1.15.0 e F90/CDF-5 em quatro
-  ranks preservados;
-- `scripts/validate/pio.sh` executado com a imagem final: código 0,
-  PIO 2.7.0/PnetCDF e CDF-2 em quatro ranks passaram com OMPIO e ROMIO;
-- `scripts/validate/metis.sh` executado com a imagem final: código 0,
-  METIS 5.1.0 produziu quatro partições conectadas, imbalance 1.000 e edge cut
-  reportado/recalculado 3;
-- valores funcionais preservados: `0, 1, 2, 3` no smoke PnetCDF e
-  `1000, 1001, 1002, 1003` no smoke PIO.
+- `scripts/validate/pnetcdf.sh`: código 0; F90/CDF-5 em quatro ranks e
+  valores `0, 1, 2, 3` preservados;
+- `scripts/validate/pio.sh`: código 0; PIO/PnetCDF CDF-2 em quatro ranks com
+  OMPIO e ROMIO e valores `1000, 1001, 1002, 1003` preservados;
+- `scripts/validate/wps-ungrib.sh`: código 0; instalação, configuração,
+  GRIB2 privado e Vtables preservados;
+- METIS não foi reexecutado porque nenhuma camada, configuração ou código de
+  particionamento mudou; a etapa permaneceu `CACHED` no build final.
 
 ## Arquiteturas adotadas
 
 O caminho de I/O paralelo permanece:
 
 ```text
-MPAS futuro → PIO 2.7.0 → PnetCDF 1.15.0 → MPI-IO → OpenMPI
+MPAS init_atmosphere → PIO 2.7.0 → PnetCDF 1.15.0 → MPI-IO → OpenMPI
 ```
 
 O particionamento é uma preparação independente:
@@ -204,11 +216,18 @@ As decisões e alternativas estão em
 - `docs/decisions/0004-wps-mpas-version-and-layout.md`: decisão aceita;
 - `learning/commits/0005-add-wps-ungrib.md`: nota educacional do ciclo.
 
+## Artefatos do ciclo 0006
+
+- `scripts/validate/mpas-init.sh`: smoke estrutural offline e read-only;
+- `learning/commits/0006-add-mpas-init-atmosphere.md`: nota educacional;
+- camada MPAS adicionada ao `Dockerfile`, sem novo ADR porque o ADR 0004 já
+  cobre versão, layout e separação da stack.
+
 ## Componentes ainda não implementados
 
 - METIS 5.2.1 e GKlib externa;
 - PT-Scotch;
-- MPAS `init_atmosphere` e `atmosphere`;
+- MPAS `atmosphere` e execução funcional do `init_atmosphere`;
 - aquisição ou preparação ERA5;
 - seleção e preparação da primeira mesh;
 - `static.nc`, `init.nc` e LBC;
@@ -218,8 +237,8 @@ As decisões e alternativas estão em
 
 - ainda não existe uma mesh MPAS aprovada; o fixture não prova compatibilidade
   ou performance em escala real;
-- o MPAS não foi compilado; o consumo real de `graph.info.part.N` permanece
-  teste de um ciclo futuro;
+- o consumo real de `graph.info.part.N` e a execução do `init_atmosphere`
+  permanecem testes de um ciclo futuro;
 - a release METIS 5.1.0 não fornece suíte formal; foram usados seus grafos de
   teste, `graphchk`, o comando real MPAS e validação independente;
 - CMake emitiu aviso de depreciação e a GKlib incluída produziu avisos
@@ -233,4 +252,6 @@ As decisões e alternativas estão em
 - a Vtable ERA5 não foi escolhida e nenhum GRIB real foi processado;
 - avisos de código legado em libpng, JasPer e Fortran permanecem, apesar do
   build e da linkagem bem-sucedidos;
-- o build e a integração do MPAS-Model 8.4.1 continuam pendentes.
+- o build estrutural do `init_atmosphere` passou, mas qualquer afirmação
+  funcional ou científica continua pendente até existir mesh/configuração e,
+  para `init.nc`, entradas WPS/ERA5 representativas.

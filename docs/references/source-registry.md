@@ -38,7 +38,11 @@ usada; autoridade e utilidade não são a mesma coisa.
 | DOC-WPS-004 | WPS 4.7.0 | [`compile` da tag](https://github.com/wrf-model/WPS/blob/v4.7.0/compile) | shebang csh, targets aceitos e confirmação de `./compile ungrib` | lido integralmente e exercitado em 2026-08-05 |
 | DOC-WPS-005 | WPS 4.7.0 | [`arch/Config.pl`](https://github.com/wrf-model/WPS/blob/v4.7.0/arch/Config.pl) e [`arch/configure.defaults`](https://github.com/wrf-model/WPS/blob/v4.7.0/arch/configure.defaults) | geração do menu, plataforma Linux x86_64/GFortran serial, compiladores e flags | inspecionados na tag e usados na seleção reproduzível em 2026-08-05 |
 | DOC-WPS-006 | WPS 4.7.0 | `external/Makefile`, `arch/preamble` e `ungrib/Makefile` contidos no archive da tag | versões e instalação privada de zlib/libpng/JasPer, flags GRIB2 e alvo ungrib | inspecionados no artefato adotado em 2026-08-05 |
-| DOC-MPAS-004 | MPAS-Model 8.4.1 | [`README.md` da tag](https://github.com/MPAS-Dev/MPAS-Model/blob/v8.4.1/README.md) | heading `MPAS-v8.4.1` no próprio source da tag | lido em 2026-08-05; versão somente documental neste ciclo |
+| DOC-MPAS-004 | MPAS-Model 8.4.1 | [`README.md` da tag](https://github.com/MPAS-Dev/MPAS-Model/blob/v8.4.1/README.md) | heading `MPAS-v8.4.1` no próprio source da tag | lido no clone verificado em 2026-08-05 |
+| DOC-MPAS-005 | MPAS-Model 8.4.1 | [`Makefile` da tag](https://github.com/MPAS-Dev/MPAS-Model/blob/v8.4.1/Makefile), [`build_options.mk` do init](https://github.com/MPAS-Dev/MPAS-Model/blob/v8.4.1/src/core_init_atmosphere/build_options.mk) e [`setup_run_dir.py`](https://github.com/MPAS-Dev/MPAS-Model/blob/v8.4.1/testing_and_setup/atmosphere/setup_run_dir.py) | target GNU, wrappers MPI, seleção do core/executável, precisão default, descoberta de PIO2/NETCDF/PNETCDF/PIO, ESMF e artefatos/defaults | arquivos da tag clonada lidos e exercitados em 2026-08-05 |
+| DOC-MPAS-006 | MPAS oficial | [Building MPAS](https://www2.mmm.ucar.edu/projects/mpas/site/documentation/users_guide/building_mpas.html) | visão geral do build, cores, targets e variáveis de dependências | consultada em 2026-08-05; quando o texto geral diverge da 8.4.1, prevalece o source exato da tag |
+| DOC-MPAS-007 | MPAS oficial | [Running MPAS](https://www2.mmm.ucar.edu/projects/mpas/site/documentation/users_guide/running.html) | papel do `init_atmosphere`, modos de inicialização e necessidade de mesh/entradas | consultada em 2026-08-05; fundamenta o limite funcional deste ciclo |
+| DOC-MPAS-008 | MPAS oficial | [Configuring I/O](https://www2.mmm.ucar.edu/projects/mpas/site/documentation/users_guide/configuring_io.html) | distinção entre namelist, streams e arquivos default | consultada em 2026-08-05 |
 | DOC-PNETCDF-001 | PnetCDF | [repositório oficial](https://github.com/Parallel-NetCDF/PnetCDF) | identidade do projeto, release atual, formatos e interfaces | consultado em 2026-08-04 |
 | DOC-PNETCDF-002 | PnetCDF | [página oficial](https://parallel-netcdf.github.io/) | relação entre PnetCDF, CDF e MPI-IO | consultada em 2026-08-04 |
 | DOC-PNETCDF-003 | PnetCDF 1.15.0 | `INSTALL` dentro do tarball oficial `pnetcdf-1.15.0.tar.gz` | requisitos MPI/m4, wrappers, defaults Fortran, `make check`, `make ptest`, `make ptests` e `TESTMPIRUN` | 381 linhas lidas integralmente em 2026-08-04; corresponde ao artefato, não à branch master |
@@ -62,9 +66,10 @@ usada; autoridade e utilidade não são a mesma coisa.
 ### Releases, artefatos e versões fixadas pela implementação atual
 
 As URLs usadas pelo build são reproduzidas literalmente do
-[`Dockerfile`](../../Dockerfile), portanto não são inferidas. A entrada MPAS é
-explicitamente documental e não aparece na receita. O estado de cada artefato
-ou pin é informado individualmente na última coluna.
+[`Dockerfile`](../../Dockerfile), portanto não são inferidas. WPS usa archive
+com SHA-256 local; MPAS usa clone Git da tag com commit verificado e metadata
+preservada. O estado de cada artefato ou pin é informado individualmente na
+última coluna.
 
 | ID | Componente | Release/artefato registrado | Integridade no build | Estado da verificação |
 |---|---|---|---|---|
@@ -79,7 +84,7 @@ ou pin é informado individualmente na última coluna.
 | REL-GENF90-001 | genf90 | [repositório oficial PARALLELIO](https://github.com/PARALLELIO/genf90) | commit `4816965ba946731352bad195b7d946a5fe682ff5` | commit da dependência auxiliar observada e fixada no build em 2026-08-04 |
 | REL-METIS-001 | METIS 5.1.0 | [tarball first-party `metis-5.1.0.tar.gz`](https://karypis.github.io/glaros/files/sw/metis/metis-5.1.0.tar.gz) | SHA-256 local `76faebe03f6c963127dbb73c13eab58c9a3faeae48779f049066a21c087c5db2` | URL ligada pela página histórica first-party; dois downloads independentes de 4.984.968 bytes produziram o mesmo SHA-256 em 2026-08-05; nenhum SHA-256 upstream foi encontrado |
 | REL-WPS-001 | WPS 4.7.0 | [release oficial `v4.7.0`](https://github.com/wrf-model/WPS/releases/tag/v4.7.0), [archive da tag](https://github.com/wrf-model/WPS/archive/refs/tags/v4.7.0.tar.gz) e [commit da tag](https://github.com/wrf-model/WPS/commit/5feccecd63384381b6942371c7a837f66e4ccb84) | SHA-256 local `5232d20d7556338391b66aba45824d4fcd6c42712ebe9325f359f3c6cf043808` | release, source da tag e [histórico oficial](https://github.com/wrf-model/WPS/releases) cruzados em 2026-08-05; dois downloads independentes de 4.544.769 bytes produziram o mesmo hash; nenhum SHA-256 upstream foi encontrado |
-| REL-MPAS-001 | MPAS-Model 8.4.1 | [release oficial `v8.4.1`](https://github.com/MPAS-Dev/MPAS-Model/releases/tag/v8.4.1), [tag](https://github.com/MPAS-Dev/MPAS-Model/tree/v8.4.1) e [hotfix/commit](https://github.com/MPAS-Dev/MPAS-Model/commit/91c5eac175eebeaf4206bacd5cb50c39dff3c152) | tag/commit fixados documentalmente; nenhum artefato baixado pelo build | release, README do source da tag e [histórico oficial](https://github.com/MPAS-Dev/MPAS-Model/releases) cruzados em 2026-08-05; nenhuma release estável posterior encontrada |
+| REL-MPAS-001 | MPAS-Model 8.4.1 | [release oficial `v8.4.1`](https://github.com/MPAS-Dev/MPAS-Model/releases/tag/v8.4.1), [repositório/tag](https://github.com/MPAS-Dev/MPAS-Model/tree/v8.4.1) e [hotfix/commit](https://github.com/MPAS-Dev/MPAS-Model/commit/91c5eac175eebeaf4206bacd5cb50c39dff3c152) | clone `--branch v8.4.1 --single-branch`; `git rev-parse HEAD` e tag exata precisam corresponder a `91c5eac175eebeaf4206bacd5cb50c39dff3c152`; metadata Git mantida | release, clone da tag, commit e histórico oficial cruzados em 2026-08-05; commit verificado no probe e no build definitivo |
 
 ### Release PnetCDF 1.15.0
 
@@ -148,8 +153,15 @@ publicado pelo upstream.
 Para MPAS, 8.4.0 chegou a ser considerado. A verificação direta mostrou a tag
 oficial `v8.4.1`, o heading `MPAS-v8.4.1` no README dessa tag e o hotfix
 `91c5eac175eebeaf4206bacd5cb50c39dff3c152`; o histórico não mostrou release
-estável posterior. Essa verificação fixa a versão do ciclo futuro, sem
-autorizar download, configuração ou build do modelo agora.
+estável posterior. O ciclo 0006 clonou essa tag, verificou o commit antes do
+build e preservou `.git` para o `git describe` do Makefile.
+
+A página geral Building MPAS contém orientações que não representam todos os
+detalhes da tag 8.4.1. Para precisão, `USE_PIO2=true`, single precision, target
+`gnu`, `CORE=init_atmosphere`, PIO2 autodetectado e ESMF embedded foram
+confirmados no Makefile e nos build options da própria tag e depois no resumo
+real do build. Essa priorização da fonte versionada evita projetar defaults de
+outras releases sobre 8.4.1.
 
 Registrar uma URL aqui não autoriza download novo, mudança de versão ou
 alteração da stack. Para isso, a fonte deve ser consultada conforme o workflow,

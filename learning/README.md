@@ -26,6 +26,9 @@ apontar para ele.
   sobre grafos e o particionamento offline com METIS 5.1.0;
 - [`commits/0005-add-wps-ungrib.md`](commits/0005-add-wps-ungrib.md): nota
   educacional sobre WPS, GRIB, Vtables e o build isolado do `ungrib`;
+- [`commits/0006-add-mpas-init-atmosphere.md`](commits/0006-add-mpas-init-atmosphere.md):
+  nota educacional sobre o framework MPAS, o core `init_atmosphere`, MPI,
+  PIO2 e os limites da validação sem mesh;
 - `commits/NNNN-<descricao>.md`: uma nota por commit posterior ao bootstrap.
 
 ## O que cada nota por commit deve ensinar

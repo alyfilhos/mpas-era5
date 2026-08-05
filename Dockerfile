@@ -421,6 +421,111 @@ RUN curl -fL "${WPS_SOURCE_URL}" -o wps.tar.gz \
     && test "$(readlink -f /opt/wps)" = "${WPS_PREFIX}" \
     && rm -f /tmp/wps.tar.gz
 
+# ------------------------------------------------------------
+# MPAS-Model / init_atmosphere
+# ------------------------------------------------------------
+
+ARG MPAS_VERSION=8.4.1
+ARG MPAS_TAG=v8.4.1
+ARG MPAS_COMMIT=91c5eac175eebeaf4206bacd5cb50c39dff3c152
+ARG MPAS_SOURCE_URL=https://github.com/MPAS-Dev/MPAS-Model.git
+
+ENV MPAS_MODEL_PREFIX=/opt/mpas-model-${MPAS_VERSION}
+
+WORKDIR /opt
+
+RUN git clone --branch "${MPAS_TAG}" --single-branch \
+       "${MPAS_SOURCE_URL}" "${MPAS_MODEL_PREFIX}" \
+    && cd "${MPAS_MODEL_PREFIX}" \
+    && test "$(git rev-parse HEAD)" = "${MPAS_COMMIT}" \
+    && test "$(git describe --tags --exact-match)" = "${MPAS_TAG}" \
+    && grep -Fx "MPAS-v${MPAS_VERSION}" README.md \
+    && bash -o pipefail -c \
+       'make -j"${BUILD_JOBS}" gnu \
+          CORE=init_atmosphere \
+          USE_PIO2=true \
+          MPAS_ESMF=embedded \
+          2>&1 | tee /tmp/mpas-init-build.log' \
+    && grep -Fx \
+       "MPAS was built with default single-precision reals." \
+       /tmp/mpas-init-build.log \
+    && grep -Fx "Debugging is off." /tmp/mpas-init-build.log \
+    && grep -Fx "Parallel version is on." /tmp/mpas-init-build.log \
+    && grep -Fx "Using the mpi_f08 module." /tmp/mpas-init-build.log \
+    && grep -Fx \
+       "MPAS was built without OpenMP support." \
+       /tmp/mpas-init-build.log \
+    && grep -Fx \
+       "MPAS was built without OpenMP-offload GPU support." \
+       /tmp/mpas-init-build.log \
+    && grep -Fx \
+       "MPAS was built without OpenACC accelerator support." \
+       /tmp/mpas-init-build.log \
+    && grep -Fx \
+       "MPAS was not linked with the MUSICA-Fortran library." \
+       /tmp/mpas-init-build.log \
+    && grep -Fx \
+       "MPAS was NOT linked with the Scotch graph partitioning library." \
+       /tmp/mpas-init-build.log \
+    && grep -Fx "Using the PIO 2.x library." /tmp/mpas-init-build.log \
+    && grep -Fx \
+       "MPAS was built with the embedded ESMF timekeeping library." \
+       /tmp/mpas-init-build.log \
+    && awk ' \
+         /^MPAS was built with default/ { capture = 1 } \
+         capture { print } \
+         capture && /^[*]+$/ { exit } \
+       ' /tmp/mpas-init-build.log > .mpas-era5-build-summary \
+    && test -x init_atmosphere_model \
+    && test ! -e atmosphere_model \
+    && test -f namelist.init_atmosphere \
+    && test -f streams.init_atmosphere \
+    && test -f default_inputs/namelist.init_atmosphere \
+    && test -f default_inputs/streams.init_atmosphere \
+    && cmp namelist.init_atmosphere \
+       default_inputs/namelist.init_atmosphere \
+    && cmp streams.init_atmosphere \
+       default_inputs/streams.init_atmosphere \
+    && test -f .build_opts.framework \
+    && test -f .build_opts.init_atmosphere \
+    && cmp .build_opts.framework .build_opts.init_atmosphere \
+    && grep -Fx "FC=mpif90" .build_opts.init_atmosphere \
+    && grep -Fx "CC=mpicc" .build_opts.init_atmosphere \
+    && grep -Fx "CXX=mpicxx" .build_opts.init_atmosphere \
+    && grep -F -- "-DSINGLE_PRECISION" .build_opts.init_atmosphere \
+    && grep -F -- "-DMPAS_BUILD_TARGET=gnu" \
+       .build_opts.init_atmosphere \
+    && grep -F -- "-DMPAS_PIO_SUPPORT" .build_opts.init_atmosphere \
+    && grep -F -- "-lpiof -lpioc" .build_opts.init_atmosphere \
+    && grep -F -- "-lpnetcdf" .build_opts.init_atmosphere \
+    && test -z "$( \
+         grep -E \
+           '(^|[[:space:]])-fopenmp([[:space:]]|$)|-DMPAS_OPENMP|-DMPAS_OPENACC|-DMPAS_OPENMP_OFFLOAD|-DMPAS_USE_MUSICA|-DMPAS_SCOTCH' \
+           .build_opts.init_atmosphere \
+       )" \
+    && file init_atmosphere_model \
+    && ldd init_atmosphere_model \
+    && test -z "$(ldd init_atmosphere_model | grep -F 'not found')" \
+    && nm init_atmosphere_model | grep -F "PIOc_Init_Intracomm" \
+    && nm init_atmosphere_model | grep -F "ncmpi_create" \
+    && printf '%s\n' \
+       "MPAS_VERSION=${MPAS_VERSION}" \
+       "MPAS_TAG=${MPAS_TAG}" \
+       "MPAS_COMMIT=${MPAS_COMMIT}" \
+       "MPAS_SOURCE_URL=${MPAS_SOURCE_URL}" \
+       "MPAS_SOURCE_METHOD=git clone --branch ${MPAS_TAG} --single-branch; commit verified before build" \
+       "MPAS_BUILD_COMMAND=make -j${BUILD_JOBS} gnu CORE=init_atmosphere USE_PIO2=true MPAS_ESMF=embedded" \
+       "MPAS_BUILD_TARGET=gnu" \
+       "MPAS_CORE=init_atmosphere" \
+       "MPAS_PRECISION=single (release default)" \
+       "MPAS_PIO_SELECTION=PIO 2.x auto-detected; USE_PIO2=true retained but deprecated and ignored by v8.4.1" \
+       "MPAS_ESMF=embedded" \
+       > .mpas-era5-provenance \
+    && ln -s "${MPAS_MODEL_PREFIX}" /opt/mpas-model \
+    && test "$(readlink /opt/mpas-model)" = "${MPAS_MODEL_PREFIX}" \
+    && test "$(readlink -f /opt/mpas-model)" = "${MPAS_MODEL_PREFIX}" \
+    && rm -f /tmp/mpas-init-build.log
+
 WORKDIR /workspace
 
 CMD ["bash"]

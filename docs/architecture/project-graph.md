@@ -22,11 +22,12 @@ Stack científica
     │     ↓
     └── METIS 5.1.0 ✅
 
-WPS 4.7.0 / ungrib ✅ ──→ WPS intermediate
-                                  │
-                                  ▼
-                         MPAS-Model 8.4.1
-                         versão fixada; build pendente
+WPS 4.7.0 / ungrib ✅ ──→ WPS intermediate ──→ dados futuros
+                                                    │
+                                                    ▼
+PIO 2.7.0 ✅ ──→ MPAS 8.4.1 / init_atmosphere_model ✅ estrutural
+                                                    │
+                                                    └──→ atmosphere ⏳
 ```
 
 ## Stack científica
@@ -44,14 +45,14 @@ Dockerfile
 /opt/wps-4.7.0 → ungrib.exe
 /opt/wps       → /opt/wps-4.7.0
 
-/opt/mpas-model-8.4.1 → futuro MPAS
-/opt/mpas-model       → futuro link estável
+/opt/mpas-model-8.4.1 → init_atmosphere_model
+/opt/mpas-model       → /opt/mpas-model-8.4.1
 ```
 
-No ciclo 0005, a stack científica continua terminando em METIS 5.1.0 sob
-`/opt/mpas`. WPS 4.7.0 foi acrescentado em prefixo próprio e somente
-`ungrib.exe` foi construído. MPAS-Model 8.4.1 foi fixado, mas não foi baixado
-nem compilado.
+No ciclo 0006, a stack científica sob `/opt/mpas` permanece inalterada. WPS
+4.7.0 continua em prefixo próprio, e MPAS-Model 8.4.1 foi acrescentado em
+`/opt/mpas-model-8.4.1`. Somente o core `init_atmosphere` foi compilado; o core
+`atmosphere` e a execução com mesh/dados continuam pendentes.
 
 PnetCDF não depende da seta HDF5 → netCDF neste ciclo. A ordem no `Dockerfile`
 preserva a stack já construída, mas o caminho funcional novo é independente:
@@ -69,7 +70,7 @@ tests/smoke/pnetcdf_mpi.f90
 ```
 
 PIO preserva esse caminho paralelo e acrescenta a camada de abstração usada
-pelo futuro MPAS:
+pelo `init_atmosphere_model`:
 
 ```text
 tests/smoke/pio_pnetcdf.c
@@ -99,7 +100,7 @@ gpmetis -minconn -contig -niter=200 graph.info N
           ↓
 graph.info.part.N
           ↓
-MPAS futuro com N ranks MPI
+MPAS com N ranks MPI em um ciclo funcional futuro
 ```
 
 O script `scripts/validate/metis.sh` copia o fixture para tmpfs, gera
@@ -117,7 +118,7 @@ Vtable aprovada (pendente)
        ↓
 WPS intermediate
        ↓
-MPAS init_atmosphere (futuro)
+MPAS init_atmosphere (build pronto; execução pendente)
 ```
 
 `scripts/validate/wps-ungrib.sh` valida a instalação sem rede e sem dados.
@@ -191,13 +192,16 @@ mpas-era5/
 │       ├── 0002-add-pnetcdf.md         nota educacional do ciclo 0002
 │       ├── 0003-add-pio2.md            nota educacional do ciclo 0003
 │       ├── 0004-add-metis.md           nota educacional do ciclo 0004
-│       └── 0005-add-wps-ungrib.md      nota educacional do ciclo 0005
+│       ├── 0005-add-wps-ungrib.md      nota educacional do ciclo 0005
+│       └── 0006-add-mpas-init-atmosphere.md
+│                                          nota educacional do ciclo 0006
 ├── scripts/
 │   ├── validate/
 │   │   ├── pnetcdf.sh                validação instalada MPI/Fortran
 │   │   ├── pio.sh                    validação PIO/PnetCDF e IOTYPEs
 │   │   ├── metis.sh                  partição e validação estrutural em tmpfs
-│   │   └── wps-ungrib.sh             smoke WPS offline e read-only
+│   │   ├── wps-ungrib.sh             smoke WPS offline e read-only
+│   │   └── mpas-init.sh              smoke MPAS offline e read-only
 │   └── codex/                        automações de suporte a ciclos futuros
 ├── tests/
 │   ├── fixtures/
@@ -212,8 +216,8 @@ mpas-era5/
 ```
 
 `scripts/validate/` contém validações instaladas e repetíveis para PnetCDF,
-PIO, METIS e WPS/ungrib. `scripts/codex/` continua vazio e, por isso, não é
-preservado pelo Git.
+PIO, METIS, WPS/ungrib e MPAS/init_atmosphere. `scripts/codex/` continua vazio
+e, por isso, não é preservado pelo Git.
 
 ## Responsabilidades e relações
 
