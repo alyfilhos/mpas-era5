@@ -66,9 +66,6 @@ docker run --rm \
         echo "== Built core and generated defaults =="
         test -x "${executable}"
         test -x /opt/mpas-model/init_atmosphere_model
-        test ! -e "${model_prefix}/atmosphere_model"
-        test ! -e "${model_prefix}/namelist.atmosphere"
-        test ! -e "${model_prefix}/streams.atmosphere"
 
         for generated in namelist.init_atmosphere streams.init_atmosphere; do
             test -s "${model_prefix}/${generated}"

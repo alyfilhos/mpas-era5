@@ -526,6 +526,217 @@ RUN git clone --branch "${MPAS_TAG}" --single-branch \
     && test "$(readlink -f /opt/mpas-model)" = "${MPAS_MODEL_PREFIX}" \
     && rm -f /tmp/mpas-init-build.log
 
+# ------------------------------------------------------------
+# MPAS-Model / atmosphere
+# ------------------------------------------------------------
+
+ARG MMM_PHYSICS_REPO_URL=https://github.com/NCAR/MMM-physics.git
+ARG MMM_PHYSICS_TAG=20250616-MPASv8.3
+ARG MMM_PHYSICS_COMMIT=a4baf7f3243d1db0dbc5f63473f895bdbdc05c30
+ARG UGWP_REPO_URL=https://github.com/NOAA-GSL/UGWP.git
+ARG UGWP_TAG=MPAS_20241223
+ARG UGWP_COMMIT=c1c893edcf171af5639af60e3a3a528816f6cc2b
+ARG MPAS_DATA_REPO_URL=https://github.com/MPAS-Dev/MPAS-Data.git
+ARG MPAS_DATA_TAG=v8.2
+ARG MPAS_DATA_COMMIT=c57dbc7be629802c6e848770a9e44b9bc602be41
+ARG MPAS_DATA_REQUIRED_COMPATIBILITY=8.2
+
+# manage_externals is a Python 3 program. Installing it here preserves all
+# previously validated scientific and init_atmosphere layers in Docker cache.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends python3 \
+    && python3 --version \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /opt
+
+RUN cd "${MPAS_MODEL_PREFIX}" \
+    && INIT_SHA256_BEFORE="$(sha256sum init_atmosphere_model \
+         | awk '{print $1}')" \
+    && FRAMEWORK_SHA256_BEFORE="$(sha256sum src/framework/libframework.a \
+         | awk '{print $1}')" \
+    && cmp .build_opts.framework .build_opts.init_atmosphere \
+    && test ! -e atmosphere_model \
+    && git clone --depth 1 --branch "${MMM_PHYSICS_TAG}" --single-branch \
+       "${MMM_PHYSICS_REPO_URL}" \
+       src/core_atmosphere/physics/physics_mmm \
+    && test "$(git -C src/core_atmosphere/physics/physics_mmm \
+         rev-parse HEAD)" = "${MMM_PHYSICS_COMMIT}" \
+    && test "$(git -C src/core_atmosphere/physics/physics_mmm \
+         describe --tags --exact-match)" = "${MMM_PHYSICS_TAG}" \
+    && test -z "$(git -C src/core_atmosphere/physics/physics_mmm \
+         symbolic-ref -q HEAD || true)" \
+    && git -C src/core_atmosphere/physics/physics_mmm diff --quiet \
+    && git -C src/core_atmosphere/physics/physics_mmm \
+       diff --cached --quiet \
+    && git clone --depth 1 --branch "${UGWP_TAG}" --single-branch \
+       "${UGWP_REPO_URL}" \
+       src/core_atmosphere/physics/physics_noaa/UGWP \
+    && test "$(git -C src/core_atmosphere/physics/physics_noaa/UGWP \
+         rev-parse HEAD)" = "${UGWP_COMMIT}" \
+    && test "$(git -C src/core_atmosphere/physics/physics_noaa/UGWP \
+         describe --tags --exact-match)" = "${UGWP_TAG}" \
+    && test -z "$(git -C src/core_atmosphere/physics/physics_noaa/UGWP \
+         symbolic-ref -q HEAD || true)" \
+    && git -C src/core_atmosphere/physics/physics_noaa/UGWP diff --quiet \
+    && git -C src/core_atmosphere/physics/physics_noaa/UGWP \
+       diff --cached --quiet \
+    && git clone --depth 1 --branch "${MPAS_DATA_TAG}" --single-branch \
+       "${MPAS_DATA_REPO_URL}" /tmp/mpas-data \
+    && test "$(git -C /tmp/mpas-data rev-parse HEAD)" = \
+       "${MPAS_DATA_COMMIT}" \
+    && test "$(git -C /tmp/mpas-data describe --tags --exact-match)" = \
+       "${MPAS_DATA_TAG}" \
+    && test -z "$(git -C /tmp/mpas-data symbolic-ref -q HEAD || true)" \
+    && grep -Fx "${MPAS_DATA_REQUIRED_COMPATIBILITY}" \
+       /tmp/mpas-data/atmosphere/physics_wrf/files/COMPATIBILITY \
+    && mkdir -p src/core_atmosphere/physics/physics_wrf/files \
+    && cp -a /tmp/mpas-data/atmosphere/physics_wrf/files/. \
+       src/core_atmosphere/physics/physics_wrf/files/ \
+    && test "$(find src/core_atmosphere/physics/physics_wrf/files \
+         -maxdepth 1 -type f | wc -l)" -eq 16 \
+    && ( \
+         cd src/core_atmosphere/physics/physics_wrf/files \
+         && sha256sum * | LC_ALL=C sort \
+       ) > .mpas-era5-mpas-data.sha256 \
+    && ( \
+         cd src/core_atmosphere/physics \
+         && ./checkout_data_files.sh \
+       ) 2>&1 | tee /tmp/mpas-lookup-tables.log \
+    && grep -F \
+       "Compatible versions of WRF physics tables appear to already exist" \
+       /tmp/mpas-lookup-tables.log \
+    && bash -o pipefail -c \
+       'make -j"${BUILD_JOBS}" gnu \
+          CORE=atmosphere \
+          USE_PIO2=true \
+          MPAS_ESMF=embedded \
+          2>&1 | tee /tmp/mpas-atmosphere-build.log' \
+    && make --no-print-directory -s \
+       -C src/core_atmosphere \
+       -f build_options.mk \
+       report_builds \
+       > .mpas-era5-build-summary.atmosphere \
+    && grep -Fx "CORE=atmosphere" \
+       .mpas-era5-build-summary.atmosphere \
+    && awk ' \
+         /^MPAS was built with default/ { capture = 1 } \
+         capture { print } \
+         capture && /^[*]+$/ { exit } \
+       ' /tmp/mpas-atmosphere-build.log \
+       >> .mpas-era5-build-summary.atmosphere \
+    && grep -Fx \
+       "MPAS was built with default single-precision reals." \
+       .mpas-era5-build-summary.atmosphere \
+    && grep -Fx "Debugging is off." \
+       .mpas-era5-build-summary.atmosphere \
+    && grep -Fx "Parallel version is on." \
+       .mpas-era5-build-summary.atmosphere \
+    && grep -Fx "Using the mpi_f08 module." \
+       .mpas-era5-build-summary.atmosphere \
+    && grep -Fx \
+       "MPAS was built without OpenMP support." \
+       .mpas-era5-build-summary.atmosphere \
+    && grep -Fx \
+       "MPAS was built without OpenMP-offload GPU support." \
+       .mpas-era5-build-summary.atmosphere \
+    && grep -Fx \
+       "MPAS was built without OpenACC accelerator support." \
+       .mpas-era5-build-summary.atmosphere \
+    && grep -Fx \
+       "MPAS was not linked with the MUSICA-Fortran library." \
+       .mpas-era5-build-summary.atmosphere \
+    && grep -Fx \
+       "MPAS was NOT linked with the Scotch graph partitioning library." \
+       .mpas-era5-build-summary.atmosphere \
+    && grep -Fx "Using the PIO 2.x library." \
+       .mpas-era5-build-summary.atmosphere \
+    && grep -Fx \
+       "MPAS was built with the embedded ESMF timekeeping library." \
+       .mpas-era5-build-summary.atmosphere \
+    && test -x atmosphere_model \
+    && test -x init_atmosphere_model \
+    && for generated in namelist.atmosphere streams.atmosphere; do \
+         test -s "${generated}"; \
+         test -s "default_inputs/${generated}"; \
+         cmp "${generated}" "default_inputs/${generated}"; \
+       done \
+    && for generated in \
+         namelist.init_atmosphere streams.init_atmosphere; do \
+         test -s "${generated}"; \
+         test -s "default_inputs/${generated}"; \
+         cmp "${generated}" "default_inputs/${generated}"; \
+       done \
+    && test -f .build_opts.framework \
+    && test -f .build_opts.init_atmosphere \
+    && test -f .build_opts.atmosphere \
+    && cmp .build_opts.framework .build_opts.init_atmosphere \
+    && cmp .build_opts.framework .build_opts.atmosphere \
+    && grep -Fx "FC=mpif90" .build_opts.atmosphere \
+    && grep -Fx "CC=mpicc" .build_opts.atmosphere \
+    && grep -Fx "CXX=mpicxx" .build_opts.atmosphere \
+    && grep -F -- "-O3" .build_opts.atmosphere \
+    && grep -F -- "-DSINGLE_PRECISION" .build_opts.atmosphere \
+    && grep -F -- "-D_MPI" .build_opts.atmosphere \
+    && grep -F -- "-DMPAS_BUILD_TARGET=gnu" .build_opts.atmosphere \
+    && grep -F -- "-DMPAS_PIO_SUPPORT" .build_opts.atmosphere \
+    && grep -F -- "-lpiof -lpioc" .build_opts.atmosphere \
+    && grep -F -- "-lpnetcdf" .build_opts.atmosphere \
+    && test -z "$( \
+         grep -E \
+           '(^|[[:space:]])-fopenmp([[:space:]]|$)|-DMPAS_OPENMP|-DMPAS_OPENACC|-DMPAS_OPENMP_OFFLOAD|-DMPAS_USE_MUSICA|-DMPAS_SCOTCH|-fdefault-real-8|-fdefault-double-8' \
+           .build_opts.atmosphere \
+       )" \
+    && test "$(sha256sum init_atmosphere_model | awk '{print $1}')" = \
+       "${INIT_SHA256_BEFORE}" \
+    && test "$(sha256sum src/framework/libframework.a | awk '{print $1}')" = \
+       "${FRAMEWORK_SHA256_BEFORE}" \
+    && test "$(git -C src/core_atmosphere/physics/physics_mmm \
+         rev-parse HEAD)" = "${MMM_PHYSICS_COMMIT}" \
+    && test "$(git -C src/core_atmosphere/physics/physics_noaa/UGWP \
+         rev-parse HEAD)" = "${UGWP_COMMIT}" \
+    && git -C src/core_atmosphere/physics/physics_mmm diff --quiet \
+    && git -C src/core_atmosphere/physics/physics_mmm \
+       diff --cached --quiet \
+    && git -C src/core_atmosphere/physics/physics_noaa/UGWP diff --quiet \
+    && git -C src/core_atmosphere/physics/physics_noaa/UGWP \
+       diff --cached --quiet \
+    && ( \
+         cd src/core_atmosphere/physics/physics_wrf/files \
+         && sha256sum -c "${MPAS_MODEL_PREFIX}/.mpas-era5-mpas-data.sha256" \
+       ) \
+    && file atmosphere_model \
+    && ldd atmosphere_model \
+    && test -z "$(ldd atmosphere_model | grep -F 'not found')" \
+    && nm atmosphere_model | grep -F "PIOc_Init_Intracomm" \
+    && nm atmosphere_model | grep -F "ncmpi_create" \
+    && printf '%s\n' \
+       "MPAS_ATMOSPHERE_BUILD_COMMAND=make -j${BUILD_JOBS} gnu CORE=atmosphere USE_PIO2=true MPAS_ESMF=embedded" \
+       "MPAS_ATMOSPHERE_CORE=atmosphere" \
+       "MPAS_ATMOSPHERE_EXECUTABLE=atmosphere_model" \
+       "MPAS_ATMOSPHERE_FRAMEWORK_REUSE=compatible build options; framework archive content unchanged" \
+       "MMM_PHYSICS_REPO_URL=${MMM_PHYSICS_REPO_URL}" \
+       "MMM_PHYSICS_TAG=${MMM_PHYSICS_TAG}" \
+       "MMM_PHYSICS_COMMIT=${MMM_PHYSICS_COMMIT}" \
+       "MMM_PHYSICS_VERIFIED_ON=2026-08-05" \
+       "UGWP_REPO_URL=${UGWP_REPO_URL}" \
+       "UGWP_TAG=${UGWP_TAG}" \
+       "UGWP_COMMIT=${UGWP_COMMIT}" \
+       "UGWP_VERIFIED_ON=2026-08-05" \
+       "MPAS_DATA_REPO_URL=${MPAS_DATA_REPO_URL}" \
+       "MPAS_DATA_TAG=${MPAS_DATA_TAG}" \
+       "MPAS_DATA_COMMIT=${MPAS_DATA_COMMIT}" \
+       "MPAS_DATA_VERIFIED_ON=2026-08-05" \
+       "MPAS_DATA_REQUIRED_COMPATIBILITY=${MPAS_DATA_REQUIRED_COMPATIBILITY}" \
+       "MPAS_DATA_FILE_COUNT=16" \
+       "MPAS_DATA_MANIFEST=.mpas-era5-mpas-data.sha256" \
+       "MPAS_LOOKUP_TABLES=pre-fetched from pinned MPAS-Data; upstream checkout script confirmed compatibility and skipped download" \
+       >> .mpas-era5-provenance \
+    && rm -rf \
+       /tmp/mpas-data \
+       /tmp/mpas-atmosphere-build.log \
+       /tmp/mpas-lookup-tables.log
+
 WORKDIR /workspace
 
 CMD ["bash"]

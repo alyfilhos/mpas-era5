@@ -29,8 +29,8 @@ mantendo as dependências científicas sob `/opt/mpas`.
 
 WPS não é uma biblioteca da stack. A instalação separada
 `/opt/wps-4.7.0` fornece somente `ungrib.exe`. MPAS-Model também usa prefixo
-separado: `/opt/mpas-model-8.4.1` contém somente o core `init_atmosphere`
-compilado neste ciclo.
+separado: `/opt/mpas-model-8.4.1` contém os cores `init_atmosphere` e
+`atmosphere`, compilados em ciclos incrementais na mesma árvore.
 
 ## PnetCDF 1.15.0
 
@@ -135,15 +135,16 @@ extensa com múltiplas contagens de ranks, não foi executada; `make check` e
 ## PIO 2.7.0
 
 PIO organiza a decomposição dos dados e encaminha operações a um backend de
-arquivo. O `init_atmosphere_model` foi compilado com `USE_PIO2=true` e
-encontrou `NETCDF`, `PNETCDF` e `PIO` no mesmo prefixo `/opt/mpas`.
+arquivo. `init_atmosphere_model` e `atmosphere_model` foram compilados com
+`USE_PIO2=true` e encontraram `NETCDF`, `PNETCDF` e `PIO` no mesmo prefixo
+`/opt/mpas`.
 
 A arquitetura aprovada preserva HDF5 1.14.6 e netCDF-C 4.10.1 seriais. O
 primeiro caso MPAS usa o `io_type=pnetcdf` padrão, de modo que o caminho
 paralelo validado é independente de HDF5:
 
 ```text
-MPAS init_atmosphere (USE_PIO2=true)
+MPAS init_atmosphere/atmosphere (USE_PIO2=true)
     ↓
 PIO 2.7.0 — PIO_IOTYPE_PNETCDF
     ↓
@@ -520,12 +521,12 @@ Detalhes auditáveis estão em
 [[../testing/validation-matrix|validation-matrix.md]] e a decisão de versão e
 layout em [[../decisions/0004-wps-mpas-version-and-layout|ADR 0004]].
 
-## MPAS-Model 8.4.1 — somente init_atmosphere
+## MPAS-Model 8.4.1 — init_atmosphere no ciclo 0006
 
 MPAS é um framework que compartilha infraestrutura entre cores. O core
 `init_atmosphere` prepara campos estáticos, condições iniciais e, quando
 aplicável, condições laterais; o core `atmosphere` integra a evolução do
-estado. Eles geram executáveis separados. Neste ciclo somente
+estado. Eles geram executáveis separados. No ciclo 0006 somente
 `init_atmosphere_model` foi construído.
 
 ### Proveniência, layout e comando
@@ -624,3 +625,100 @@ O compilador emitiu avisos de código legado no ESMF embedded e nas ferramentas
 de Registry, além de avisos make; não houve erro. A árvore Git completa aumenta
 o tamanho da imagem, trade-off aceito para preservar `git describe` e a
 proveniência solicitada.
+
+## MPAS-Model 8.4.1 — atmosphere no ciclo 0007
+
+`atmosphere_model` integra no tempo o estado atmosférico preparado pelo
+`init_atmosphere_model`. O ciclo 0007 construiu o core na mesma árvore
+`/opt/mpas-model-8.4.1`, preservando o source, o symlink e os artefatos do
+core init.
+
+### Externals e lookup tables reproduzíveis
+
+O `src/core_atmosphere/Externals.cfg` da tag 8.4.1 exige dois repositórios
+para a física. As tags oficiais foram resolvidas e fixadas em 2026-08-05:
+
+| Dependência | Repositório | Tag | Commit |
+|---|---|---|---|
+| MMM-physics | `https://github.com/NCAR/MMM-physics.git` | `20250616-MPASv8.3` | `a4baf7f3243d1db0dbc5f63473f895bdbdc05c30` |
+| UGWP | `https://github.com/NOAA-GSL/UGWP.git` | `MPAS_20241223` | `c1c893edcf171af5639af60e3a3a528816f6cc2b` |
+| MPAS-Data | `https://github.com/MPAS-Dev/MPAS-Data.git` | `v8.2` | `c57dbc7be629802c6e848770a9e44b9bc602be41` |
+
+Cada checkout precisa estar detached no commit esperado e sem mudanças
+rastreadas; qualquer divergência falha o build. O `manage_externals` usado
+pela física requer Python 3, por isso Python 3.12.3 foi instalado numa camada
+posterior ao init já validado.
+
+O script upstream `checkout_data_files.sh` usa deliberadamente
+`mpas_vers="8.2"`. Esse valor não foi alterado. A árvore MPAS-Data `v8.2`
+contém `COMPATIBILITY` compatível com 8.2 e 16 lookup tables. O Dockerfile
+resolve o commit, verifica a compatibilidade, copia os arquivos para
+`physics_wrf/files` e grava um manifesto SHA-256 antes do `make`. Quando o
+script upstream roda, ele reconhece os arquivos já presentes e não inicia
+download mutável. As tabelas e sources externos ficam somente na imagem.
+
+### Build incremental e configuração efetiva
+
+O comando executado foi:
+
+```sh
+make -j8 gnu \
+    CORE=atmosphere \
+    USE_PIO2=true \
+    MPAS_ESMF=embedded
+```
+
+Nenhum `make clean` foi usado. A proteção de compatibilidade do MPAS comparou
+as opções do framework; `.build_opts.framework`,
+`.build_opts.init_atmosphere` e `.build_opts.atmosphere` são iguais. O hash
+do executável init e o conteúdo do archive framework permaneceram iguais. O
+Makefile executou novamente `ar -ru` e relinkou geradores, alterando metadata
+do archive sem recompilar seus objetos Fortran.
+
+O resumo do build e `.build_opts.atmosphere` comprovam:
+
+- `CORE=atmosphere`, target GNU, wrappers MPI e interface `mpi_f08`;
+- single precision com `-DSINGLE_PRECISION` e otimização `-O3`;
+- PIO 2.x autodetectado, PnetCDF presente e ESMF timekeeping embedded;
+- DEBUG, OpenMP, offload OpenMP, OpenACC, MUSICA e PT-Scotch desligados.
+
+`USE_PIO2=true` registra intenção, mas não seleciona sozinho PIO2 na 8.4.1.
+A evidência efetiva é o resumo, as opções, a linkagem e os símbolos.
+
+### Artefatos, linkagem e classificação
+
+A árvore final contém os dois executáveis e seus defaults:
+
+```text
+atmosphere_model
+namelist.atmosphere
+streams.atmosphere
+default_inputs/namelist.atmosphere
+default_inputs/streams.atmosphere
+init_atmosphere_model
+namelist.init_atmosphere
+streams.init_atmosphere
+default_inputs/namelist.init_atmosphere
+default_inputs/streams.init_atmosphere
+```
+
+`file` identificou `atmosphere_model` como ELF 64-bit PIE x86-64 dinâmico.
+`ldd` resolveu MPI, netCDF e PnetCDF sem `not found`. Como PIO continua
+static, não se espera `libpio.so` no `ldd`; `nm` confirmou símbolos
+`PIOc_*` definidos no executável e referências `ncmpi_*` resolvidas por
+`libpnetcdf.so.8`.
+
+O `scripts/validate/mpas-atmosphere.sh` executou sem rede, com filesystem
+read-only e tmpfs, e a regressão `scripts/validate/mpas-init.sh` passou na
+imagem combinada. As regressões PIO e PnetCDF também passaram em quatro ranks.
+A classificação permanece:
+
+- BUILD atmosphere: PASS;
+- STRUCTURAL/INSTALL SMOKE atmosphere: PASS;
+- FUNCTIONAL, `init.nc` + mesh + partição → `atmosphere_model`: PENDENTE;
+- SCIENTIFIC, primeira simulação e avaliação dos campos: PENDENTE.
+
+Nenhuma previsão foi executada, e nenhuma mesh, ERA5, GRIB, `static.nc`,
+`init.nc`, LBC ou saída científica foi criada. WPS e METIS não foram
+reexecutados porque suas camadas ficaram em cache e nenhum arquivo ou contrato
+desses componentes foi alterado.

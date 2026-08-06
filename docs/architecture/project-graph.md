@@ -25,9 +25,9 @@ Stack científica
 WPS 4.7.0 / ungrib ✅ ──→ WPS intermediate ──→ dados futuros
                                                     │
                                                     ▼
-PIO 2.7.0 ✅ ──→ MPAS 8.4.1 / init_atmosphere_model ✅ estrutural
-                                                    │
-                                                    └──→ atmosphere ⏳
+PIO 2.7.0 ✅ ──→ MPAS 8.4.1
+                    ├── init_atmosphere_model ✅ estrutural
+                    └── atmosphere_model ✅ estrutural; execução ⏳
 ```
 
 ## Stack científica
@@ -46,13 +46,14 @@ Dockerfile
 /opt/wps       → /opt/wps-4.7.0
 
 /opt/mpas-model-8.4.1 → init_atmosphere_model
+                       └──→ atmosphere_model
 /opt/mpas-model       → /opt/mpas-model-8.4.1
 ```
 
-No ciclo 0006, a stack científica sob `/opt/mpas` permanece inalterada. WPS
-4.7.0 continua em prefixo próprio, e MPAS-Model 8.4.1 foi acrescentado em
-`/opt/mpas-model-8.4.1`. Somente o core `init_atmosphere` foi compilado; o core
-`atmosphere` e a execução com mesh/dados continuam pendentes.
+No ciclo 0007, a stack científica sob `/opt/mpas` permaneceu inalterada e
+todas as camadas até o init foram recuperadas do cache. O core `atmosphere`
+foi acrescentado à mesma árvore `/opt/mpas-model-8.4.1`; os dois executáveis
+estão presentes, enquanto a execução com mesh/dados continua pendente.
 
 PnetCDF não depende da seta HDF5 → netCDF neste ciclo. A ordem no `Dockerfile`
 preserva a stack já construída, mas o caminho funcional novo é independente:
@@ -70,7 +71,7 @@ tests/smoke/pnetcdf_mpi.f90
 ```
 
 PIO preserva esse caminho paralelo e acrescenta a camada de abstração usada
-pelo `init_atmosphere_model`:
+por `init_atmosphere_model` e `atmosphere_model`:
 
 ```text
 tests/smoke/pio_pnetcdf.c
@@ -119,6 +120,8 @@ Vtable aprovada (pendente)
 WPS intermediate
        ↓
 MPAS init_atmosphere (build pronto; execução pendente)
+       ↓
+MPAS atmosphere (build pronto; execução pendente)
 ```
 
 `scripts/validate/wps-ungrib.sh` valida a instalação sem rede e sem dados.
@@ -126,6 +129,20 @@ As bibliotecas zlib, libpng e JasPer construídas por
 `--build-grib2-libs` ficam em `/opt/wps-4.7.0/grib2`, separadas das versões da
 stack em `/opt/mpas`. A integração funcional exige ERA5 GRIB e permanece
 pendente.
+
+As dependências de física do atmosphere são materializadas antes do make:
+
+```text
+Externals.cfg
+    ├── MMM-physics tag → commit exato
+    └── UGWP tag        → commit exato
+
+checkout_data_files.sh (`mpas_vers=8.2`)
+    ↓
+MPAS-Data v8.2 → commit exato → COMPATIBILITY → 16 lookup tables
+    ↓
+physics_wrf/files → manifesto SHA-256 → build offline quanto aos dados
+```
 
 ## Fluxo de governança
 
@@ -193,15 +210,18 @@ mpas-era5/
 │       ├── 0003-add-pio2.md            nota educacional do ciclo 0003
 │       ├── 0004-add-metis.md           nota educacional do ciclo 0004
 │       ├── 0005-add-wps-ungrib.md      nota educacional do ciclo 0005
-│       └── 0006-add-mpas-init-atmosphere.md
-│                                          nota educacional do ciclo 0006
+│       ├── 0006-add-mpas-init-atmosphere.md
+│       │                                  nota educacional do ciclo 0006
+│       └── 0007-add-mpas-atmosphere.md
+│                                          nota educacional do ciclo 0007
 ├── scripts/
 │   ├── validate/
 │   │   ├── pnetcdf.sh                validação instalada MPI/Fortran
 │   │   ├── pio.sh                    validação PIO/PnetCDF e IOTYPEs
 │   │   ├── metis.sh                  partição e validação estrutural em tmpfs
 │   │   ├── wps-ungrib.sh             smoke WPS offline e read-only
-│   │   └── mpas-init.sh              smoke MPAS offline e read-only
+│   │   ├── mpas-init.sh              smoke MPAS init offline/read-only
+│   │   └── mpas-atmosphere.sh        smoke MPAS atmosphere offline/read-only
 │   └── codex/                        automações de suporte a ciclos futuros
 ├── tests/
 │   ├── fixtures/
@@ -216,7 +236,7 @@ mpas-era5/
 ```
 
 `scripts/validate/` contém validações instaladas e repetíveis para PnetCDF,
-PIO, METIS, WPS/ungrib e MPAS/init_atmosphere. `scripts/codex/` continua vazio
+PIO, METIS, WPS/ungrib e os dois cores MPAS. `scripts/codex/` continua vazio
 e, por isso, não é preservado pelo Git.
 
 ## Responsabilidades e relações

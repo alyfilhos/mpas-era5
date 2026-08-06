@@ -29,6 +29,9 @@ apontar para ele.
 - [`commits/0006-add-mpas-init-atmosphere.md`](commits/0006-add-mpas-init-atmosphere.md):
   nota educacional sobre o framework MPAS, o core `init_atmosphere`, MPI,
   PIO2 e os limites da validação sem mesh;
+- [`commits/0007-add-mpas-atmosphere.md`](commits/0007-add-mpas-atmosphere.md):
+  nota educacional sobre o core `atmosphere`, física, externals fixados,
+  lookup tables e reutilização segura do framework;
 - `commits/NNNN-<descricao>.md`: uma nota por commit posterior ao bootstrap.
 
 ## O que cada nota por commit deve ensinar

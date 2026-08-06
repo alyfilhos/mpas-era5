@@ -37,7 +37,8 @@ compilação de software científico, MPI e ferramentas utilizadas em HPC.
 - WPS 4.7.0 / `ungrib.exe` GNU serial ✅
 - MPAS-Model 8.4.1 / `init_atmosphere_model` GNU + MPI ✅ build e smoke
   estrutural
-- MPAS-Model 8.4.1 / `atmosphere_model` ⏳ pendente
+- MPAS-Model 8.4.1 / `atmosphere_model` GNU + MPI ✅ build e smoke
+  estrutural; execução funcional ⏳
 
 ## Roadmap
 
@@ -47,9 +48,9 @@ Stack científica:
 
 O prefixo `/opt/mpas` permanece reservado às bibliotecas científicas. WPS e
 MPAS-Model usam árvores separadas: `/opt/wps-4.7.0` com `/opt/wps`, e
-`/opt/mpas-model-8.4.1` com `/opt/mpas-model`. Somente `ungrib.exe` e
-`init_atmosphere_model` foram construídos; WRF, `geogrid`, `metgrid` e o core
-MPAS `atmosphere` continuam fora da imagem.
+`/opt/mpas-model-8.4.1` com `/opt/mpas-model`. `ungrib.exe`,
+`init_atmosphere_model` e `atmosphere_model` foram construídos; WRF,
+`geogrid` e `metgrid` continuam fora da imagem.
 
 O METIS é usado offline: `gpmetis` transforma `graph.info` em
 `graph.info.part.N`, e `N` deve corresponder ao número de tasks MPI da futura
@@ -61,8 +62,9 @@ Depois:
 `ERA5 GRIB → Vtable → ungrib → WPS intermediate → MPAS init_atmosphere → MPAS atmosphere`
 
 A Vtable ERA5 definitiva e as integrações funcionais com mesh e dados reais
-ainda dependem de ciclos próprios. O ciclo atual prova build, configuração e
-instalação do `init_atmosphere`; não afirma funcionamento científico.
+ainda dependem de ciclos próprios. O estado atual prova build, configuração e
+instalação estrutural dos dois executáveis MPAS, mas não executa uma previsão
+nem afirma funcionamento científico.
 
 ## Documentação
 

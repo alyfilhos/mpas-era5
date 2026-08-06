@@ -35,6 +35,7 @@ Este diretório centraliza a documentação técnica e científica do projeto.
 - [[../learning/commits/0004-add-metis|Ciclo 0004 — adicionar METIS]]
 - [[../learning/commits/0005-add-wps-ungrib|Ciclo 0005 — adicionar WPS/ungrib]]
 - [[../learning/commits/0006-add-mpas-init-atmosphere|Ciclo 0006 — adicionar MPAS init_atmosphere]]
+- [[../learning/commits/0007-add-mpas-atmosphere|Ciclo 0007 — adicionar MPAS atmosphere]]
 
 ## Blocos do projeto
 

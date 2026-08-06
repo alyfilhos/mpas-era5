@@ -31,13 +31,13 @@ evidência estiverem registrados.
 | PIO 2.7.0 | CTest: 109/109 testes aprovados | versão, configuração, headers, módulos, bibliotecas e pacote CMake conferidos | C → PIO/PnetCDF → MPI-IO → OpenMPI; CDF-2 escrito e relido em 4 ranks com OMPIO e ROMIO | Implementado e validado no ciclo 0003 | [`Dockerfile`](../../Dockerfile), [`pio.sh`](../../scripts/validate/pio.sh), [`pio_pnetcdf.c`](../../tests/smoke/pio_pnetcdf.c) e evidência abaixo |
 | METIS 5.1.0 | não há `make check`/CTest formal; `graphchk` e `gpmetis` passaram no `4elt.graph` fornecido upstream | versão por macros, ferramentas, biblioteca, help e opções conferidos | fixture → `gpmetis` → `graph.info.part.4`; estrutura, IDs, quatro partições, edge cut e conectividade validados | Implementado e validado no ciclo 0004 | [`Dockerfile`](../../Dockerfile), [`metis.sh`](../../scripts/validate/metis.sh), [`graph.info`](../../tests/fixtures/metis/graph.info) e evidência abaixo |
 | WPS 4.7.0 / ungrib | não foi identificada suíte formal para este recorte; build aplicável `configure` + `compile ungrib` passou | executável, links, `file`, `ldd`, `configure.wps`, proveniência, GRIB2 privado e Vtables conferidos offline | ERA5 GRIB → ungrib → WPS intermediate pendente; nenhum dado artificial ou aleatório foi usado | Build e smoke validados no ciclo 0005; integração funcional pendente | [`Dockerfile`](../../Dockerfile), [`wps-ungrib.sh`](../../scripts/validate/wps-ungrib.sh) e evidência abaixo |
-| MPAS 8.4.1 `init_atmosphere` | a tag não contém suíte autocontida aplicável sem mesh/configuração; o build real do core passou | executável, defaults, proveniência, opções, `file`, `ldd`, símbolos e interfaces conferidos offline | mesh → `init_atmosphere` e mesh + WPS/ERA5 → `init.nc` pendentes | Build e smoke estrutural validados no ciclo 0006; funcional/científico pendentes | [`Dockerfile`](../../Dockerfile), [`mpas-init.sh`](../../scripts/validate/mpas-init.sh) e evidência abaixo |
+| MPAS 8.4.1 `init_atmosphere` | a tag não contém suíte autocontida aplicável sem mesh/configuração; o build real do core passou | executável, defaults, proveniência, opções, `file`, `ldd`, símbolos e interfaces conferidos offline | mesh → `init_atmosphere` e mesh + WPS/ERA5 → `init.nc` pendentes | Build e smoke estrutural validados no ciclo 0006 e regressão aprovada no ciclo 0007; funcional/científico pendentes | [`Dockerfile`](../../Dockerfile), [`mpas-init.sh`](../../scripts/validate/mpas-init.sh) e evidência abaixo |
+| MPAS 8.4.1 `atmosphere` | a tag não contém suíte autocontida aplicável sem mesh, `init.nc` e configuração; o build real do core passou | executável, defaults, configuração, pins, lookup tables, `file`, `ldd` e símbolos conferidos offline | `init.nc` + mesh + partição → `atmosphere_model` pendente | Build e smoke estrutural validados no ciclo 0007; funcional/científico pendentes | [`Dockerfile`](../../Dockerfile), [`mpas-atmosphere.sh`](../../scripts/validate/mpas-atmosphere.sh) e evidência abaixo |
 
 ## Componentes futuros
 
 | Componente | Upstream test | Smoke test | Integration test | Status | Evidência |
 |---|---|---|---|---|---|
-| MPAS 8.4.1 `atmosphere` | Planejado: testes upstream disponíveis para a release | Planejado: integração curta e determinística do caso aprovado | Planejado: ler artefatos do `init_atmosphere` e produzir saída MPAS | Versão fixada; source e build não implementados | [[../project/requirements|REQ-MPAS-002]] |
 | ERA5 | Não se aplica como suite de software única; validar cliente e esquema segundo fontes oficiais | Planejado: baixar uma amostra mínima sem registrar credenciais e conferir metadados/unidades | Planejado: amostra ERA5 → `ungrib` → `init_atmosphere` | Período/área/variáveis a decidir | [[../project/requirements|REQ-DATA-001]] |
 | Mesh pública inicial | Validar com ferramentas/recomendações oficiais da release MPAS escolhida | Planejado: conferir dimensões, conectividade e metadados da mesh | Planejado: mesh aceita pelo `init_atmosphere` e pelo caso curto | Mesh a decidir | [[../project/requirements|REQ-MESH-001]] |
 | `static.nc` | Não se aplica | Planejado: inspecionar dimensões, variáveis, atributos, valores ausentes e faixas plausíveis | Planejado: arquivo aceito na geração do estado inicial | Não gerado | [[../project/requirements|REQ-CASE-001]] |
@@ -262,6 +262,47 @@ evidência estiverem registrados.
   Git; logs completos também não são versionados;
 - a árvore `.git` na imagem é intencional para `git describe` e
   proveniência, com custo de tamanho.
+
+## Evidência do ciclo 0007 — MPAS-Model 8.4.1 / atmosphere
+
+| Campo | Evidência real |
+|---|---|
+| Data | 2026-08-05 |
+| Base do ciclo | `a70df2714667e57d2042762e822fe0344cbe8ec6` (`build: add MPAS init_atmosphere support`); worktree inicial limpo, mudanças do ciclo sem commit |
+| Imagem base | `mpas-era5:mpas-init-8.4.1`, ID `sha256:f5e6040cec6de2f0f9af14f1d37a091cbdbdf315cedce1c8f1cbc37a1b936193`, 411.742.970 bytes |
+| Imagem final | `mpas-era5:mpas-atmosphere-8.4.1`, ID local `sha256:54281c60db053982692d21bef27cf522293e8e2568be748cf4a83f2d5f0e4c93`, 466.941.565 bytes |
+| Probe | primeiro make falhou porque `manage_externals` requer `python3`; com Python 3.12.3 numa árvore descartável, externals/lookup tables e o build passaram sem `make clean` |
+| Build da imagem | `docker build --progress=plain --build-arg BUILD_JOBS=8 -t mpas-era5:mpas-atmosphere-8.4.1 .`; código 0 |
+| Preservação | todas as 27 etapas até o MPAS init apareceram como `CACHED`; nenhuma camada científica anterior foi reconstruída |
+| Source MPAS | tag `v8.4.1`, commit `91c5eac175eebeaf4206bacd5cb50c39dff3c152`, mesma árvore `/opt/mpas-model-8.4.1` e symlink `/opt/mpas-model` |
+| MMM-physics | repo oficial, tag `20250616-MPASv8.3`, commit `a4baf7f3243d1db0dbc5f63473f895bdbdc05c30`; detached e sem mudanças rastreadas |
+| UGWP | repo oficial, tag `MPAS_20241223`, commit `c1c893edcf171af5639af60e3a3a528816f6cc2b`; detached e sem mudanças rastreadas |
+| MPAS-Data | repo oficial, tag `v8.2`, commit `c57dbc7be629802c6e848770a9e44b9bc602be41`; `COMPATIBILITY` contém 8.2 |
+| Lookup tables | 16 arquivos copiados para `physics_wrf/files`, manifesto SHA-256 conferido; `checkout_data_files.sh` reportou dados compatíveis já existentes e não baixou durante o make |
+| Comando MPAS | `make -j8 gnu CORE=atmosphere USE_PIO2=true MPAS_ESMF=embedded`; código 0 |
+| Framework | `.build_opts.framework` = init = atmosphere; hash de conteúdo do archive e hash de `init_atmosphere_model` inalterados; `ar -ru` reempacotou/reindexou o archive, sem recompilar objetos Fortran do framework |
+| Arquitetura | `CORE=atmosphere`; GNU, wrappers MPI e `mpi_f08`; single precision; `-O3`; PIO 2.x/PnetCDF; ESMF embedded; DEBUG/OpenMP/offload/OpenACC/MUSICA/PT-Scotch off |
+| Artefatos | `atmosphere_model`, `namelist.atmosphere`, `streams.atmosphere` e cópias em `default_inputs/`; todos os equivalentes init preservados |
+| Binário/linkagem | ELF 64-bit PIE x86-64 dinâmico; `ldd` resolveu MPI/netCDF/PnetCDF sem `not found`; ausência de `libpio.so` esperada; símbolos `PIOc_*` definidos e `ncmpi_*` resolvidos |
+| Smoke atmosphere | `scripts/validate/mpas-atmosphere.sh`; sem rede, raiz read-only e tmpfs; código 0 |
+| Regressão init | `MPAS_INIT_IMAGE=mpas-era5:mpas-atmosphere-8.4.1 ./scripts/validate/mpas-init.sh`; código 0 |
+| Regressão PIO | código 0; PIO/PnetCDF CDF-2 em quatro ranks com OMPIO e ROMIO; valores 1000–1003 |
+| Regressão PnetCDF | código 0; F90/CDF-5 em quatro ranks; valores 0–3 |
+| WPS/METIS | não reexecutados: nenhum arquivo, camada ou contrato desses componentes mudou; etapas correspondentes estavam `CACHED` |
+| Classificação | BUILD: PASS; STRUCTURAL SMOKE: PASS; FUNCTIONAL: PENDENTE; SCIENTIFIC: PENDENTE |
+
+### Limitações, avisos e testes não executados
+
+- `USE_PIO2=true` não é evidência isolada: a 8.4.1 autodetecta PIO2; resumo,
+  opções, linkagem e símbolos comprovaram o backend;
+- o build emitiu avisos de statement functions obsolescentes e avisos
+  make/`ar` upstream; não houve erro de compilação ou linkagem;
+- Python foi obtido por APT e não possui pin completo por versão/digest;
+- externals e lookup tables ficam na imagem, não no Git do projeto;
+- nenhuma mesh, partição real, ERA5, GRIB, `static.nc`, `init.nc`, LBC ou
+  saída científica foi criada;
+- `atmosphere_model` não foi executado: a validação funcional exige entradas
+  representativas e uma decisão futura sobre mesh/caso.
 
 ## Evidência mínima de um resultado futuro
 
