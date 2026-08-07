@@ -358,10 +358,11 @@ Os defaults do source foram preservados:
 | `IDXTYPEWIDTH` | 32 | largura dos índices de vértices, arestas e partições do METIS |
 | `REALTYPEWIDTH` | 32 | largura do tipo real usado internamente pelo METIS |
 
-Não foram habilitados `i64=1` nem `r64=1`, pois não existe uma mesh aprovada
-que demonstre essa necessidade e a documentação atual do MPAS exige
-compatibilidade de particionadores com índices de 32 bits. `REALTYPEWIDTH`
-não define a precisão dos campos atmosféricos do MPAS.
+Não foram habilitados `i64=1` nem `r64=1`. A mesh x1.10242 aprovada tem
+10.242 vértices e não demonstra necessidade de índices de 64 bits; além
+disso, a documentação atual do MPAS exige compatibilidade de particionadores
+com índices de 32 bits. `REALTYPEWIDTH` não define a precisão dos campos
+atmosféricos do MPAS.
 
 O tarball 5.1.0 contém o diretório `GKlib/`; o build o usa diretamente e
 compila essas fontes em `libmetis`. Por isso nenhuma GKlib externa foi
@@ -382,6 +383,13 @@ produziu quatro partições não vazias, 4 vértices em cada, imbalance simples
 1.000 (0%), `edge cut` reportado e recalculado igual a 3 e conectividade
 confirmada em cada partição. O script também verifica uma linha por vértice,
 um único inteiro por linha, IDs 0..3 e ausência de linhas extras.
+
+No ciclo 0008, o mesmo workflow foi exercitado sobre o `graph.info` real da
+mesh x1.10242: 10.242 vértices, 30.720 arestas e quatro partições contíguas.
+O `gpmetis` e o cálculo independente concordaram em `edge cut` 663; as
+partições contêm 2.566, 2.549, 2.568 e 2.559 células, com imbalance simples
+máximo/média de 1,002929. Essa validação de dados não altera o build do METIS
+nem a imagem científica.
 
 O banner do programa instalado imprime `METIS 5.0`, texto legado codificado
 no programa da release. A versão exata 5.1.0 é verificada pelos macros

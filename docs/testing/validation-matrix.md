@@ -39,10 +39,10 @@ evidência estiverem registrados.
 | Componente | Upstream test | Smoke test | Integration test | Status | Evidência |
 |---|---|---|---|---|---|
 | ERA5 | Não se aplica como suite de software única; validar cliente e esquema segundo fontes oficiais | Planejado: baixar uma amostra mínima sem registrar credenciais e conferir metadados/unidades | Planejado: amostra ERA5 → `ungrib` → `init_atmosphere` | Período/área/variáveis a decidir | [[../project/requirements|REQ-DATA-001]] |
-| Mesh pública inicial | Validar com ferramentas/recomendações oficiais da release MPAS escolhida | Planejado: conferir dimensões, conectividade e metadados da mesh | Planejado: mesh aceita pelo `init_atmosphere` e pelo caso curto | Mesh a decidir | [[../project/requirements|REQ-MESH-001]] |
+| Mesh pública inicial | Fonte/proveniência e integridade do pacote x1.10242 confirmadas; `graphchk` aprovado no grafo real | NetCDF, dimensões, variáveis, grafo, part.4, edge cut, balanceamento e conectividade conferidos offline | `graph.info` real → METIS 5.1.0 → `part.4`: PASS; aceitação pelo `init_atmosphere` pendente | x1.10242 preparada e estruturalmente validada no ciclo 0008 | [`fetch-mesh.sh`](../../scripts/data/fetch-mesh.sh), [`partition-mesh.sh`](../../scripts/prepare/partition-mesh.sh), [`mesh.sh`](../../scripts/validate/mesh.sh) e evidência abaixo |
 | `static.nc` | Não se aplica | Planejado: inspecionar dimensões, variáveis, atributos, valores ausentes e faixas plausíveis | Planejado: arquivo aceito na geração do estado inicial | Não gerado | [[../project/requirements|REQ-CASE-001]] |
 | `init.nc` | Não se aplica | Planejado: verificar estrutura, completude, tempo e faixas físicas iniciais | Planejado: arquivo aceito por `atmosphere` em execução curta | Não gerado | [[../project/requirements|REQ-CASE-002]] |
-| LBC | Não se aplica | Planejado somente para área limitada: verificar sequência temporal, cobertura e continuidade | Planejado somente quando aplicável: execução curta consome todos os contornos | Condicional; estratégia do caso a decidir | [[../project/requirements|REQ-CASE-003]] |
+| LBC | Não se aplica | Planejado somente para área limitada: verificar sequência temporal, cobertura e continuidade | Planejado somente quando aplicável: execução curta consome todos os contornos | Não se aplica ao primeiro caso global; condicional para casos futuros | [[../project/requirements|REQ-CASE-003]] |
 | Primeira execução | Não se aplica | Planejado: execução curta termina sem erro e produz logs/saídas esperados | Planejado: pipeline completo reproduz a execução a partir das entradas registradas | Não executada | [[../project/requirements|REQ-RUN-001]] |
 | Validação física | Não se aplica | Planejado: checagens de sanidade, conservação, extremos, NaN/Inf e coerência temporal/espacial | Planejado: comparar entradas, estado inicial e evolução conforme critérios aprovados | Critérios quantitativos a decidir | [[../project/requirements|REQ-VAL-001]] |
 
@@ -303,6 +303,55 @@ evidência estiverem registrados.
   saída científica foi criada;
 - `atmosphere_model` não foi executado: a validação funcional exige entradas
   representativas e uma decisão futura sobre mesh/caso.
+
+## Evidência do ciclo 0008 — primeira mesh MPAS x1.10242
+
+| Campo | Evidência real |
+|---|---|
+| Data | 2026-08-06 |
+| Base do ciclo | `d13c82f1b46832cd0d063ed8151b56d294707771` (`build: add MPAS atmosphere support`); worktree inicial limpo, mudanças do ciclo sem commit |
+| Imagem usada | `mpas-era5:mpas-atmosphere-8.4.1`, ID local `sha256:54281c60db053982692d21bef27cf522293e8e2568be748cf4a83f2d5f0e4c93`, 466.941.565 bytes |
+| Fonte oficial | página [Meshes & Mesh Utilities](https://www2.mmm.ucar.edu/projects/mpas/site/downloads/meshes.html): seção quasi-uniforme, 240 km, 10.242 células, pacote com SCVT/`graph.info`/partições |
+| URL resolvida | `https://www2.mmm.ucar.edu/projects/mpas/atmosphere_meshes/x1.10242.tar.gz` |
+| Integridade | dois downloads independentes de 6.321.104 bytes, byte-a-byte iguais; SHA-256 local `4dde31932bc45aaf467e2717d17ec8e5e54d73c3ebbeea027087bfdb8b98ab56`; nenhum SHA-256 upstream encontrado |
+| Archive | `x1.10242.grid.nc`, `x1.10242.graph.info` e partições pré-computadas para 2, 4, 6, 8, 12, 16, 24, 32, 36, 48 e 64 partes; somente grid e grafo copiados |
+| Aquisição | `scripts/data/fetch-mesh.sh`; hash antes da extração, listagem antes de extrair, extração temporária, nomes canônicos exigidos, conteúdo existente divergente rejeitado; segunda execução `unchanged` |
+| Política de dados | artefatos em `data/meshes/x1.10242/`, ignorados pelo Git e ausentes da imagem; static file pronto não baixado |
+| NetCDF | `ncdump -k`: `64-bit offset`; `nCells=10242`, `nVertices=20480`, `nEdges=30720`, `maxEdges=10`, `maxEdges2=20`, `vertexDegree=3` |
+| Variáveis | `latCell`, `lonCell`, `nEdgesOnCell`, `cellsOnCell`, `edgesOnCell`, `verticesOnCell` e `indexToCellID` presentes e lidas por `ncdump` |
+| `graphchk` | código 0; “The format of the graph is correct”; 10.242 vértices e 30.720 arestas |
+| Grafo independente | header `10242 30720`; exatamente 10.242 linhas; índices em 1..10242; sem self-edge/duplicata/assimetria; arestas coerentes; grafo conectado |
+| Vínculo mesh ↔ grafo | `nCells = 10242 =` número de vértices do `graph.info` |
+| Comando METIS | `gpmetis -minconn -contig -niter=200 x1.10242.graph.info 4`; METIS 5.1.0 da imagem; código 0; UID/GID do usuário |
+| Resultado `gpmetis` | `Edgecut: 663`; balanceamento 1.003; quatro partições contíguas; reexecução produziu conteúdo idêntico |
+| Contagens da partição | partição 0: 2566; 1: 2549; 2: 2568; 3: 2559; total 10.242; média 2560,5 |
+| Imbalance independente | mínimo 2549, máximo 2568; máximo/média 1,002929, ou 0,292912% |
+| Edge cut independente | 663, igual ao valor reportado por `gpmetis` |
+| Contiguidade independente | quatro subgrafos conectados: 2566, 2549, 2568 e 2559 células alcançadas |
+| Smoke | `scripts/validate/mesh.sh`; `--network none`, raiz e bind da mesh read-only, tmpfs para temporários; `mesh_smoke=PASS` |
+| Regressão | Dockerfile e versões inalterados; imagem existente acessível; scripts `mpas-init.sh` e `mpas-atmosphere.sh` presentes; smokes MPAS não reexecutados por ausência de impacto |
+
+### Estado dos gates da primeira mesh
+
+| Gate | Estado |
+|---|---|
+| SOURCE/PROVENANCE | PASS |
+| ARTIFACT INTEGRITY | PASS |
+| NETCDF STRUCTURE | PASS |
+| GRAPH STRUCTURE | PASS |
+| REAL METIS PARTITION | PASS |
+| MPAS `init_atmosphere` integration | PENDING |
+| `static.nc` | PENDING |
+
+### Limites
+
+- uma partição válida não é um benchmark nem prova configuração ótima de
+  performance; quatro ranks são apenas a baseline aprovada;
+- a partição upstream `.part.4` presente no archive não foi usada;
+- `init_atmosphere_model`, datasets geográficos, `static.nc`, ERA5,
+  `init.nc` e `atmosphere_model` não foram executados;
+- a mesh ainda não foi aceita funcionalmente pelo MPAS; a evidência deste
+  ciclo é de proveniência, integridade, estrutura e particionamento.
 
 ## Evidência mínima de um resultado futuro
 

@@ -7,7 +7,7 @@ comprovadas pelo repositório e destaca explicitamente o que ainda depende de
 decisão. Ele não substitui hashes de artefatos, digest da imagem, lock de
 pacotes do sistema ou testes de compatibilidade.
 
-Última conferência: **2026-08-05**.
+Última conferência: **2026-08-06**.
 
 ## Ambiente e versões adotadas
 
@@ -30,6 +30,7 @@ pacotes do sistema ou testes de compatibilidade.
 | MMM-physics | `20250616-MPASv8.3` | external atmosphere adotado pelo source MPAS | commit `a4baf7f3243d1db0dbc5f63473f895bdbdc05c30`; checkout detached e limpo |
 | UGWP | `MPAS_20241223` | external atmosphere adotado pelo source MPAS | commit `c1c893edcf171af5639af60e3a3a528816f6cc2b`; checkout detached e limpo |
 | MPAS-Data | `v8.2` | lookup tables adotadas pelo script MPAS 8.4.1 | commit `c57dbc7be629802c6e848770a9e44b9bc602be41`; `COMPATIBILITY` 8.2; 16 arquivos com manifesto SHA-256 |
+| Mesh MPAS | x1.10242 / ~240 km / 10.242 células | adotada e estruturalmente validada para o primeiro caso | pacote oficial first-party; global quasi-uniforme/SCVT; SHA-256 local confirmado em dois downloads; `part.4` gerado com METIS 5.1.0; [[../decisions/0005-first-mesh-baseline|ADR 0005]] |
 | CMake_Fortran_utils | commit `05ff8d8e4c88786e94a02c853d3ff921113d785c` | auxiliar de build PIO fixado | checkout detached antes da configuração; evita clone sem pin executado internamente pelo PIO |
 | genf90 | commit `4816965ba946731352bad195b7d946a5fe682ff5` | auxiliar de build PIO fixado | checkout detached passado por `GENF90_PATH`; evita resolução mutável durante o build |
 
@@ -56,10 +57,24 @@ MPAS_DATA_COMMIT=c57dbc7be629802c6e848770a9e44b9bc602be41
 
 make -j8 gnu CORE=init_atmosphere USE_PIO2=true MPAS_ESMF=embedded
 make -j8 gnu CORE=atmosphere USE_PIO2=true MPAS_ESMF=embedded
+
+MPAS_MESH=x1.10242
+MPAS_MESH_RESOLUTION_KM=240
+MPAS_MESH_CELLS=10242
+MPAS_MESH_SOURCE_URL=https://www2.mmm.ucar.edu/projects/mpas/atmosphere_meshes/x1.10242.tar.gz
+MPAS_MESH_ARCHIVE_SIZE=6321104
+MPAS_MESH_ARCHIVE_SHA256=4dde31932bc45aaf467e2717d17ec8e5e54d73c3ebbeea027087bfdb8b98ab56
+MPAS_MESH_PARTITIONS_BASELINE=4
 ```
 
 O SHA-256 WPS foi calculado localmente e confirmado por dois downloads; não
 foi encontrado checksum SHA-256 publicado pelo upstream.
+
+O SHA-256 da mesh também é local: dois downloads independentes do mesmo
+artefato first-party produziram o valor acima e foram comparados byte a byte.
+Não foi encontrado SHA-256 publicado pela NCAR, e o valor não é atribuído ao
+upstream. O static file pronto de 240 km é deliberadamente excluído; o projeto
+gerará seu próprio `static.nc` em ciclo posterior.
 
 ## Itens relacionados ainda não fixados
 
@@ -72,9 +87,8 @@ foi encontrado checksum SHA-256 publicado pelo upstream.
   essas alternativas não são versões adotadas e estão somente em
   [[../project/future-experiments|future-experiments.md]];
 - Vtable definitiva e mapeamento dos campos ERA5 para o WPS;
-- execução funcional de `init_atmosphere` e `atmosphere` com mesh,
-  partição e entradas representativas;
-- mesh pública exata;
+- execução funcional de `init_atmosphere` e `atmosphere` com a mesh x1.10242,
+  sua partição e entradas representativas;
 - período, área, níveis e variáveis ERA5.
 
 Essas lacunas não devem ser preenchidas por suposição. Qualquer fixação ou

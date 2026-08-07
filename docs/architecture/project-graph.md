@@ -28,6 +28,20 @@ WPS 4.7.0 / ungrib ✅ ──→ WPS intermediate ──→ dados futuros
 PIO 2.7.0 ✅ ──→ MPAS 8.4.1
                     ├── init_atmosphere_model ✅ estrutural
                     └── atmosphere_model ✅ estrutural; execução ⏳
+
+MPAS-Atmosphere Meshes (oficial)
+        ↓
+scripts/data/fetch-mesh.sh
+        ↓
+data/meshes/x1.10242/
+        ├── x1.10242.grid.nc
+        └── x1.10242.graph.info
+                      ↓
+              METIS 5.1.0
+                      ↓
+          x1.10242.graph.info.part.4
+                      ↓
+          init_atmosphere futuro
 ```
 
 ## Stack científica
@@ -108,6 +122,23 @@ O script `scripts/validate/metis.sh` copia o fixture para tmpfs, gera
 `graph.info.part.4` somente ali e valida estrutura, IDs, cobertura,
 balanceamento, `edge cut` e conectividade.
 
+O ciclo 0008 aplica o mesmo contrato a uma entrada científica real, mantendo
+os dados fora da imagem e do Git:
+
+```text
+https://www2.mmm.ucar.edu/.../x1.10242.tar.gz
+        ↓ SHA-256 local fixado
+scripts/data/fetch-mesh.sh
+        ↓
+data/meshes/x1.10242/x1.10242.graph.info
+        ↓ scripts/prepare/partition-mesh.sh
+gpmetis -minconn -contig -niter=200 ... 4
+        ↓
+x1.10242.graph.info.part.4
+        ↓ scripts/validate/mesh.sh
+NetCDF + graphchk + estrutura + balanceamento + edge cut + contiguidade ✅
+```
+
 WPS prepara dados meteorológicos por um caminho distinto da stack científica:
 
 ```text
@@ -180,6 +211,8 @@ mpas-era5/
 │   │   └── project-graph.md          este mapa
 │   ├── build/
 │   │   └── scientific-stack.md       documentação técnica da stack
+│   ├── cases/
+│   │   └── first-global-240km.md     primeiro caso; mesh pronta
 │   ├── project/
 │   │   ├── requirements.md           escopo original versus decisões
 │   │   ├── current-state.md          estado produzido e referência Git real
@@ -196,8 +229,10 @@ mpas-era5/
 │   │   │                              arquitetura PIO2 e backends habilitados
 │   │   ├── 0003-metis-5.1.0-partitioning-baseline.md
 │   │                                  baseline offline e alternativas futuras
-│   │   └── 0004-wps-mpas-version-and-layout.md
-│   │                                  versões, flags e prefixos separados
+│   │   ├── 0004-wps-mpas-version-and-layout.md
+│   │   │                              versões, flags e prefixos separados
+│   │   └── 0005-first-mesh-baseline.md
+│   │                                  x1.10242 e part.4 aprovadas
 │   ├── testing/
 │   │   └── validation-matrix.md      testes, status e evidências
 │   └── logs/                         reservado; atualmente vazio
@@ -212,16 +247,22 @@ mpas-era5/
 │       ├── 0005-add-wps-ungrib.md      nota educacional do ciclo 0005
 │       ├── 0006-add-mpas-init-atmosphere.md
 │       │                                  nota educacional do ciclo 0006
-│       └── 0007-add-mpas-atmosphere.md
-│                                          nota educacional do ciclo 0007
+│       ├── 0007-add-mpas-atmosphere.md
+│       │                                  nota educacional do ciclo 0007
+│       └── 0008-add-first-mesh.md         nota educacional do ciclo 0008
 ├── scripts/
+│   ├── data/
+│   │   └── fetch-mesh.sh             aquisição first-party e integridade
+│   ├── prepare/
+│   │   └── partition-mesh.sh         graph.info + N → part.N com METIS
 │   ├── validate/
 │   │   ├── pnetcdf.sh                validação instalada MPI/Fortran
 │   │   ├── pio.sh                    validação PIO/PnetCDF e IOTYPEs
 │   │   ├── metis.sh                  partição e validação estrutural em tmpfs
 │   │   ├── wps-ungrib.sh             smoke WPS offline e read-only
 │   │   ├── mpas-init.sh              smoke MPAS init offline/read-only
-│   │   └── mpas-atmosphere.sh        smoke MPAS atmosphere offline/read-only
+│   │   ├── mpas-atmosphere.sh        smoke MPAS atmosphere offline/read-only
+│   │   └── mesh.sh                   validação da mesh real e partição
 │   └── codex/                        automações de suporte a ciclos futuros
 ├── tests/
 │   ├── fixtures/
@@ -230,14 +271,15 @@ mpas-era5/
 │   └── smoke/
 │       ├── pnetcdf_mpi.f90           I/O coletivo CDF-5 em 4 ranks
 │       └── pio_pnetcdf.c             PIO explícito sobre PnetCDF em 4 ranks
-├── data/                              entradas locais; dados grandes fora do Git
+├── data/                              entradas científicas locais fora do Git
+│   └── meshes/x1.10242/               grid, graph.info e part.4 ignorados
 ├── cases/                             configurações futuras de experimentos
 └── docker/                            suporte Docker futuro
 ```
 
 `scripts/validate/` contém validações instaladas e repetíveis para PnetCDF,
-PIO, METIS, WPS/ungrib e os dois cores MPAS. `scripts/codex/` continua vazio
-e, por isso, não é preservado pelo Git.
+PIO, METIS, WPS/ungrib, os dois cores MPAS e a mesh x1.10242.
+`scripts/codex/` continua vazio e, por isso, não é preservado pelo Git.
 
 ## Responsabilidades e relações
 
@@ -250,10 +292,12 @@ e, por isso, não é preservado pelo Git.
 | `docs/testing/` | distinguir teste planejado, executado e comprovado | atualizada após cada validação técnica |
 | `learning/` | explicar conceitos e raciocínio por baseline/commit | referencia estado, fontes, ADRs e testes sem substituí-los |
 | `scripts/validate/` | hospedar validações repetíveis | resultados resumidos alimentam `docs/testing/` |
+| `scripts/data/` | adquirir dados externos reproduzivelmente | usa somente fontes e hashes registrados; instala sob `data/` |
+| `scripts/prepare/` | transformar entradas sem incorporá-las à imagem | gera `graph.info.part.N` com UID/GID do usuário |
 | `tests/smoke/` | hospedar fontes mínimas independentes do build upstream | compiladas pelos scripts contra a instalação final |
 | `tests/fixtures/` | manter entradas pequenas, deliberadas e versionadas | copiadas para espaço efêmero; nunca recebem saídas geradas |
 | `scripts/codex/` | hospedar automação de governança aprovada | deve respeitar `AGENTS.md` e o workflow |
-| `data/` | manter entradas locais do ERA5 e auxiliares | credenciais e dados grandes nunca devem entrar no Git |
+| `data/` | manter meshes, ERA5 e outras entradas científicas locais | credenciais, NetCDF, GRIB, partições e outputs nunca devem entrar no Git |
 | `cases/` | manter configurações de execuções MPAS | depende de mesh, ERA5 e versões aprovadas |
 
 ## Documentos relacionados
@@ -269,5 +313,7 @@ e, por isso, não é preservado pelo Git.
 - [[../decisions/README|ADRs]]
 - [[../decisions/0003-metis-5.1.0-partitioning-baseline|ADR 0003 — METIS 5.1.0]]
 - [[../decisions/0004-wps-mpas-version-and-layout|ADR 0004 — WPS/MPAS e layout]]
+- [[../decisions/0005-first-mesh-baseline|ADR 0005 — primeira mesh e part.4]]
+- [[../cases/first-global-240km|Primeiro caso global de ~240 km]]
 - [[../testing/validation-matrix|Matriz de validação]]
 - [[../../learning/README|Índice de aprendizado]]

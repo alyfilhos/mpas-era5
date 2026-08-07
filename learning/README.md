@@ -32,6 +32,8 @@ apontar para ele.
 - [`commits/0007-add-mpas-atmosphere.md`](commits/0007-add-mpas-atmosphere.md):
   nota educacional sobre o core `atmosphere`, física, externals fixados,
   lookup tables e reutilização segura do framework;
+- [`commits/0008-add-first-mesh.md`](commits/0008-add-first-mesh.md): nota
+  educacional sobre SCVT, NetCDF de mesh, grafo, METIS e política de dados;
 - `commits/NNNN-<descricao>.md`: uma nota por commit posterior ao bootstrap.
 
 ## O que cada nota por commit deve ensinar

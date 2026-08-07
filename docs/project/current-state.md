@@ -19,25 +19,25 @@ A partir do ciclo 0004, cada atualização distingue:
 Consequentemente, a referência abaixo é uma observação datada, não uma
 declaração eterna do `HEAD`.
 
-## Referência do ciclo 0007
+## Referência do ciclo 0008
 
-Estado atualizado em **2026-08-05** depois da implementação, build, smoke e
-regressões do MPAS-Model 8.4.1/`atmosphere`:
+Estado atualizado em **2026-08-06** depois da aquisição, particionamento e
+validação estrutural da primeira mesh MPAS real:
 
 - branch inspecionada: `main`;
 - base e `HEAD` observados antes das mudanças:
-  `a70df2714667e57d2042762e822fe0344cbe8ec6`
-  (`build: add MPAS init_atmosphere support`);
+  `d13c82f1b46832cd0d063ed8151b56d294707771`
+  (`build: add MPAS atmosphere support`);
 - relação observada: `main` alinhada com `origin/main`;
 - worktree inicial: limpo;
-- estado produzido: mudanças do ciclo 0007 no worktree, sem commit e sem push,
+- estado produzido: mudanças do ciclo 0008 no worktree, sem commit e sem push,
   aguardando relatório pré-commit e aprovação;
 - commit que materializa este estado: **consultar Git**; nenhum SHA futuro foi
   escrito;
 - comando normativo para o `HEAD` atual: `git rev-parse HEAD`.
 
-O ciclo começou com `init_atmosphere` finalizado no commit base acima. Esta
-referência não antecipa o hash de um possível commit 0007.
+O ciclo começou com os dois cores MPAS finalizados no commit base acima. Esta
+referência não antecipa o hash de um possível commit 0008.
 
 ## Ambiente definido no repositório
 
@@ -70,6 +70,7 @@ Não foi criada uma variável `METIS`: o workflow usa
 | WPS/ungrib | 4.7.0 | GNU serial; sem WRF; GRIB2 privado; build e smoke offline aprovados |
 | MPAS/init_atmosphere | 8.4.1 | GNU/MPI, single precision, PIO2 e ESMF embedded; build e smoke estrutural aprovados |
 | MPAS/atmosphere | 8.4.1 | GNU/MPI, single precision, PIO2, ESMF embedded, externals e lookup tables fixados; build e smoke estrutural aprovados |
+| Primeira mesh | x1.10242 | oficial, global quasi-uniforme, ~240 km, 10.242 células; NetCDF/grafo/part.4 estruturalmente validados |
 
 A imagem validada é `mpas-era5:mpas-atmosphere-8.4.1`, com ID local
 `sha256:54281c60db053982692d21bef27cf522293e8e2568be748cf4a83f2d5f0e4c93`
@@ -217,17 +218,81 @@ MPAS com N ranks MPI
 METIS não é a implementação MPI do modelo. A validação do ciclo 0004
 demonstrou a invariável quatro partições ↔ quatro tasks MPI sem executar MPAS.
 
-## Regressão da stack anterior
+## Primeira mesh real no ciclo 0008
 
-- `scripts/validate/mpas-init.sh`: código 0 na imagem final; executável,
-  defaults, configuração e linkagem do core init preservados;
-- `scripts/validate/pnetcdf.sh`: código 0; F90/CDF-5 em quatro ranks e
-  valores `0, 1, 2, 3` preservados;
-- `scripts/validate/pio.sh`: código 0; PIO/PnetCDF CDF-2 em quatro ranks com
-  OMPIO e ROMIO e valores `1000, 1001, 1002, 1003` preservados;
-- WPS e METIS não foram reexecutados: nenhuma camada, configuração ou script
-  desses componentes mudou, e todas as respectivas etapas permaneceram
-  `CACHED` no build final.
+A fonte oficial MPAS-Atmosphere classifica x1.10242 como mesh SCVT
+quasi-uniforme de aproximadamente 240 km e 10.242 células horizontais. O link
+da página resolveu para:
+
+```text
+https://www2.mmm.ucar.edu/projects/mpas/atmosphere_meshes/x1.10242.tar.gz
+```
+
+O tarball possui 6.321.104 bytes. Como não foi encontrado SHA-256 upstream,
+dois downloads independentes foram comparados byte a byte e produziram o hash
+local:
+
+```text
+4dde31932bc45aaf467e2717d17ec8e5e54d73c3ebbeea027087bfdb8b98ab56
+```
+
+O archive contém `x1.10242.grid.nc`, `x1.10242.graph.info` e partições
+pré-computadas. `scripts/data/fetch-mesh.sh` valida o hash antes da extração,
+lista o archive e copia somente grid e grafo para
+`data/meshes/x1.10242/`. Reexecução com conteúdo idêntico terminou como
+`unchanged`; conteúdo preexistente divergente causa falha. O static file
+separado não foi baixado.
+
+O NetCDF real é `64-bit offset`, com:
+
+- `nCells = 10242`;
+- `nVertices = 20480`;
+- `nEdges = 30720`;
+- `maxEdges = 10`, `maxEdges2 = 20` e `vertexDegree = 3`;
+- `latCell`, `lonCell`, `nEdgesOnCell`, `cellsOnCell`, `edgesOnCell`,
+  `verticesOnCell` e `indexToCellID` presentes e legíveis.
+
+`graphchk` aprovou o `graph.info` real. A validação independente confirmou o
+header `10242 30720`, exatamente 10.242 linhas de vértices, índices válidos,
+adjacências simétricas, contagem de arestas e conectividade de todo o grafo.
+Logo, `nCells` do NetCDF e vértices do grafo coincidem.
+
+`scripts/prepare/partition-mesh.sh` executou na imagem atual, com UID/GID do
+usuário:
+
+```sh
+gpmetis -minconn -contig -niter=200 x1.10242.graph.info 4
+```
+
+O METIS reportou `Edgecut: 663`, balanceamento 1.003 e todas as partições
+contíguas. `scripts/validate/mesh.sh`, sem rede e com a mesh montada read-only,
+confirmou independentemente:
+
+| Partição | Células |
+|---:|---:|
+| 0 | 2566 |
+| 1 | 2549 |
+| 2 | 2568 |
+| 3 | 2559 |
+
+A média é 2560,5, o mínimo 2549, o máximo 2568 e o imbalance simples
+máximo/média é 1,002929, ou 0,292912%. As quatro partições são conectadas e o
+edge cut recalculado é 663. O smoke final terminou `mesh_smoke=PASS`.
+
+Essa evidência valida aquisição, estrutura e particionamento. Não executa
+`init_atmosphere_model`, não gera `static.nc` e não prova aceitação funcional
+da mesh pelo MPAS.
+
+## Preservação da stack anterior
+
+- a imagem `mpas-era5:mpas-atmosphere-8.4.1` permaneceu acessível com o mesmo
+  ID e tamanho local registrados acima;
+- o `Dockerfile` não mudou e nenhuma imagem foi reconstruída;
+- `scripts/validate/mpas-init.sh` e
+  `scripts/validate/mpas-atmosphere.sh` continuam presentes e executáveis;
+- esses smokes não foram reexecutados porque o ciclo altera apenas aquisição,
+  preparação, validação e documentação de dados externos;
+- a integração relevante `graph.info` real → METIS 5.1.0 → `part.4` passou.
 
 ## Arquiteturas adotadas
 
@@ -241,13 +306,14 @@ MPAS init_atmosphere/atmosphere
 O particionamento é uma preparação independente:
 
 ```text
-mesh futura → graph.info → METIS 5.1.0 serial → graph.info.part.N
+x1.10242.grid.nc + graph.info → METIS 5.1.0 serial → graph.info.part.4
 ```
 
 As decisões e alternativas estão em
 [[../decisions/0002-pio2-pnetcdf-with-serial-netcdf|ADR 0002]],
 [[../decisions/0003-metis-5.1.0-partitioning-baseline|ADR 0003]] e
-[[../decisions/0004-wps-mpas-version-and-layout|ADR 0004]], além de
+[[../decisions/0004-wps-mpas-version-and-layout|ADR 0004]],
+[[../decisions/0005-first-mesh-baseline|ADR 0005]], além de
 [[future-experiments|future-experiments.md]].
 
 ## Artefatos do ciclo 0004
@@ -279,21 +345,30 @@ As decisões e alternativas estão em
 - camada atmosphere adicionada ao `Dockerfile`, sem novo ADR: versão e layout
   continuam cobertos pelo ADR 0004 e os pins reproduzem contratos upstream.
 
+## Artefatos do ciclo 0008
+
+- `.gitignore`: política de exclusão de dados científicos locais;
+- `scripts/data/fetch-mesh.sh`: aquisição first-party com SHA-256 fixado;
+- `scripts/prepare/partition-mesh.sh`: geração reutilizável de `.part.N`;
+- `scripts/validate/mesh.sh`: smoke offline/read-only estrutural e matemático;
+- `docs/decisions/0005-first-mesh-baseline.md`: decisão de mesh e part.4;
+- `docs/cases/first-global-240km.md`: documento evolutivo do primeiro caso;
+- `learning/commits/0008-add-first-mesh.md`: nota educacional do ciclo.
+
 ## Componentes ainda não implementados
 
 - METIS 5.2.1 e GKlib externa;
 - PT-Scotch;
 - execução funcional de `init_atmosphere` e `atmosphere`;
 - aquisição ou preparação ERA5;
-- seleção e preparação da primeira mesh;
-- `static.nc`, `init.nc` e LBC;
+- `static.nc` e `init.nc`; LBC permanece somente para eventual caso futuro de
+  área limitada;
 - primeira execução e validação física MPAS.
 
 ## Lacunas e limitações atuais
 
-- ainda não existe uma mesh MPAS aprovada; o fixture não prova compatibilidade
-  ou performance em escala real;
-- o consumo real de `graph.info.part.N` e a execução do `init_atmosphere`
+- a mesh x1.10242 e sua partição foram validadas estruturalmente, mas o consumo
+  real de `graph.info.part.4` e a execução do `init_atmosphere`
   permanecem testes de um ciclo futuro;
 - a release METIS 5.1.0 não fornece suíte formal; foram usados seus grafos de
   teste, `graphchk`, o comando real MPAS e validação independente;
@@ -309,6 +384,7 @@ As decisões e alternativas estão em
 - avisos de código legado em libpng, JasPer e Fortran permanecem, apesar do
   build e da linkagem bem-sucedidos;
 - os builds estruturais de `init_atmosphere` e `atmosphere` passaram, mas
-  qualquer afirmação funcional ou científica continua pendente até existir
-  mesh/configuração e, para `init.nc`, entradas WPS/ERA5 representativas;
+  qualquer afirmação funcional ou científica continua pendente até a mesh ser
+  consumida com configuração e, para `init.nc`, entradas WPS/ERA5
+  representativas;
 - a imagem Ubuntu e os pacotes APT, inclusive Python, não têm lock por digest.

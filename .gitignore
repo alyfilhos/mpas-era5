@@ -1,0 +1,34 @@
+# Local credentials
+.cdsapirc
+
+# Reproducibly acquired scientific data. Markdown documentation remains tracked.
+data/**/*.nc
+data/**/*.grib
+data/**/*.grib1
+data/**/*.grib2
+data/**/*.grb
+data/**/*.grb1
+data/**/*.grb2
+data/**/*ERA5*
+data/**/*era5*
+data/**/FILE:*
+data/**/PFILE:*
+data/**/*.tar
+data/**/*.tar.gz
+data/**/*.tgz
+data/**/*graph.info
+data/**/*graph.info.part.*
+data/**/*.sha256
+data/**/*manifest*
+data/**/*provenance*
+data/**/*.log
+!data/**/*.md
+
+# Local MPAS case inputs, outputs, and runtime logs
+cases/**/*.nc
+cases/**/log.*
+cases/**/*.log
+log.*.out
+log.*.err
+rsl.out.*
+rsl.error.*

@@ -40,6 +40,12 @@ compilação de software científico, MPI e ferramentas utilizadas em HPC.
 - MPAS-Model 8.4.1 / `atmosphere_model` GNU + MPI ✅ build e smoke
   estrutural; execução funcional ⏳
 
+### Primeiro caso
+
+- mesh oficial x1.10242, global quasi-uniforme, ~240 km e 10.242 células ✅
+- `x1.10242.graph.info.part.4` gerado localmente com METIS 5.1.0 e validado ✅
+- `static.nc`, ERA5, `init.nc` e execução do modelo ⏳
+
 ## Roadmap
 
 Stack científica:
@@ -57,14 +63,22 @@ O METIS é usado offline: `gpmetis` transforma `graph.info` em
 execução MPAS. O backlog de alternativas de particionamento está em
 [`docs/project/future-experiments.md`](docs/project/future-experiments.md).
 
+A primeira mesh real é adquirida reproduzivelmente por
+[`scripts/data/fetch-mesh.sh`](scripts/data/fetch-mesh.sh), fica somente em
+`data/meshes/x1.10242/` e não é incorporada à imagem nem ao Git. A partição
+baseline em quatro partes é preparada por
+[`scripts/prepare/partition-mesh.sh`](scripts/prepare/partition-mesh.sh) e
+validada offline por [`scripts/validate/mesh.sh`](scripts/validate/mesh.sh).
+
 Depois:
 
 `ERA5 GRIB → Vtable → ungrib → WPS intermediate → MPAS init_atmosphere → MPAS atmosphere`
 
-A Vtable ERA5 definitiva e as integrações funcionais com mesh e dados reais
-ainda dependem de ciclos próprios. O estado atual prova build, configuração e
-instalação estrutural dos dois executáveis MPAS, mas não executa uma previsão
-nem afirma funcionamento científico.
+A Vtable ERA5 definitiva, a geração própria de `static.nc` e as integrações
+funcionais com o MPAS ainda dependem de ciclos próprios. O estado atual prova
+a estrutura da mesh e seu particionamento, além do build dos dois executáveis,
+mas ainda não prova que `init_atmosphere` aceita a mesh nem executa uma
+previsão.
 
 ## Documentação
 
@@ -87,4 +101,5 @@ O material didático e as notas de aprendizado por ciclo estão em:
 - METIS
 - WPS
 - MPAS-Model
+- MPAS-Atmosphere Meshes
 - ECMWF Climate Data Store

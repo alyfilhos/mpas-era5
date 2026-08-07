@@ -6,7 +6,7 @@ Este registro documenta de onde vêm requisitos, fatos técnicos, versões e
 orientações de troubleshooting. Uma fonte deve ser classificada antes de ser
 usada; autoridade e utilidade não são a mesma coisa.
 
-Última revisão deste registro: **2026-08-05**.
+Última revisão deste registro: **2026-08-06**.
 
 ## Classes de fonte
 
@@ -65,6 +65,9 @@ usada; autoridade e utilidade não são a mesma coisa.
 | DOC-METIS-005 | METIS 5.2.1 | [repositório moderno oficial](https://github.com/KarypisLab/METIS), [release v5.2.1](https://github.com/KarypisLab/METIS/releases/tag/v5.2.1) e [README da tag](https://github.com/KarypisLab/METIS/blob/v5.2.1/README.md) | existência da linha moderna, GKlib externa, configuração por `gklib_path` e preservação de `gpmetis` | consultados em 2026-08-05 apenas para alternativa futura; não implementados |
 | DOC-MPAS-002 | MPAS atual | [Preparing Meshes — Graph Partitioning with METIS](https://www2.mmm.ucar.edu/projects/mpas/site/documentation/users_guide/preparing_meshes.html) | fluxo offline `gpmetis -minconn -contig -niter=200 graph.info N`, arquivo `.part.N`, correspondência com tasks MPI e coexistência com particionamento online | consultada em 2026-08-05; sustenta [[../decisions/0003-metis-5.1.0-partitioning-baseline|ADR 0003]] |
 | DOC-MPAS-003 | MPAS atual | [Building MPAS — PT-Scotch](https://www2.mmm.ucar.edu/projects/mpas/site/documentation/users_guide/building_mpas.html) | particionamento online desde v8.4.0, PT-Scotch mínimo 7.0.8, build MPAS e compatibilidade com índices de 32 bits | consultada em 2026-08-05 apenas para [[../project/future-experiments|experimento futuro]] |
+| DOC-MPAS-MESH-001 | MPAS-Atmosphere atual | [Meshes & Mesh Utilities](https://www2.mmm.ucar.edu/projects/mpas/site/downloads/meshes.html) | página first-party: classifica x1.10242 entre as meshes quasi-uniformes, registra 240 km/10.242 células e informa que cada pacote contém SCVT na esfera, `graph.info` e partições pré-computadas; oferece separadamente um static file | consultada diretamente em 2026-08-06; link da mesh de 240 km resolvido para o artefato registrado abaixo |
+| DOC-MPAS-MESH-002 | MPAS-Atmosphere atual | [Overview of MPAS Atmosphere](https://www2.mmm.ucar.edu/projects/mpas/site/documentation/mpas_overview.html) | uso de mesh de Voronoi centroidal não estruturada, dual triangular e suporte a aplicações globais uniformes e de resolução variável | consultada em 2026-08-06 para contexto conceitual da primeira mesh |
+| DOC-MPAS-TUTORIAL-001 | Tutorial MPAS-Atmosphere | [Practice Session Guide](https://www2.mmm.ucar.edu/projects/mpas/tutorial/UK2015/) | exemplo oficial recorrente com x1.10242, 10.242 células e resolução aproximada de 240 km para geração de campos estáticos e iniciais | consultado em 2026-08-06 como justificativa didática, não como origem do artefato |
 
 ### Releases, artefatos e versões fixadas pela implementação atual
 
@@ -74,7 +77,7 @@ com SHA-256 local; MPAS usa clone Git da tag com commit verificado e metadata
 preservada. O estado de cada artefato ou pin é informado individualmente na
 última coluna.
 
-| ID | Componente | Release/artefato registrado | Integridade no build | Estado da verificação |
+| ID | Componente | Release/artefato registrado | Integridade no build/aquisição | Estado da verificação |
 |---|---|---|---|---|
 | REL-UBUNTU-001 | Ubuntu | imagem `ubuntu:24.04` | tag sem digest fixado | referência confirmada no `Dockerfile`; origem/digest devem ser verificados antes de uma mudança de base |
 | REL-ZLIB-001 | zlib 1.3.2 | `https://zlib.net/fossils/zlib-1.3.2.tar.gz` | SHA-256 `bb329a0a2cd0274d05519d61c667c062e06990d72e125ee2dfa8de64f0119d16` | URL e hash confirmados no `Dockerfile`; autoridade externa não revalidada neste ciclo |
@@ -88,6 +91,7 @@ preservada. O estado de cada artefato ou pin é informado individualmente na
 | REL-METIS-001 | METIS 5.1.0 | [tarball first-party `metis-5.1.0.tar.gz`](https://karypis.github.io/glaros/files/sw/metis/metis-5.1.0.tar.gz) | SHA-256 local `76faebe03f6c963127dbb73c13eab58c9a3faeae48779f049066a21c087c5db2` | URL ligada pela página histórica first-party; dois downloads independentes de 4.984.968 bytes produziram o mesmo SHA-256 em 2026-08-05; nenhum SHA-256 upstream foi encontrado |
 | REL-WPS-001 | WPS 4.7.0 | [release oficial `v4.7.0`](https://github.com/wrf-model/WPS/releases/tag/v4.7.0), [archive da tag](https://github.com/wrf-model/WPS/archive/refs/tags/v4.7.0.tar.gz) e [commit da tag](https://github.com/wrf-model/WPS/commit/5feccecd63384381b6942371c7a837f66e4ccb84) | SHA-256 local `5232d20d7556338391b66aba45824d4fcd6c42712ebe9325f359f3c6cf043808` | release, source da tag e [histórico oficial](https://github.com/wrf-model/WPS/releases) cruzados em 2026-08-05; dois downloads independentes de 4.544.769 bytes produziram o mesmo hash; nenhum SHA-256 upstream foi encontrado |
 | REL-MPAS-001 | MPAS-Model 8.4.1 | [release oficial `v8.4.1`](https://github.com/MPAS-Dev/MPAS-Model/releases/tag/v8.4.1), [repositório/tag](https://github.com/MPAS-Dev/MPAS-Model/tree/v8.4.1) e [hotfix/commit](https://github.com/MPAS-Dev/MPAS-Model/commit/91c5eac175eebeaf4206bacd5cb50c39dff3c152) | clone `--branch v8.4.1 --single-branch`; `git rev-parse HEAD` e tag exata precisam corresponder a `91c5eac175eebeaf4206bacd5cb50c39dff3c152`; metadata Git mantida | release, clone da tag, commit e histórico oficial cruzados em 2026-08-05; commit verificado nos probes e builds definitivos |
+| REL-MPAS-MESH-001 | MPAS x1.10242 | [tarball first-party de 240 km](https://www2.mmm.ucar.edu/projects/mpas/atmosphere_meshes/x1.10242.tar.gz) | 6.321.104 bytes; SHA-256 local `4dde31932bc45aaf467e2717d17ec8e5e54d73c3ebbeea027087bfdb8b98ab56` | URL resolvida a partir de DOC-MPAS-MESH-001; dois downloads independentes foram byte-a-byte iguais em 2026-08-06; nenhum SHA-256 upstream foi encontrado; archive contém a mesh, `graph.info` e partições, mas o workflow copia somente os dois primeiros |
 | REL-MMM-PHYSICS-001 | MMM-physics | [release oficial `20250616-MPASv8.3`](https://github.com/NCAR/MMM-physics/releases/tag/20250616-MPASv8.3) | tag anotada resolvida para commit `a4baf7f3243d1db0dbc5f63473f895bdbdc05c30`; checkout detached e limpo | repo/tag impostos por `Externals.cfg`; objeto de tag e commit peeled verificados em 2026-08-05 |
 | REL-UGWP-001 | UGWP | [release oficial `MPAS_20241223`](https://github.com/NOAA-GSL/UGWP/releases/tag/MPAS_20241223) | tag leve/commit `c1c893edcf171af5639af60e3a3a528816f6cc2b`; checkout detached e limpo | repo/tag impostos por `Externals.cfg`; commit verificado em 2026-08-05 |
 | REL-MPAS-DATA-001 | MPAS-Data | [tag oficial `v8.2`](https://github.com/MPAS-Dev/MPAS-Data/tree/v8.2) | tag anotada resolvida para commit `c57dbc7be629802c6e848770a9e44b9bc602be41`; compatibilidade e hashes dos arquivos verificados | tag usada pelo script da física; objeto de tag e commit peeled verificados em 2026-08-05 |
@@ -141,6 +145,28 @@ introduzida. O repositório oficial moderno contém a release 5.2.1 e suas
 instruções exigem GKlib externa. Essa observação histórica não altera a versão
 adotada: 5.2.1 só poderá ser experimentada com revisão/release GKlib fixada,
 conforme [[../project/future-experiments|future-experiments.md]].
+
+### Mesh MPAS x1.10242
+
+A página oficial liga a entrada quasi-uniforme de 240 km e 10.242 células
+diretamente a `x1.10242.tar.gz` no domínio first-party da NSF NCAR. O archive
+observado contém `x1.10242.grid.nc`, `x1.10242.graph.info` e partições
+pré-computadas para 2, 4, 6, 8, 12, 16, 24, 32, 36, 48 e 64 partes. Os nomes
+canônicos já coincidem com o uso no projeto; nenhuma renomeação foi inventada.
+
+Não foi encontrado checksum SHA-256 na página, junto ao download ou na
+documentação oficial consultada. Dois downloads independentes de 6.321.104
+bytes foram comparados byte a byte e produziram o mesmo SHA-256 local:
+
+```text
+4dde31932bc45aaf467e2717d17ec8e5e54d73c3ebbeea027087bfdb8b98ab56
+```
+
+Esse valor identifica o artefato first-party observado e fica fixado no
+script de aquisição; não é descrito como checksum publicado pela NCAR. O
+static file de 240 km, oferecido por link separado, não foi baixado. Essa
+exclusão implementa a decisão de gerar `static.nc` localmente no ciclo
+seguinte.
 
 ### Releases WPS 4.7.0 e MPAS-Model 8.4.1
 
