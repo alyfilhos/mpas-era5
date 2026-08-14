@@ -18,6 +18,8 @@ pacotes do sistema ou testes de compatibilidade.
 | Toolchain Fortran | GFortran fornecido pelo Ubuntu 24.04 | adotada, versão exata não fixada | pacote `gfortran`; o índice APT não está congelado |
 | MPI | OpenMPI fornecido pelo Ubuntu 24.04 | implementação adotada, versão exata não fixada | pacotes `openmpi-bin` e `libopenmpi-dev`; mudança de MPI exige decisão do usuário |
 | Python | 3.12.3 observado | runtime de build do `manage_externals`; pacote APT não fixado | `python3` instalado depois da camada init; índice APT não está congelado |
+| Python do cliente CDS | 3.12.13 slim-bookworm | adotada e fixada por digest, separada da stack científica | imagem oficial `python:3.12.13-slim-bookworm@sha256:d50fb7611f86d04a3b0471b46d7557818d88983fc3136726336b2a4c657aa30b` em `docker/cds/Dockerfile` |
+| cdsapi | 0.7.7 | adotada e validada | versão direta e dependências transitivas fixadas em `docker/cds/requirements.txt`; `pip check`, autenticação, probes e downloads PASS |
 | zlib | 1.3.2 | adotada | `ZLIB_VERSION=1.3.2`; SHA-256 registrado no `Dockerfile` |
 | HDF5 | 1.14.6 | adotada | `HDF5_VERSION=1.14.6`; checksum ainda não registrado |
 | netCDF-C | 4.10.1 | adotada | `NETCDF_C_VERSION=4.10.1`; SHA-256 registrado no `Dockerfile` |
@@ -33,6 +35,7 @@ pacotes do sistema ou testes de compatibilidade.
 | Mesh MPAS | x1.10242 / ~240 km / 10.242 células | adotada, estruturalmente validada e consumida pelo init para static | pacote oficial first-party; global quasi-uniforme/SCVT; SHA-256 local confirmado em dois downloads; `part.4` gerado com METIS 5.1.0; [[../decisions/0005-first-mesh-baseline|ADR 0005]] |
 | WPS_GEOG do primeiro static | high mandatory + MODIS landuse 30s + USGS landuse 30s | adotado e validado para MPAS 8.4.1 | três artefatos first-party, tamanhos/hashes abaixo; extração seletiva 16.563.576.021 bytes; [[../decisions/0006-first-static-baseline|ADR 0006]] |
 | Static x1.10242 | CDF-2, `config_noahmp_static=false`, supersampling 1 | gerado e validado localmente; não versionado | 18.201.336 bytes; SHA-256 observado `36e50a8f8d0233327b6505f74e2f909aaaa6c7cee03499affabadd5cc11a144f`; 1 task MPI; não usar com física que exija Noah-MP |
+| Baseline ERA5 | 2014-09-10 00 UTC, global, GRIB, 37 pressure levels | selecionada, adquirida e validada localmente | pressure: 384.168.780 bytes, SHA-256 `11a0a10a5727a19f64c529179af8b9e5fc4f92cdb60eb32ac90c68926b2e06ac`; single: 41.995.970 bytes, SHA-256 `5d0c6aeeef07c5109f044428266d822928c2cf4ccda1ccbb430c916f0b5b693b`; hashes locais; [[../decisions/0007-first-era5-baseline|ADR 0007]] |
 | CMake_Fortran_utils | commit `05ff8d8e4c88786e94a02c853d3ff921113d785c` | auxiliar de build PIO fixado | checkout detached antes da configuração; evita clone sem pin executado internamente pelo PIO |
 | genf90 | commit `4816965ba946731352bad195b7d946a5fe682ff5` | auxiliar de build PIO fixado | checkout detached passado por `GENF90_PATH`; evita resolução mutável durante o build |
 
@@ -77,6 +80,18 @@ WPS_GEOG_MODIS_SHA256=b21ca154d1038ec271abaa1be2fd38a0cd055b8a4ddfaab520719478ac
 WPS_GEOG_GWD_URL=https://www2.mmm.ucar.edu/wrf/src/wps_files/landuse_30s.tar.bz2
 WPS_GEOG_GWD_SIZE=20988479
 WPS_GEOG_GWD_SHA256=143cd195ae91f64011a43eae52ca00228709672c6a2ba614cb437eeb4cd41160
+
+CDS_PYTHON_IMAGE=python:3.12.13-slim-bookworm
+CDS_PYTHON_IMAGE_DIGEST=sha256:d50fb7611f86d04a3b0471b46d7557818d88983fc3136726336b2a4c657aa30b
+CDSAPI_VERSION=0.7.7
+ERA5_TIMESTAMP=2014-09-10T00:00:00Z
+ERA5_AREA=global
+ERA5_DATA_FORMAT=grib
+ERA5_PRESSURE_DATASET=reanalysis-era5-pressure-levels
+ERA5_PRESSURE_LEVELS=37
+ERA5_PRESSURE_VARIABLES=5
+ERA5_SINGLE_DATASET=reanalysis-era5-single-levels
+ERA5_SINGLE_VARIABLES=19
 ```
 
 O SHA-256 WPS foi calculado localmente e confirmado por dois downloads; não
@@ -107,7 +122,6 @@ e rejeitado por ausência dos datasets requeridos, não por escolha de versão.
 - Vtable definitiva e mapeamento dos campos ERA5 para o WPS;
 - execução meteorológica de `init_atmosphere` e `atmosphere` com ERA5,
   `init.nc`, sua partição e entradas representativas; a etapa static já passou;
-- período, área, níveis e variáveis ERA5.
 
 Essas lacunas não devem ser preenchidas por suposição. Qualquer fixação ou
 mudança deve atualizar o registro de fontes, este arquivo, a matriz de

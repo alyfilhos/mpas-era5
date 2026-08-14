@@ -22,7 +22,13 @@ Stack científica
     │     ↓
     └── METIS 5.1.0 ✅
 
-WPS 4.7.0 / ungrib ✅ ──→ WPS intermediate ──→ dados futuros
+CDS
+ ├── ERA5 pressure levels ─┐
+ └── ERA5 single levels ───┴─→ container CDS + fetch-era5
+                                      ↓
+                         data/era5/2014-09-10_00/ ✅ GRIB bruto
+                                      ↓ ciclo 0011
+WPS 4.7.0 / ungrib ✅ ──→ WPS intermediate ──→ init meteorológico futuro
                                                     │
                                                     ▼
 PIO 2.7.0 ✅ ──→ MPAS 8.4.1
@@ -52,7 +58,7 @@ data/geog/mpas-8.4.1/ ───────────────────�
                                             ↓
                               x1.10242.static.nc ✅
                                             ↓
-                                      ERA5 / init.nc ⏳
+                               ERA5 GRIB bruto ✅ / init.nc ⏳
 ```
 
 ## Stack científica
@@ -178,10 +184,38 @@ ignorados. O namelist/streams, scripts e validador C são os contratos
 versionados. A seta não passa por ERA5 porque campos estáticos independem da
 data.
 
+O ciclo 0010 cria um caminho de aquisição isolado da stack científica:
+
+```text
+Climate Data Store
+    ├── reanalysis-era5-pressure-levels
+    └── reanalysis-era5-single-levels
+                    ↓
+cases/first-global-240km/era5/*.json
+                    +
+docker/cds/Dockerfile → Python 3.12.13 → cdsapi 0.7.7
+                    ↓ scripts/data/fetch-era5.sh
+       .cdsapirc read-only em runtime
+                    ↓
+         probe 1° × 1° descartável
+                    ↓
+data/era5/2014-09-10_00/
+    ├── era5-pressure-levels.grib
+    ├── era5-single-levels.grib
+    └── manifest.json
+                    ↓
+         scripts/validate/era5.sh
+```
+
+Requests, cliente e lock estão versionados. Os dois probes passaram antes dos
+downloads globais; os GRIBs e o manifesto existem somente no diretório local
+ignorado e passaram na validação de transporte. A credencial nunca entra na
+imagem, nos argumentos ou no Git.
+
 WPS prepara dados meteorológicos por um caminho distinto da stack científica:
 
 ```text
-ERA5 GRIB (futuro)
+ERA5 GRIB local validado
        ↓
 Vtable aprovada (pendente)
        ↓
@@ -272,8 +306,10 @@ mpas-era5/
 │   │   │                              versões, flags e prefixos separados
 │   │   ├── 0005-first-mesh-baseline.md
 │   │   │                              x1.10242 e part.4 aprovadas
-│   │   └── 0006-first-static-baseline.md
-│   │                                  geografia, 1 task, supersampling e Noah
+│   │   ├── 0006-first-static-baseline.md
+│   │   │                              geografia, 1 task, supersampling e Noah
+│   │   └── 0007-first-era5-baseline.md
+│   │                                  instante, inventário e cliente CDS
 │   ├── testing/
 │   │   └── validation-matrix.md      testes, status e evidências
 │   └── logs/                         reservado; atualmente vazio
@@ -291,11 +327,14 @@ mpas-era5/
 │       ├── 0007-add-mpas-atmosphere.md
 │       │                                  nota educacional do ciclo 0007
 │       ├── 0008-add-first-mesh.md         nota educacional do ciclo 0008
-│       └── 0009-generate-static-fields.md nota educacional do ciclo 0009
+│       ├── 0009-generate-static-fields.md nota educacional do ciclo 0009
+│       └── 0010-add-era5-acquisition.md   nota educacional do ciclo 0010
 ├── scripts/
 │   ├── data/
 │   │   ├── fetch-mesh.sh             aquisição first-party e integridade
-│   │   └── fetch-geog.sh             WPS_GEOG exato, hashes e manifesto
+│   │   ├── fetch-geog.sh             WPS_GEOG exato, hashes e manifesto
+│   │   ├── fetch-era5.py             requests, CDS, GRIB e manifesto seguro
+│   │   └── fetch-era5.sh             isolamento/volumes do container CDS
 │   ├── run/
 │   │   └── generate-static.sh        init case 7, MPI 1, execução isolada
 │   ├── prepare/
@@ -308,7 +347,8 @@ mpas-era5/
 │   │   ├── mpas-init.sh              smoke MPAS init offline/read-only
 │   │   ├── mpas-atmosphere.sh        smoke MPAS atmosphere offline/read-only
 │   │   ├── mesh.sh                   validação da mesh real e partição
-│   │   └── static.sh                 estrutura, campos, ranges e log MPAS
+│   │   ├── static.sh                 estrutura, campos, ranges e log MPAS
+│   │   └── era5.sh                   transporte GRIB, manifesto e Git hygiene
 │   └── codex/                        automações de suporte a ciclos futuros
 ├── tests/
 │   ├── fixtures/
@@ -321,10 +361,14 @@ mpas-era5/
 ├── data/                              entradas/saídas científicas fora do Git
 │   ├── meshes/x1.10242/              grid, graph.info e part.4 ignorados
 │   ├── geog/mpas-8.4.1/              oito datasets WPS ignorados
+│   ├── era5/2014-09-10_00/           GRIBs/manifesto locais validados
 │   └── cases/.../static/             NetCDF e logs ignorados
 ├── cases/
-│   └── first-global-240km/static/    namelist e streams versionados
-└── docker/                            suporte Docker futuro
+│   └── first-global-240km/
+│       ├── static/                    namelist e streams versionados
+│       └── era5/                      requests globais versionadas
+└── docker/
+    └── cds/                           cliente de aquisição; fora da stack MPAS
 ```
 
 `scripts/validate/` contém validações instaladas e repetíveis para PnetCDF,
@@ -336,6 +380,7 @@ PIO, METIS, WPS/ungrib, os dois cores MPAS e a mesh x1.10242.
 | Caminho | Responsabilidade | Relações principais |
 |---|---|---|
 | `Dockerfile` | construir ambiente e bibliotecas adotadas | versões em `docs/references/versions.lock.md`; testes em `docs/testing/validation-matrix.md` |
+| `docker/cds/` | construir somente o cliente de aquisição ERA5 | Python/cdsapi fixados; não contém MPAS/WPS nem recebe credencial no build |
 | `docs/project/` | controlar escopo, estado e processo | lido antes de todo ciclo conforme `AGENTS.md` |
 | `docs/references/` | registrar autoridade das fontes e versões | alimenta propostas, ADRs e reprodução do build |
 | `docs/decisions/` | preservar decisões significativas e alternativas | depende de proposta e decisão do usuário |
@@ -348,7 +393,7 @@ PIO, METIS, WPS/ungrib, os dois cores MPAS e a mesh x1.10242.
 | `tests/fixtures/` | manter entradas pequenas, deliberadas e versionadas | copiadas para espaço efêmero; nunca recebem saídas geradas |
 | `scripts/codex/` | hospedar automação de governança aprovada | deve respeitar `AGENTS.md` e o workflow |
 | `data/` | manter meshes, ERA5 e outras entradas científicas locais | credenciais, NetCDF, GRIB, partições e outputs nunca devem entrar no Git |
-| `cases/` | manter configurações de execuções MPAS | depende de mesh, ERA5 e versões aprovadas |
+| `cases/` | manter configurações de execuções MPAS e requests científicas aprovadas | depende de mesh, ERA5 e versões aprovadas; dados materializados ficam em `data/` |
 
 ## Documentos relacionados
 
@@ -365,6 +410,7 @@ PIO, METIS, WPS/ungrib, os dois cores MPAS e a mesh x1.10242.
 - [[../decisions/0004-wps-mpas-version-and-layout|ADR 0004 — WPS/MPAS e layout]]
 - [[../decisions/0005-first-mesh-baseline|ADR 0005 — primeira mesh e part.4]]
 - [[../decisions/0006-first-static-baseline|ADR 0006 — primeira baseline static]]
+- [[../decisions/0007-first-era5-baseline|ADR 0007 — baseline ERA5]]
 - [[../cases/first-global-240km|Primeiro caso global de ~240 km]]
 - [[../testing/validation-matrix|Matriz de validação]]
 - [[../../learning/README|Índice de aprendizado]]

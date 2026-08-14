@@ -2,12 +2,14 @@
 
 ## Status
 
-**Mesh, dados geográficos e campos estáticos preparados e validados.**
+**Mesh, dados geográficos, campos estáticos e ERA5 bruto validados.**
 
 O ciclo 0009 executou pela primeira vez o `init_atmosphere_model` 8.4.1
 sobre a mesh real x1.10242 e produziu
-`data/cases/first-global-240km/static/x1.10242.static.nc`. ERA5, `init.nc`
-e a previsão continuam fora deste estágio.
+`data/cases/first-global-240km/static/x1.10242.static.nc`. O ciclo 0010
+aprovou e versionou a seleção ERA5, construiu seu cliente dedicado, validou os
+probes e adquiriu os dois GRIBs globais. `ungrib`, `init.nc` e a previsão
+continuam fora deste estágio.
 
 ## Baseline
 
@@ -26,6 +28,64 @@ A mesh fica em `data/meshes/x1.10242/`; dados geográficos ficam em
 `data/geog/mpas-8.4.1/`; o output e os logs ficam em
 `data/cases/first-global-240km/static/`. Todos são ignorados pelo Git. O
 repositório preserva somente aquisição, configuração, execução e validação.
+
+## Baseline meteorológica ERA5
+
+O [[../decisions/0007-first-era5-baseline|ADR 0007]] fixa:
+
+| Campo | Seleção |
+|---|---|
+| Instante | `2014-09-10 00:00:00 UTC` |
+| Área final | global; `area` omitida |
+| Grade final | regular latitude/longitude CDS, 0,25°; `grid` omitido |
+| Formato | GRIB, `download_format=unarchived` |
+| Pressure dataset | `reanalysis-era5-pressure-levels` |
+| Pressure levels | todos os 37 níveis, de 1000 a 1 hPa |
+| Pressure variables | geopotential, RH, temperature, U e V |
+| Single dataset | `reanalysis-era5-single-levels` |
+| Single variables | 19 campos de superfície, pressão, solo, neve e gelo |
+| Cliente | `cdsapi==0.7.7` em container Python 3.12.13 por digest |
+
+As requests completas estão em
+[`cases/first-global-240km/era5/`](../../cases/first-global-240km/era5/).
+Elas omitem recorte e regrid. Um probe temporário mantém todas as 204
+mensagens esperadas — 185 pressure e 19 single-level — numa área de 1° × 1°,
+validando a API e o transporte antes do download global.
+
+O cliente dedicado é separado da imagem
+`mpas-era5:mpas-atmosphere-8.4.1`. A credencial é montada read-only em
+`/run/secrets/cdsapirc`, sem `ARG`, `ENV`, cópia ou log do token. O destino
+local observado é:
+
+```text
+data/era5/2014-09-10_00/
+├── era5-pressure-levels.grib
+├── era5-single-levels.grib
+└── manifest.json
+```
+
+Build, `pip check`, versão, requests e self-test do framing GRIB passaram. O
+preflight inicialmente recusou com segurança a ausência de `~/.cdsapirc`;
+depois que a credencial regular com modo `600` e os termos foram
+disponibilizados, os dois probes autenticados passaram:
+
+| Probe | Bytes | Mensagens | Edição | SHA-256 local |
+|---|---:|---:|---:|---|
+| pressure levels | 29.230 | 185 | GRIB1 | `ee199692c9cee1a1c6983be1f90a523f903889a1b06d58fefeb7d0a98b60f341` |
+| single levels | 3.118 | 19 | GRIB1 | `b18bee89bcca223af1be15e4ecbd97a3b46556e651d51c945d9e221d2c928420` |
+
+Os probes foram descartados depois da validação. Os arquivos globais
+promovidos atomicamente e registrados no manifesto local são:
+
+| Arquivo | Bytes | Mensagens | Edição | SHA-256 local |
+|---|---:|---:|---:|---|
+| `era5-pressure-levels.grib` | 384.168.780 | 185 | GRIB1 | `11a0a10a5727a19f64c529179af8b9e5fc4f92cdb60eb32ac90c68926b2e06ac` |
+| `era5-single-levels.grib` | 41.995.970 | 19 | GRIB1 | `5d0c6aeeef07c5109f044428266d822928c2cf4ccda1ccbb430c916f0b5b693b` |
+
+Uma segunda execução reconheceu ambos como `unchanged` e não submeteu novo
+retrieve. O sucesso dos dois datasets confirma autenticação e termos sem
+expor o token; os checksums identificam os bytes recebidos e não são hashes
+publicados pelo CDS.
 
 ## Dados geográficos adotados
 
@@ -207,7 +267,9 @@ init_atmosphere_model 8.4.1, 1 task MPI
         ↓
 x1.10242.static.nc ✅
         ↓
-ERA5 / init.nc ⏳
+ERA5 pressure + single-level GRIB ✅
+        ↓
+WPS intermediate / init.nc ⏳
 ```
 
 Isto prova pela primeira vez que o init consumiu a mesh real escolhida e
@@ -217,7 +279,6 @@ constitui validação meteorológica de uma previsão.
 
 ## Próximas decisões ainda pendentes
 
-- data, hora, período, área, variáveis e níveis ERA5;
 - Vtable e mapeamento ERA5 → WPS intermediate;
 - geração e validação de `init.nc`;
 - duração, timestep e configuração de physics;

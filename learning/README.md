@@ -37,6 +37,9 @@ apontar para ele.
 - [`commits/0009-generate-static-fields.md`](commits/0009-generate-static-fields.md):
   nota educacional sobre WPS_GEOG, interpolação, static, GWD, Noah-MP e
   validação física básica;
+- [`commits/0010-add-era5-acquisition.md`](commits/0010-add-era5-acquisition.md):
+  nota educacional sobre reanálise, ERA5, pressure/single levels, GRIB, CDS,
+  credenciais, requests e validação de transporte;
 - `commits/NNNN-<descricao>.md`: uma nota por commit posterior ao bootstrap.
 
 ## O que cada nota por commit deve ensinar

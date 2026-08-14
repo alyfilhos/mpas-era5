@@ -46,7 +46,8 @@ compilação de software científico, MPI e ferramentas utilizadas em HPC.
 - `x1.10242.graph.info.part.4` gerado localmente com METIS 5.1.0 e validado ✅
 - dados geográficos oficiais WPS, selecionados e validados para MPAS 8.4.1 ✅
 - `x1.10242.static.nc` gerado localmente e validado ✅
-- ERA5, `init.nc` e execução do `atmosphere_model` ⏳
+- baseline/request/client ERA5 definidos e ERA5 bruto global adquirido e
+  validado ✅; `init.nc` e execução do `atmosphere_model` ⏳
 
 ## Roadmap
 
@@ -87,6 +88,26 @@ reproduzir e validar:
 O output local é
 `data/cases/first-global-240km/static/x1.10242.static.nc`; dados, NetCDF e
 logs continuam fora do Git.
+
+A baseline meteorológica é global em 2014-09-10 00 UTC. Requests pressure e
+single-level versionadas ficam em
+[`cases/first-global-240km/era5/`](cases/first-global-240km/era5/), enquanto
+o cliente `cdsapi==0.7.7` usa um container pequeno em
+[`docker/cds/`](docker/cds/), separado da imagem científica. Depois de
+configurar `~/.cdsapirc` e aceitar os termos dos dois datasets no CDS:
+
+```sh
+./scripts/data/fetch-era5.sh build
+./scripts/data/fetch-era5.sh probe
+./scripts/data/fetch-era5.sh download
+./scripts/validate/era5.sh
+```
+
+A credencial é montada read-only somente em runtime. Os dois probes e os
+downloads globais passaram; os GRIBs e o manifesto ficam em
+`data/era5/2014-09-10_00/`, ignorados pelo Git. A validação confirmou 185
+mensagens pressure-level e 19 single-level, todas GRIB edição 1, com tamanho e
+SHA-256 registrados localmente.
 
 Depois:
 

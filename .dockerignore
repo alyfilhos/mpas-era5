@@ -1,7 +1,14 @@
 .git
+.cdsapirc
+**/.cdsapirc
 data
 cases
 *.nc
 *.grib
+*.grib1
 *.grb
+*.grb1
 *.grib2
+*.grb2
+.venv
+venv

@@ -24,6 +24,8 @@ evidência. Decisões novas são listadas abaixo.
   — aceito em 2026-08-06.
 - [[0006-first-static-baseline|ADR 0006 — baseline geográfica e static]]
   — aceito em 2026-08-14.
+- [[0007-first-era5-baseline|ADR 0007 — baseline ERA5 do primeiro caso global]]
+  — aceito em 2026-08-14.
 
 ## Quando criar um ADR
 

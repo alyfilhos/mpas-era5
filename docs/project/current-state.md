@@ -19,6 +19,27 @@ A partir do ciclo 0004, cada atualização distingue:
 Consequentemente, a referência abaixo é uma observação datada, não uma
 declaração eterna do `HEAD`.
 
+## Referência do ciclo 0010 em andamento
+
+Estado atualizado em **2026-08-14** depois da decisão, implementação, probes,
+aquisição e validação do ERA5 bruto:
+
+- branch inspecionada: `main`;
+- base e `HEAD` observados antes das mudanças:
+  `6a527d97f66a94b03e8320d5369167a9365c6490`;
+- relação observada: `main` alinhada com `origin/main`;
+- worktree inicial: limpo;
+- baseline aprovada: 2014-09-10 00 UTC, global, 37 pressure levels,
+  5 variáveis pressure e 19 single-level, GRIB;
+- estado produzido: requests, ADR, container dedicado, cliente, probes e dois
+  GRIBs globais validados no worktree; nenhum commit ou push;
+- autenticação e termos: comprovados pelos retrieves bem-sucedidos dos dois
+  datasets, sem token em imagem, argumentos, logs ou Git;
+- comando normativo para o `HEAD` atual: `git rev-parse HEAD`.
+
+O `Dockerfile` científico permaneceu inalterado. O novo
+`docker/cds/Dockerfile` é uma imagem independente para aquisição.
+
 ## Referência do ciclo 0009
 
 Estado atualizado em **2026-08-14** depois da aquisição geográfica, execução
@@ -72,6 +93,8 @@ Não foi criada uma variável `METIS`: o workflow usa
 | Primeira mesh | x1.10242 | oficial, global quasi-uniforme, ~240 km, 10.242 células; NetCDF/grafo/part.4 validados e grid consumido pelo init |
 | Geografia do primeiro static | WPS first-party | 8 datasets exatos, 16.563.576.021 bytes, hashes locais/manifests validados; fora do Git/imagem |
 | Primeiro static | x1.10242 / CDF-2 | 18.201.336 bytes; 1 task MPI; Noah-MP false; campos/ranges/log validados; artefato local ignorado |
+| Cliente CDS | Python 3.12.13 / cdsapi 0.7.7 | imagem dedicada por digest, lock transitivo, `pip check`, versão, requests, self-test e autenticação aprovados |
+| Baseline ERA5 | 2014-09-10 00 UTC / global / GRIB | probes e dois downloads globais GRIB1 validados; 426.164.750 bytes locais no total |
 
 A imagem validada é `mpas-era5:mpas-atmosphere-8.4.1`, com ID local
 `sha256:54281c60db053982692d21bef27cf522293e8e2568be748cf4a83f2d5f0e4c93`
@@ -334,7 +357,53 @@ A integração agora comprovada é:
 x1.10242.grid.nc + WPS_GEOG → init_atmosphere static → x1.10242.static.nc
 ```
 
-ERA5, WPS intermediate, `init.nc` e `atmosphere_model` continuam pendentes.
+WPS intermediate, `init.nc` e `atmosphere_model` continuam pendentes.
+
+## Baseline e cliente ERA5 no ciclo 0010
+
+O ADR 0007 fixa 2014-09-10 00 UTC, domínio global, grade CDS regular 0,25°
+sem recorte/regrid e os datasets horários pressure/single-level. As requests
+versionadas selecionam cinco variáveis em todos os 37 pressure levels e 19
+campos single-level, totalizando 185 e 19 mensagens esperadas.
+
+`docker/cds/Dockerfile` parte da imagem oficial Python 3.12.13 slim-bookworm
+por digest, instala `cdsapi==0.7.7` e fixa a resolução transitiva observada.
+O build terminou com `pip check` sem dependências quebradas. A imagem local
+`mpas-era5:cdsapi-0.7.7` tem ID
+`sha256:6f7044041f5c813f4042fed3cc4edb269ec4ba8e3663def887e408e75ae951d1`
+e 47.761.384 bytes.
+
+O wrapper executa com rootfs read-only, UID/GID do host, capabilities
+removidas, `no-new-privileges`, configuração/credencial read-only e volume de
+dados writable somente no download. O Python valida JSON, data versus
+seletores, ausência de `area`/`grid`, mensagem/edição GRIB, end marker,
+tamanho e SHA-256; também recusa sobrescrita sem manifesto idêntico.
+
+Build, versão, `pip check`, smoke de requests e self-test do framing GRIB
+passaram. O self-test aceitou GRIB1/GRIB2 enquadrados e rejeitou arquivo vazio,
+HTML, JSON e GRIB truncado. A primeira tentativa de probe terminou antes da
+rede porque `~/.cdsapirc` não existia. Depois da configuração manual segura,
+os probes dos dois datasets retornaram exatamente 185 e 19 mensagens GRIB1.
+
+Os downloads globais foram concluídos e validados independentemente:
+
+| Arquivo | Bytes | SHA-256 local |
+|---|---:|---|
+| `era5-pressure-levels.grib` | 384.168.780 | `11a0a10a5727a19f64c529179af8b9e5fc4f92cdb60eb32ac90c68926b2e06ac` |
+| `era5-single-levels.grib` | 41.995.970 | `5d0c6aeeef07c5109f044428266d822928c2cf4ccda1ccbb430c916f0b5b693b` |
+
+O manifesto registra requests, cliente, jobs concluídos, tamanhos, hashes,
+contagens e edições. Uma reexecução retornou `unchanged` para ambos sem novo
+retrieve. Os dados e o manifesto estão ignorados e não rastreados; as requests
+continuam versionáveis. O token não foi solicitado, impresso ou copiado.
+
+Logo, a evidência neste ponto é:
+
+```text
+seleção + requests + cliente isolado + credencial/termos ✅
+probe + ERA5 GRIB pressure/single-level + transporte bruto ✅
+ungrib.exe (ciclo 0011) ⏳
+```
 
 ## Preservação da stack anterior
 
@@ -418,11 +487,20 @@ As decisões e alternativas estão em
 - `docs/decisions/0006-first-static-baseline.md`: baseline geográfica/static;
 - `learning/commits/0009-generate-static-fields.md`: nota educacional.
 
+## Artefatos do ciclo 0010 em andamento
+
+- `cases/first-global-240km/era5/`: duas requests e instruções;
+- `docker/cds/`: imagem Python/CDS separada e lock completo;
+- `scripts/data/fetch-era5.py`: aquisição, framing GRIB, SHA-256 e manifesto;
+- `scripts/data/fetch-era5.sh`: build e execução isolada;
+- `scripts/validate/era5.sh`: validação local e Git hygiene;
+- `docs/decisions/0007-first-era5-baseline.md`: decisão meteorológica;
+- `learning/commits/0010-add-era5-acquisition.md`: nota educacional.
+
 ## Componentes ainda não implementados
 
 - METIS 5.2.1 e GKlib externa;
 - PT-Scotch;
-- aquisição ou preparação ERA5;
 - execução meteorológica do `init_atmosphere` para `init.nc`;
 - `init.nc`; LBC permanece somente para eventual caso futuro de área
   limitada;
@@ -445,7 +523,7 @@ As decisões e alternativas estão em
 - HDF5 e netCDF continuam seriais por decisão anterior;
 - METIS 5.2.1 + GKlib fixada e PT-Scotch online são somente hipóteses futuras,
   sem conclusão de superioridade;
-- a Vtable ERA5 não foi escolhida e nenhum GRIB real foi processado;
+- a Vtable ERA5 não foi escolhida e nenhum GRIB real foi processado pelo WPS;
 - avisos de código legado em libpng, JasPer e Fortran permanecem, apesar do
   build e da linkagem bem-sucedidos;
 - a etapa static do `init_atmosphere` passou funcionalmente, mas qualquer

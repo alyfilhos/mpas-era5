@@ -15,7 +15,7 @@ não prova que a execução ocorreu nesta máquina nem preserva o resultado. Um
 componente só poderá receber status validado quando comando, resultado e
 evidência estiverem registrados.
 
-Última revisão: **2026-08-05**.
+Última revisão: **2026-08-14**.
 
 ## Ambiente e stack existente
 
@@ -34,11 +34,11 @@ evidência estiverem registrados.
 | MPAS 8.4.1 `init_atmosphere` | a tag não contém suíte autocontida; build real do core passou | executável/defaults/proveniência conferidos e static NetCDF validado independentemente | mesh + WPS_GEOG → static: PASS; mesh + WPS/ERA5 → `init.nc` pendente | Build/smoke estrutural nos ciclos 0006/0007; execução static funcional no ciclo 0009 | [`Dockerfile`](../../Dockerfile), [`mpas-init.sh`](../../scripts/validate/mpas-init.sh), [`generate-static.sh`](../../scripts/run/generate-static.sh), [`static.sh`](../../scripts/validate/static.sh) e evidência abaixo |
 | MPAS 8.4.1 `atmosphere` | a tag não contém suíte autocontida aplicável sem mesh, `init.nc` e configuração; o build real do core passou | executável, defaults, configuração, pins, lookup tables, `file`, `ldd` e símbolos conferidos offline | `init.nc` + mesh + partição → `atmosphere_model` pendente | Build e smoke estrutural validados no ciclo 0007; funcional/científico pendentes | [`Dockerfile`](../../Dockerfile), [`mpas-atmosphere.sh`](../../scripts/validate/mpas-atmosphere.sh) e evidência abaixo |
 
-## Componentes futuros
+## Dados adquiridos e componentes futuros
 
 | Componente | Upstream test | Smoke test | Integration test | Status | Evidência |
 |---|---|---|---|---|---|
-| ERA5 | Não se aplica como suite de software única; validar cliente e esquema segundo fontes oficiais | Planejado: baixar uma amostra mínima sem registrar credenciais e conferir metadados/unidades | Planejado: amostra ERA5 → `ungrib` → `init_atmosphere` | Período/área/variáveis a decidir | [[../project/requirements|REQ-DATA-001]] |
+| ERA5 / cliente CDS | O dataset não possui suite; build do cliente executou `pip check` sem dependências quebradas | Python 3.12.13, `cdsapi==0.7.7`, lock, requests, parser/framing, manifestos e reexecução idempotente validados | Probes autenticados + pressure/single global → GRIB1 bruto: PASS; ERA5 → ungrib pertence ao ciclo 0011 | Baseline, aquisição e transporte bruto validados no ciclo 0010 | [`docker/cds/`](../../docker/cds/), [`fetch-era5.py`](../../scripts/data/fetch-era5.py), [`fetch-era5.sh`](../../scripts/data/fetch-era5.sh), [`era5.sh`](../../scripts/validate/era5.sh) e evidência do ciclo 0010 |
 | Mesh pública inicial | Fonte/proveniência e integridade do pacote x1.10242 confirmadas; `graphchk` aprovado no grafo real | NetCDF, dimensões, variáveis, grafo, part.4, edge cut, balanceamento e conectividade conferidos offline | `graph.info` real → METIS 5.1.0 → `part.4`: PASS; mesh real → init static: PASS | x1.10242 validada no ciclo 0008 e consumida funcionalmente no ciclo 0009 | [`fetch-mesh.sh`](../../scripts/data/fetch-mesh.sh), [`partition-mesh.sh`](../../scripts/prepare/partition-mesh.sh), [`mesh.sh`](../../scripts/validate/mesh.sh) e evidências abaixo |
 | `static.nc` | Não se aplica | CDF-2, dimensões, atributos, Registry/source, campos, missing, NaN/Inf, categorias e ranges conferidos | x1.10242 + WPS_GEOG → init case 7 → `x1.10242.static.nc`: PASS em 1 task MPI | Gerado e validado no ciclo 0009; local/ignorado; Noah-MP ausente por decisão | [`generate-static.sh`](../../scripts/run/generate-static.sh), [`static.sh`](../../scripts/validate/static.sh), [`static_netcdf.c`](../../tests/smoke/static_netcdf.c) e evidência abaixo |
 | `init.nc` | Não se aplica | Planejado: verificar estrutura, completude, tempo e faixas físicas iniciais | Planejado: arquivo aceito por `atmosphere` em execução curta | Não gerado | [[../project/requirements|REQ-CASE-002]] |
@@ -410,6 +410,50 @@ ambos são superados pelos PASS registrados no ciclo 0009 abaixo.
 | NETCDF/PHYSICAL VALIDATION | PASS |
 | ERA5 → `init.nc` | PENDING, fora do escopo |
 | `atmosphere_model` forecast | PENDING, fora do escopo |
+
+## Evidência do ciclo 0010 — baseline e aquisição ERA5
+
+| Campo | Evidência real |
+|---|---|
+| Data | 2026-08-14 |
+| Base | `6a527d97f66a94b03e8320d5369167a9365c6490`; branch `main` alinhada a `origin/main`; worktree inicial limpo |
+| Decisão | 2014-09-10 00 UTC, global, 37 níveis, 5 variáveis pressure, 19 single-level, GRIB e container dedicado aprovados explicitamente |
+| Requests | JSON válido; pressure: 5 × 37 = 185 mensagens; single: 19 mensagens; `area`/`grid` ausentes; request SHA-256 `13cf2e50f81dadb4bb347c39ac4ebc77cf519e96a88fe9f50e2152e75d49873a` e `de3a1bce687a56f4be55ab62439498bd7eca659b6adda9b2c55ee0a3be0d73f4` |
+| Base do cliente | Python Official Image 3.12.13 slim-bookworm; digest `sha256:d50fb7611f86d04a3b0471b46d7557818d88983fc3136726336b2a4c657aa30b` |
+| Cliente | `cdsapi==0.7.7`; dependências transitivas fixadas; build e `pip check` código 0 |
+| Imagem local | `mpas-era5:cdsapi-0.7.7`, ID `sha256:6f7044041f5c813f4042fed3cc4edb269ec4ba8e3663def887e408e75ae951d1`, 47.761.384 bytes |
+| Isolamento | rootfs read-only, UID/GID do host, capabilities removidas, `no-new-privileges`, requests/credencial read-only e somente output writable no download |
+| Self-test | framing GRIB1/GRIB2 aceito; vazio, HTML, JSON e GRIB truncado rejeitados; manifesto idêntico aceito e checksum divergente recusado; ambos os self-tests PASS no host e no container |
+| Config smoke | ambos os datasets, instante, domínio, 5/37/185 e 19/0/19 conferidos com rede desligada |
+| Preflight da credencial | ausência inicial recusada com código 1 e sem criar dados; arquivo depois fornecido como regular, não symlink e modo `600` |
+| Autenticação/termos | retrieves bem-sucedidos nos dois datasets; confirmação empírica sem imprimir ou copiar o token |
+| Probe pressure | job `11024332-1fd6-47f6-af20-a70d42ca4539` successful; 29.230 bytes; 185 mensagens GRIB1; SHA-256 `ee199692c9cee1a1c6983be1f90a523f903889a1b06d58fefeb7d0a98b60f341` |
+| Probe single | job `9a0c3182-d923-4fc1-9377-7fcc38f7b39e` successful; 3.118 bytes; 19 mensagens GRIB1; SHA-256 `b18bee89bcca223af1be15e4ecbd97a3b46556e651d51c945d9e221d2c928420` |
+| Pressure global | job `b7a6ac07-dcae-4fac-81d6-41da9daca21c` successful; 384.168.780 bytes; 185 mensagens GRIB1; SHA-256 `11a0a10a5727a19f64c529179af8b9e5fc4f92cdb60eb32ac90c68926b2e06ac` |
+| Single global | job `548eaa8b-7e65-41f9-bac1-040b71b82153` successful; 41.995.970 bytes; 19 mensagens GRIB1; SHA-256 `5d0c6aeeef07c5109f044428266d822928c2cf4ccda1ccbb430c916f0b5b693b` |
+| Recuperação de transporte | pressure teve duas `IncompleteRead`; o cliente retomou do byte parcial e a validação final integral passou |
+| Validação independente | arquivos regulares/não vazios, framing e terminadores GRIB, edição, contagens, tamanho, SHA-256, manifesto/request e Git hygiene: PASS |
+| Idempotência | segunda execução retornou `unchanged` para os dois arquivos e não submeteu novo retrieve |
+| Segurança | nenhuma credencial em args/env/imagem; `.cdsapirc`, GRIBs e manifesto ignorados; requests trackable |
+| Preservação | imagem científica manteve ID `sha256:54281c60db053982692d21bef27cf522293e8e2568be748cf4a83f2d5f0e4c93` e 466.941.565 bytes; Dockerfile científico inalterado |
+
+### Gates do ciclo 0010 neste ponto
+
+| Gate | Estado |
+|---|---|
+| ERA5 source/provenance | PASS |
+| Baseline/request schema | PASS |
+| Acquisition container build | PASS |
+| Client/version/dependency check | PASS |
+| CDS authentication | PASS |
+| Dataset Terms of Use | PASS, confirmado pelos dois retrieves |
+| Pressure GRIB probe | PASS |
+| Single-level GRIB probe | PASS |
+| Pressure GRIB acquisition | PASS |
+| Single-level GRIB acquisition | PASS |
+| Raw transport validation | PASS |
+| ERA5 → ungrib | PENDING, ciclo 0011 |
+| ERA5 → `init.nc` | PENDING, ciclo posterior |
 
 ## Evidência mínima de um resultado futuro
 

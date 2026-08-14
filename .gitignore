@@ -1,7 +1,12 @@
 # Local credentials
 .cdsapirc
 
+# Local Python environments
+.venv/
+venv/
+
 # Reproducibly acquired scientific data. Markdown documentation remains tracked.
+data/era5/
 data/geog/
 data/**/*.nc
 data/**/*.grib
