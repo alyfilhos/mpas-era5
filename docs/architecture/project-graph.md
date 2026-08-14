@@ -26,7 +26,7 @@ WPS 4.7.0 / ungrib ✅ ──→ WPS intermediate ──→ dados futuros
                                                     │
                                                     ▼
 PIO 2.7.0 ✅ ──→ MPAS 8.4.1
-                    ├── init_atmosphere_model ✅ estrutural
+                    ├── init_atmosphere_model ✅ static funcional
                     └── atmosphere_model ✅ estrutural; execução ⏳
 
 MPAS-Atmosphere Meshes (oficial)
@@ -34,14 +34,25 @@ MPAS-Atmosphere Meshes (oficial)
 scripts/data/fetch-mesh.sh
         ↓
 data/meshes/x1.10242/
-        ├── x1.10242.grid.nc
-        └── x1.10242.graph.info
-                      ↓
-              METIS 5.1.0
-                      ↓
-          x1.10242.graph.info.part.4
-                      ↓
-          init_atmosphere futuro
+        ├── x1.10242.grid.nc ───────────────┐
+        └── x1.10242.graph.info             │
+                      ↓                     │
+              METIS 5.1.0                   │
+                      ↓                     │
+          x1.10242.graph.info.part.4         │
+              (previsão futura)             │
+                                            │
+WPS Geographic Static Data (oficial)        │
+        ↓                                   │
+scripts/data/fetch-geog.sh                   │
+        ↓                                   │
+data/geog/mpas-8.4.1/ ──────────────────────┤
+                                            ↓
+                              init_atmosphere, case 7
+                                            ↓
+                              x1.10242.static.nc ✅
+                                            ↓
+                                      ERA5 / init.nc ⏳
 ```
 
 ## Stack científica
@@ -67,7 +78,8 @@ Dockerfile
 No ciclo 0007, a stack científica sob `/opt/mpas` permaneceu inalterada e
 todas as camadas até o init foram recuperadas do cache. O core `atmosphere`
 foi acrescentado à mesma árvore `/opt/mpas-model-8.4.1`; os dois executáveis
-estão presentes, enquanto a execução com mesh/dados continua pendente.
+estão presentes. No ciclo 0009 o init executou funcionalmente a etapa static
+com a mesh real; a execução meteorológica e o atmosphere continuam pendentes.
 
 PnetCDF não depende da seta HDF5 → netCDF neste ciclo. A ordem no `Dockerfile`
 preserva a stack já construída, mas o caminho funcional novo é independente:
@@ -139,6 +151,33 @@ x1.10242.graph.info.part.4
 NetCDF + graphchk + estrutura + balanceamento + edge cut + contiguidade ✅
 ```
 
+O ciclo 0009 acrescenta um caminho geográfico separado do caminho ERA5:
+
+```text
+geog_high_res_mandatory
+  ├── topo_gmted2010_30s
+  ├── soiltype_top_30s
+  ├── soiltemp_1deg
+  ├── greenfrac_fpar_modis
+  ├── albedo_modis
+  └── maxsnowalb_modis
+modis_landuse_20class_30s ─┐
+landuse_30s (native GWD) ──┴─→ data/geog/mpas-8.4.1/
+                                      +
+                              x1.10242.grid.nc
+                                      ↓
+                   cases/.../static + generate-static.sh
+                                      ↓
+                              x1.10242.static.nc
+                                      ↓
+                               validate/static.sh ✅
+```
+
+Os archives são entradas first-party; `data/geog/`, logs e outputs são
+ignorados. O namelist/streams, scripts e validador C são os contratos
+versionados. A seta não passa por ERA5 porque campos estáticos independem da
+data.
+
 WPS prepara dados meteorológicos por um caminho distinto da stack científica:
 
 ```text
@@ -150,7 +189,7 @@ Vtable aprovada (pendente)
        ↓
 WPS intermediate
        ↓
-MPAS init_atmosphere (build pronto; execução pendente)
+MPAS init_atmosphere meteorológico (static já pronto; init.nc pendente)
        ↓
 MPAS atmosphere (build pronto; execução pendente)
 ```
@@ -212,7 +251,7 @@ mpas-era5/
 │   ├── build/
 │   │   └── scientific-stack.md       documentação técnica da stack
 │   ├── cases/
-│   │   └── first-global-240km.md     primeiro caso; mesh pronta
+│   │   └── first-global-240km.md     mesh, geografia e static prontos
 │   ├── project/
 │   │   ├── requirements.md           escopo original versus decisões
 │   │   ├── current-state.md          estado produzido e referência Git real
@@ -231,8 +270,10 @@ mpas-era5/
 │   │                                  baseline offline e alternativas futuras
 │   │   ├── 0004-wps-mpas-version-and-layout.md
 │   │   │                              versões, flags e prefixos separados
-│   │   └── 0005-first-mesh-baseline.md
-│   │                                  x1.10242 e part.4 aprovadas
+│   │   ├── 0005-first-mesh-baseline.md
+│   │   │                              x1.10242 e part.4 aprovadas
+│   │   └── 0006-first-static-baseline.md
+│   │                                  geografia, 1 task, supersampling e Noah
 │   ├── testing/
 │   │   └── validation-matrix.md      testes, status e evidências
 │   └── logs/                         reservado; atualmente vazio
@@ -249,10 +290,14 @@ mpas-era5/
 │       │                                  nota educacional do ciclo 0006
 │       ├── 0007-add-mpas-atmosphere.md
 │       │                                  nota educacional do ciclo 0007
-│       └── 0008-add-first-mesh.md         nota educacional do ciclo 0008
+│       ├── 0008-add-first-mesh.md         nota educacional do ciclo 0008
+│       └── 0009-generate-static-fields.md nota educacional do ciclo 0009
 ├── scripts/
 │   ├── data/
-│   │   └── fetch-mesh.sh             aquisição first-party e integridade
+│   │   ├── fetch-mesh.sh             aquisição first-party e integridade
+│   │   └── fetch-geog.sh             WPS_GEOG exato, hashes e manifesto
+│   ├── run/
+│   │   └── generate-static.sh        init case 7, MPI 1, execução isolada
 │   ├── prepare/
 │   │   └── partition-mesh.sh         graph.info + N → part.N com METIS
 │   ├── validate/
@@ -262,7 +307,8 @@ mpas-era5/
 │   │   ├── wps-ungrib.sh             smoke WPS offline e read-only
 │   │   ├── mpas-init.sh              smoke MPAS init offline/read-only
 │   │   ├── mpas-atmosphere.sh        smoke MPAS atmosphere offline/read-only
-│   │   └── mesh.sh                   validação da mesh real e partição
+│   │   ├── mesh.sh                   validação da mesh real e partição
+│   │   └── static.sh                 estrutura, campos, ranges e log MPAS
 │   └── codex/                        automações de suporte a ciclos futuros
 ├── tests/
 │   ├── fixtures/
@@ -270,10 +316,14 @@ mpas-era5/
 │   │       └── graph.info            grafo didático de 16 vértices
 │   └── smoke/
 │       ├── pnetcdf_mpi.f90           I/O coletivo CDF-5 em 4 ranks
-│       └── pio_pnetcdf.c             PIO explícito sobre PnetCDF em 4 ranks
-├── data/                              entradas científicas locais fora do Git
-│   └── meshes/x1.10242/               grid, graph.info e part.4 ignorados
-├── cases/                             configurações futuras de experimentos
+│       ├── pio_pnetcdf.c             PIO explícito sobre PnetCDF em 4 ranks
+│       └── static_netcdf.c           validador independente do static
+├── data/                              entradas/saídas científicas fora do Git
+│   ├── meshes/x1.10242/              grid, graph.info e part.4 ignorados
+│   ├── geog/mpas-8.4.1/              oito datasets WPS ignorados
+│   └── cases/.../static/             NetCDF e logs ignorados
+├── cases/
+│   └── first-global-240km/static/    namelist e streams versionados
 └── docker/                            suporte Docker futuro
 ```
 
@@ -314,6 +364,7 @@ PIO, METIS, WPS/ungrib, os dois cores MPAS e a mesh x1.10242.
 - [[../decisions/0003-metis-5.1.0-partitioning-baseline|ADR 0003 — METIS 5.1.0]]
 - [[../decisions/0004-wps-mpas-version-and-layout|ADR 0004 — WPS/MPAS e layout]]
 - [[../decisions/0005-first-mesh-baseline|ADR 0005 — primeira mesh e part.4]]
+- [[../decisions/0006-first-static-baseline|ADR 0006 — primeira baseline static]]
 - [[../cases/first-global-240km|Primeiro caso global de ~240 km]]
 - [[../testing/validation-matrix|Matriz de validação]]
 - [[../../learning/README|Índice de aprendizado]]

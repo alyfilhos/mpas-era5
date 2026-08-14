@@ -22,6 +22,8 @@ evidência. Decisões novas são listadas abaixo.
   — aceito em 2026-08-05.
 - [[0005-first-mesh-baseline|ADR 0005 — primeira mesh e part.4]]
   — aceito em 2026-08-06.
+- [[0006-first-static-baseline|ADR 0006 — baseline geográfica e static]]
+  — aceito em 2026-08-14.
 
 ## Quando criar um ADR
 

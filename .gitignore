@@ -2,6 +2,7 @@
 .cdsapirc
 
 # Reproducibly acquired scientific data. Markdown documentation remains tracked.
+data/geog/
 data/**/*.nc
 data/**/*.grib
 data/**/*.grib1

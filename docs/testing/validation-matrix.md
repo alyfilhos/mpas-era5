@@ -31,7 +31,7 @@ evidência estiverem registrados.
 | PIO 2.7.0 | CTest: 109/109 testes aprovados | versão, configuração, headers, módulos, bibliotecas e pacote CMake conferidos | C → PIO/PnetCDF → MPI-IO → OpenMPI; CDF-2 escrito e relido em 4 ranks com OMPIO e ROMIO | Implementado e validado no ciclo 0003 | [`Dockerfile`](../../Dockerfile), [`pio.sh`](../../scripts/validate/pio.sh), [`pio_pnetcdf.c`](../../tests/smoke/pio_pnetcdf.c) e evidência abaixo |
 | METIS 5.1.0 | não há `make check`/CTest formal; `graphchk` e `gpmetis` passaram no `4elt.graph` fornecido upstream | versão por macros, ferramentas, biblioteca, help e opções conferidos | fixture → `gpmetis` → `graph.info.part.4`; estrutura, IDs, quatro partições, edge cut e conectividade validados | Implementado e validado no ciclo 0004 | [`Dockerfile`](../../Dockerfile), [`metis.sh`](../../scripts/validate/metis.sh), [`graph.info`](../../tests/fixtures/metis/graph.info) e evidência abaixo |
 | WPS 4.7.0 / ungrib | não foi identificada suíte formal para este recorte; build aplicável `configure` + `compile ungrib` passou | executável, links, `file`, `ldd`, `configure.wps`, proveniência, GRIB2 privado e Vtables conferidos offline | ERA5 GRIB → ungrib → WPS intermediate pendente; nenhum dado artificial ou aleatório foi usado | Build e smoke validados no ciclo 0005; integração funcional pendente | [`Dockerfile`](../../Dockerfile), [`wps-ungrib.sh`](../../scripts/validate/wps-ungrib.sh) e evidência abaixo |
-| MPAS 8.4.1 `init_atmosphere` | a tag não contém suíte autocontida aplicável sem mesh/configuração; o build real do core passou | executável, defaults, proveniência, opções, `file`, `ldd`, símbolos e interfaces conferidos offline | mesh → `init_atmosphere` e mesh + WPS/ERA5 → `init.nc` pendentes | Build e smoke estrutural validados no ciclo 0006 e regressão aprovada no ciclo 0007; funcional/científico pendentes | [`Dockerfile`](../../Dockerfile), [`mpas-init.sh`](../../scripts/validate/mpas-init.sh) e evidência abaixo |
+| MPAS 8.4.1 `init_atmosphere` | a tag não contém suíte autocontida; build real do core passou | executável/defaults/proveniência conferidos e static NetCDF validado independentemente | mesh + WPS_GEOG → static: PASS; mesh + WPS/ERA5 → `init.nc` pendente | Build/smoke estrutural nos ciclos 0006/0007; execução static funcional no ciclo 0009 | [`Dockerfile`](../../Dockerfile), [`mpas-init.sh`](../../scripts/validate/mpas-init.sh), [`generate-static.sh`](../../scripts/run/generate-static.sh), [`static.sh`](../../scripts/validate/static.sh) e evidência abaixo |
 | MPAS 8.4.1 `atmosphere` | a tag não contém suíte autocontida aplicável sem mesh, `init.nc` e configuração; o build real do core passou | executável, defaults, configuração, pins, lookup tables, `file`, `ldd` e símbolos conferidos offline | `init.nc` + mesh + partição → `atmosphere_model` pendente | Build e smoke estrutural validados no ciclo 0007; funcional/científico pendentes | [`Dockerfile`](../../Dockerfile), [`mpas-atmosphere.sh`](../../scripts/validate/mpas-atmosphere.sh) e evidência abaixo |
 
 ## Componentes futuros
@@ -39,8 +39,8 @@ evidência estiverem registrados.
 | Componente | Upstream test | Smoke test | Integration test | Status | Evidência |
 |---|---|---|---|---|---|
 | ERA5 | Não se aplica como suite de software única; validar cliente e esquema segundo fontes oficiais | Planejado: baixar uma amostra mínima sem registrar credenciais e conferir metadados/unidades | Planejado: amostra ERA5 → `ungrib` → `init_atmosphere` | Período/área/variáveis a decidir | [[../project/requirements|REQ-DATA-001]] |
-| Mesh pública inicial | Fonte/proveniência e integridade do pacote x1.10242 confirmadas; `graphchk` aprovado no grafo real | NetCDF, dimensões, variáveis, grafo, part.4, edge cut, balanceamento e conectividade conferidos offline | `graph.info` real → METIS 5.1.0 → `part.4`: PASS; aceitação pelo `init_atmosphere` pendente | x1.10242 preparada e estruturalmente validada no ciclo 0008 | [`fetch-mesh.sh`](../../scripts/data/fetch-mesh.sh), [`partition-mesh.sh`](../../scripts/prepare/partition-mesh.sh), [`mesh.sh`](../../scripts/validate/mesh.sh) e evidência abaixo |
-| `static.nc` | Não se aplica | Planejado: inspecionar dimensões, variáveis, atributos, valores ausentes e faixas plausíveis | Planejado: arquivo aceito na geração do estado inicial | Não gerado | [[../project/requirements|REQ-CASE-001]] |
+| Mesh pública inicial | Fonte/proveniência e integridade do pacote x1.10242 confirmadas; `graphchk` aprovado no grafo real | NetCDF, dimensões, variáveis, grafo, part.4, edge cut, balanceamento e conectividade conferidos offline | `graph.info` real → METIS 5.1.0 → `part.4`: PASS; mesh real → init static: PASS | x1.10242 validada no ciclo 0008 e consumida funcionalmente no ciclo 0009 | [`fetch-mesh.sh`](../../scripts/data/fetch-mesh.sh), [`partition-mesh.sh`](../../scripts/prepare/partition-mesh.sh), [`mesh.sh`](../../scripts/validate/mesh.sh) e evidências abaixo |
+| `static.nc` | Não se aplica | CDF-2, dimensões, atributos, Registry/source, campos, missing, NaN/Inf, categorias e ranges conferidos | x1.10242 + WPS_GEOG → init case 7 → `x1.10242.static.nc`: PASS em 1 task MPI | Gerado e validado no ciclo 0009; local/ignorado; Noah-MP ausente por decisão | [`generate-static.sh`](../../scripts/run/generate-static.sh), [`static.sh`](../../scripts/validate/static.sh), [`static_netcdf.c`](../../tests/smoke/static_netcdf.c) e evidência abaixo |
 | `init.nc` | Não se aplica | Planejado: verificar estrutura, completude, tempo e faixas físicas iniciais | Planejado: arquivo aceito por `atmosphere` em execução curta | Não gerado | [[../project/requirements|REQ-CASE-002]] |
 | LBC | Não se aplica | Planejado somente para área limitada: verificar sequência temporal, cobertura e continuidade | Planejado somente quando aplicável: execução curta consome todos os contornos | Não se aplica ao primeiro caso global; condicional para casos futuros | [[../project/requirements|REQ-CASE-003]] |
 | Primeira execução | Não se aplica | Planejado: execução curta termina sem erro e produz logs/saídas esperados | Planejado: pipeline completo reproduz a execução a partir das entradas registradas | Não executada | [[../project/requirements|REQ-RUN-001]] |
@@ -343,6 +343,9 @@ evidência estiverem registrados.
 | MPAS `init_atmosphere` integration | PENDING |
 | `static.nc` | PENDING |
 
+Esses dois estados PENDING descrevem o fechamento histórico do ciclo 0008;
+ambos são superados pelos PASS registrados no ciclo 0009 abaixo.
+
 ### Limites
 
 - uma partição válida não é um benchmark nem prova configuração ótima de
@@ -352,6 +355,61 @@ evidência estiverem registrados.
   `init.nc` e `atmosphere_model` não foram executados;
 - a mesh ainda não foi aceita funcionalmente pelo MPAS; a evidência deste
   ciclo é de proveniência, integridade, estrutura e particionamento.
+
+## Evidência do ciclo 0009 — campos estáticos x1.10242
+
+| Campo | Evidência real |
+|---|---|
+| Data | 2026-08-14 |
+| Base do ciclo | `7555a96a7c706ea9e719f23ff27eaf29498ffe05` (`data: add reproducible MPAS mesh workflow`); branch `main`, alinhada a `origin/main`; worktree inicial limpo |
+| Imagem | `mpas-era5:mpas-atmosphere-8.4.1`, ID `sha256:54281c60db053982692d21bef27cf522293e8e2568be748cf4a83f2d5f0e4c93`, 466.941.565 bytes; Dockerfile inalterado |
+| Pesquisa | Running MPAS/Static Fields, tutorial St Andrews 2025, Geographic Static Data WPS e Registry/source exatos v8.4.1 |
+| Low mandatory | 149.872.777 bytes; SHA-256 local `cbdbcc43554d946a38cbce658b7d563afd7a2889f2c0735b8aa3f2206c7256e7`; inspecionado e rejeitado: não contém os diretórios 30s requeridos |
+| High mandatory | URL first-party; 2.772.782.816 bytes; SHA-256 local `89b026b9db0a03c0c995e53b4a1d99663af1f6bda21b3b34c3c2c07386da5493`; ranges/tamanho/gzip/tar PASS |
+| MODIS supplement | 32.334.661 bytes; SHA-256 local `b21ca154d1038ec271abaa1be2fd38a0cd055b8a4ddfaab520719478ac48d326`; dois downloads iguais; bzip2/tar/index PASS |
+| GWD landuse supplement | 20.988.479 bytes; SHA-256 local `143cd195ae91f64011a43eae52ca00228709672c6a2ba614cb437eeb4cd41160`; dois downloads iguais; bzip2/tar/index PASS |
+| SHA upstream | nenhum SHA-256 publicado encontrado; hashes registrados explicitamente como locais |
+| Instalação geográfica | 8 diretórios, 5.274 arquivos/indexes, 16.563.576.021 bytes; manifesto por arquivo; segunda execução do fetch retornou `unchanged` |
+| Datasets | `albedo_modis`, `greenfrac_fpar_modis`, `landuse_30s`, `maxsnowalb_modis`, `modis_landuse_20class_30s`, `soiltemp_1deg`, `soiltype_top_30s`, `topo_gmted2010_30s` |
+| Configuração | case 7; dimensões static=1; GMTED2010/MODIS/STATSGO; supersampling 1; Noah-MP false; static/native GWD true; GWD GSL/vertical/met/SST/seaice false |
+| Streams | input `x1.10242.grid.nc`; output `x1.10242.static.nc`; surface/lbc/ugwp preservados e ignorados pelos stages desligados |
+| Isolamento | `--network none`, rootfs/inputs read-only, somente output writable, UID/GID do host, sem alteração de `/opt/mpas-model` |
+| Comando científico | `mpiexec -n 1 /opt/mpas-model-8.4.1/init_atmosphere_model`; exatamente 1 task MPI |
+| Tempo | wrapper: 1.042 s; timer MPAS: 1.041,84729 s |
+| Primeiro intento | falhou no native GWD por ausência de `landuse_30s/`; source exato confirmou path literal; output parcial não foi promovido, logs locais preservados e ignorados |
+| Output | `data/cases/first-global-240km/static/x1.10242.static.nc`; 18.201.336 bytes; SHA-256 `36e50a8f8d0233327b6505f74e2f909aaaa6c7cee03499affabadd5cc11a144f` |
+| NetCDF | CDF-2 / 64-bit offset; `nCells=10242`, `nEdges=30720`, `nVertices=20480`, `nMonths=12`, `Time=1` |
+| Campos | terreno, máscara/land use, solo, vegetation fraction, albedo/snow albedo e GWD `var2d/con/oa1..4/ol1..4` presentes |
+| Noah-MP | `soilcomp` e `soilcl1..4` ausentes como esperado; static proibido para física futura que exija esses campos |
+| Integridade física | todos os campos testados com missing=0 e NaN/Inf=0; categorias integrais; ranges plausíveis; `shdmin <= shdmax`; `static_validation=PASS` |
+| Ranges principais | `ter=-27..5112,52686`; `ivgtyp=1..19`; `isltyp=1..16`; `snoalb=0..0,839999974`; `soiltemp=0..305,01825`; `albedo12m=6,29671335..70`; `var2d=0..2023,71582`; `con=0..232,8871`; OA=-1..1; OL=0..1 |
+| Log | 3.016 output, 6 warnings de metadata opcional, 0 errors, 0 critical; `Logging complete` |
+| Regressão mesh | formato/dimensões/grafo/part.4 novamente aprovados; edge cut 663, imbalance 0,292912%, quatro partições conectadas; `mesh_smoke=PASS` |
+| Limite | prova mesh + geografia → static; não prova ERA5, WPS intermediate, `init.nc`, Noah-MP nem previsão |
+
+### Divergências documentais resolvidas
+
+- User Guide: uma task; tutorial recente: static paralelo. A baseline usa uma
+  task sem afirmar que paralelismo é impossível.
+- User Guide: supersampling 1; Registry 8.4.1: default 3; tutorial deixa 3
+  implícito. A mesh de ~240 km fixa 1 explicitamente.
+- Tutorial: Noah-MP false; Registry: default true. A baseline fixa false e
+  valida a ausência dos campos.
+- O User Guide não explicita o `landuse_30s/` de native GWD. Para o
+  comportamento 8.4.1 prevaleceu o path literal no source.
+
+### Gates do ciclo
+
+| Gate | Estado |
+|---|---|
+| OFFICIAL SOURCE RESEARCH | PASS |
+| ARCHIVE CONTENT/INTEGRITY | PASS |
+| REPRODUCIBLE ACQUISITION | PASS |
+| MESH REGRESSION | PASS |
+| MPAS STATIC EXECUTION | PASS |
+| NETCDF/PHYSICAL VALIDATION | PASS |
+| ERA5 → `init.nc` | PENDING, fora do escopo |
+| `atmosphere_model` forecast | PENDING, fora do escopo |
 
 ## Evidência mínima de um resultado futuro
 

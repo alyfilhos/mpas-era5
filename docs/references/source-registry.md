@@ -68,6 +68,10 @@ usada; autoridade e utilidade não são a mesma coisa.
 | DOC-MPAS-MESH-001 | MPAS-Atmosphere atual | [Meshes & Mesh Utilities](https://www2.mmm.ucar.edu/projects/mpas/site/downloads/meshes.html) | página first-party: classifica x1.10242 entre as meshes quasi-uniformes, registra 240 km/10.242 células e informa que cada pacote contém SCVT na esfera, `graph.info` e partições pré-computadas; oferece separadamente um static file | consultada diretamente em 2026-08-06; link da mesh de 240 km resolvido para o artefato registrado abaixo |
 | DOC-MPAS-MESH-002 | MPAS-Atmosphere atual | [Overview of MPAS Atmosphere](https://www2.mmm.ucar.edu/projects/mpas/site/documentation/mpas_overview.html) | uso de mesh de Voronoi centroidal não estruturada, dual triangular e suporte a aplicações globais uniformes e de resolução variável | consultada em 2026-08-06 para contexto conceitual da primeira mesh |
 | DOC-MPAS-TUTORIAL-001 | Tutorial MPAS-Atmosphere | [Practice Session Guide](https://www2.mmm.ucar.edu/projects/mpas/tutorial/UK2015/) | exemplo oficial recorrente com x1.10242, 10.242 células e resolução aproximada de 240 km para geração de campos estáticos e iniciais | consultado em 2026-08-06 como justificativa didática, não como origem do artefato |
+| DOC-MPAS-STATIC-001 | MPAS atual | [Running MPAS — Static Fields](https://www2.mmm.ucar.edu/projects/mpas/site/documentation/users_guide/running.html#static-fields) | case 7, dimensões unitárias, data sources, supersampling 1, preproc stages e orientação conservadora de uma task MPI | consultado em 2026-08-13; source 8.4.1 prevalece para nomes/comportamento da versão |
+| DOC-MPAS-TUTORIAL-002 | MPAS-Atmosphere St Andrews 2025 | [tutorial first-party](https://www2.mmm.ucar.edu/projects/mpas/tutorial/StAndrews2025/) | caso x1.10242, static paralelo, `config_noahmp_static=false`, GWD GSL desligado e streams não usados ignorados | consultado em 2026-08-13; execução paralela diverge da orientação conservadora do User Guide sem provar incompatibilidade |
+| DOC-MPAS-REGISTRY-001 | MPAS-Model 8.4.1 | [`Registry.xml` do core init](https://github.com/MPAS-Dev/MPAS-Model/blob/v8.4.1/src/core_init_atmosphere/Registry.xml), `mpas_init_atm_static.F`, `mpas_init_atm_gwd.F` e defaults gerados na imagem | opções válidas, defaults, campos de output, seleção de diretórios, ausência Noah-MP e leitura literal de `landuse_30s/` por native GWD | source/tag exatos inspecionados e exercitados em 2026-08-13/14; autoridade operacional da versão |
+| DOC-WPS-GEOG-001 | WPS atual | [Geographic Static Data Downloads](https://www2.mmm.ucar.edu/wrf/site/geog_data.html) | classifica low-resolution para testing/educação, publica high mandatory e suplementos WPSv3; origem first-party dos três artefatos adotados | página e links reais consultados em 2026-08-13; conteúdo de cada archive inspecionado antes da adoção |
 
 ### Releases, artefatos e versões fixadas pela implementação atual
 
@@ -92,6 +96,10 @@ preservada. O estado de cada artefato ou pin é informado individualmente na
 | REL-WPS-001 | WPS 4.7.0 | [release oficial `v4.7.0`](https://github.com/wrf-model/WPS/releases/tag/v4.7.0), [archive da tag](https://github.com/wrf-model/WPS/archive/refs/tags/v4.7.0.tar.gz) e [commit da tag](https://github.com/wrf-model/WPS/commit/5feccecd63384381b6942371c7a837f66e4ccb84) | SHA-256 local `5232d20d7556338391b66aba45824d4fcd6c42712ebe9325f359f3c6cf043808` | release, source da tag e [histórico oficial](https://github.com/wrf-model/WPS/releases) cruzados em 2026-08-05; dois downloads independentes de 4.544.769 bytes produziram o mesmo hash; nenhum SHA-256 upstream foi encontrado |
 | REL-MPAS-001 | MPAS-Model 8.4.1 | [release oficial `v8.4.1`](https://github.com/MPAS-Dev/MPAS-Model/releases/tag/v8.4.1), [repositório/tag](https://github.com/MPAS-Dev/MPAS-Model/tree/v8.4.1) e [hotfix/commit](https://github.com/MPAS-Dev/MPAS-Model/commit/91c5eac175eebeaf4206bacd5cb50c39dff3c152) | clone `--branch v8.4.1 --single-branch`; `git rev-parse HEAD` e tag exata precisam corresponder a `91c5eac175eebeaf4206bacd5cb50c39dff3c152`; metadata Git mantida | release, clone da tag, commit e histórico oficial cruzados em 2026-08-05; commit verificado nos probes e builds definitivos |
 | REL-MPAS-MESH-001 | MPAS x1.10242 | [tarball first-party de 240 km](https://www2.mmm.ucar.edu/projects/mpas/atmosphere_meshes/x1.10242.tar.gz) | 6.321.104 bytes; SHA-256 local `4dde31932bc45aaf467e2717d17ec8e5e54d73c3ebbeea027087bfdb8b98ab56` | URL resolvida a partir de DOC-MPAS-MESH-001; dois downloads independentes foram byte-a-byte iguais em 2026-08-06; nenhum SHA-256 upstream foi encontrado; archive contém a mesh, `graph.info` e partições, mas o workflow copia somente os dois primeiros |
+| REL-WPS-GEOG-LOW-001 | WPS geographic low mandatory | [`geog_low_res_mandatory.tar.gz`](https://www2.mmm.ucar.edu/wrf/src/wps_files/geog_low_res_mandatory.tar.gz) | 149.872.777 bytes; SHA-256 local `cbdbcc43554d946a38cbce658b7d563afd7a2889f2c0735b8aa3f2206c7256e7` | archive real inspecionado em 2026-08-13 e rejeitado para esta baseline por ausência dos datasets 30s requeridos; nenhum SHA-256 upstream encontrado |
+| REL-WPS-GEOG-HIGH-001 | WPS geographic high mandatory | [`geog_high_res_mandatory.tar.gz`](https://www2.mmm.ucar.edu/wrf/src/wps_files/geog_high_res_mandatory.tar.gz) | 2.772.782.816 bytes; SHA-256 local `89b026b9db0a03c0c995e53b4a1d99663af1f6bda21b3b34c3c2c07386da5493` | tamanho HTTP, ranges independentes, hash, `gzip -t` e listagem `tar` conferidos em 2026-08-13; nenhum SHA-256 upstream encontrado; somente seis diretórios necessários são extraídos |
+| REL-WPS-GEOG-MODIS-001 | WPSv3 MODIS land use | [`modis_landuse_20class_30s.tar.bz2`](https://www2.mmm.ucar.edu/wrf/src/wps_files/modis_landuse_20class_30s.tar.bz2) | 32.334.661 bytes; SHA-256 local `b21ca154d1038ec271abaa1be2fd38a0cd055b8a4ddfaab520719478ac48d326` | dois downloads independentes byte-a-byte iguais, bzip2/tar e índice MODIFIED_IGBP verificados em 2026-08-13; nenhum SHA-256 upstream encontrado |
+| REL-WPS-GEOG-GWD-001 | WPSv3 USGS land use | [`landuse_30s.tar.bz2`](https://www2.mmm.ucar.edu/wrf/src/wps_files/landuse_30s.tar.bz2) | 20.988.479 bytes; SHA-256 local `143cd195ae91f64011a43eae52ca00228709672c6a2ba614cb437eeb4cd41160` | dois downloads independentes, um por ranges, byte-a-byte iguais; bzip2/tar e índice USGS 24 categorias verificados em 2026-08-13; requerido pelo source GWD 8.4.1; nenhum SHA-256 upstream encontrado |
 | REL-MMM-PHYSICS-001 | MMM-physics | [release oficial `20250616-MPASv8.3`](https://github.com/NCAR/MMM-physics/releases/tag/20250616-MPASv8.3) | tag anotada resolvida para commit `a4baf7f3243d1db0dbc5f63473f895bdbdc05c30`; checkout detached e limpo | repo/tag impostos por `Externals.cfg`; objeto de tag e commit peeled verificados em 2026-08-05 |
 | REL-UGWP-001 | UGWP | [release oficial `MPAS_20241223`](https://github.com/NOAA-GSL/UGWP/releases/tag/MPAS_20241223) | tag leve/commit `c1c893edcf171af5639af60e3a3a528816f6cc2b`; checkout detached e limpo | repo/tag impostos por `Externals.cfg`; commit verificado em 2026-08-05 |
 | REL-MPAS-DATA-001 | MPAS-Data | [tag oficial `v8.2`](https://github.com/MPAS-Dev/MPAS-Data/tree/v8.2) | tag anotada resolvida para commit `c57dbc7be629802c6e848770a9e44b9bc602be41`; compatibilidade e hashes dos arquivos verificados | tag usada pelo script da física; objeto de tag e commit peeled verificados em 2026-08-05 |
@@ -165,8 +173,23 @@ bytes foram comparados byte a byte e produziram o mesmo SHA-256 local:
 Esse valor identifica o artefato first-party observado e fica fixado no
 script de aquisição; não é descrito como checksum publicado pela NCAR. O
 static file de 240 km, oferecido por link separado, não foi baixado. Essa
-exclusão implementa a decisão de gerar `static.nc` localmente no ciclo
-seguinte.
+exclusão implementou a decisão de gerar `static.nc` localmente, concluída no
+ciclo 0009.
+
+### Dados geográficos WPS para MPAS 8.4.1
+
+A inspeção real de `geog_low_res_mandatory.tar.gz` mostrou ausência dos
+datasets 30s desta configuração. O high mandatory tampouco contém
+`modis_landuse_20class_30s/` sem lakes nem `landuse_30s/`. O source exato
+8.4.1 seleciona o primeiro pelo namelist e lê o segundo diretamente no native
+GWD. Por isso a baseline usa a extração seletiva do high junto aos dois
+suplementos first-party exatos ligados pela página WPS.
+
+Os três SHA-256 são de origem local, não upstream. Não há alias entre produtos.
+O conteúdo final, 16.563.576.021 bytes, recebe manifesto por arquivo e fica
+fora do Git e da imagem. O conflito User Guide/tutorial sobre uma versus várias
+tasks é registrado sem generalizar: a baseline executada tem uma task; o
+tutorial demonstra que paralelismo existe.
 
 ### Releases WPS 4.7.0 e MPAS-Model 8.4.1
 

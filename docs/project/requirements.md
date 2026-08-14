@@ -88,7 +88,7 @@ Estas escolhas são implementações atuais, não requisitos originais imutávei
 | Layout de instalação | `/opt/mpas` para bibliotecas, `/opt/wps-*` para WPS e `/opt/mpas-model-*` para o modelo | [[../decisions/0004-wps-mpas-version-and-layout|ADR 0004]] |
 | Primeira mesh | x1.10242 oficial, global quasi-uniforme, ~240 km e 10.242 células | [[../decisions/0005-first-mesh-baseline|ADR 0005]] |
 | Primeiro particionamento | `part.4` gerado localmente com METIS 5.1.0; quatro partições correspondem a quatro tasks MPI futuras | [[../decisions/0005-first-mesh-baseline|ADR 0005]] |
-| Primeiro caso descrito publicamente | global e de baixa resolução; mesh preparada, demais parâmetros pendentes | [[../cases/first-global-240km|Primeiro caso]] |
+| Primeiro caso descrito publicamente | global e de baixa resolução; mesh, geografia e static preparados; ERA5/init/previsão pendentes | [[../cases/first-global-240km|Primeiro caso]] |
 | Política da mesh | entrada científica reproduzivelmente adquirida em `data/`, fora da imagem e do Git | [`.gitignore`](../../.gitignore) e [`fetch-mesh.sh`](../../scripts/data/fetch-mesh.sh) |
 
 Essas decisões não autorizam alterações automáticas. Troca de MPI, estratégia

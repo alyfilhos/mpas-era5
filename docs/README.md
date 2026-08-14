@@ -24,6 +24,7 @@ Este diretório centraliza a documentação técnica e científica do projeto.
 - [[decisions/0003-metis-5.1.0-partitioning-baseline|ADR 0003 — METIS 5.1.0 como baseline de particionamento]]
 - [[decisions/0004-wps-mpas-version-and-layout|ADR 0004 — versões e layout de WPS/MPAS]]
 - [[decisions/0005-first-mesh-baseline|ADR 0005 — primeira mesh e part.4]]
+- [[decisions/0006-first-static-baseline|ADR 0006 — primeira baseline static]]
 - [[testing/validation-matrix|Matriz de validação]]
 - [[cases/first-global-240km|Primeiro caso global de ~240 km]]
 
@@ -39,6 +40,7 @@ Este diretório centraliza a documentação técnica e científica do projeto.
 - [[../learning/commits/0006-add-mpas-init-atmosphere|Ciclo 0006 — adicionar MPAS init_atmosphere]]
 - [[../learning/commits/0007-add-mpas-atmosphere|Ciclo 0007 — adicionar MPAS atmosphere]]
 - [[../learning/commits/0008-add-first-mesh|Ciclo 0008 — adicionar a primeira mesh real]]
+- [[../learning/commits/0009-generate-static-fields|Ciclo 0009 — gerar campos estáticos]]
 
 ## Blocos do projeto
 

@@ -621,13 +621,23 @@ deliberada:
 
 - BUILD: PASS;
 - STRUCTURAL/INSTALL SMOKE: PASS;
-- FUNCTIONAL, mesh → `init_atmosphere`: PENDENTE;
-- SCIENTIFIC/REAL-DATA, mesh + static data + WPS/ERA5 → `init.nc`: PENDENTE.
+- FUNCTIONAL STATIC, mesh + WPS_GEOG → `init_atmosphere` → `static.nc`:
+  PASS no ciclo 0009;
+- METEOROLOGICAL/REAL-DATA, mesh + static + WPS/ERA5 → `init.nc`: PENDENTE.
 
 A tag não fornece uma suíte autocontida aplicável a esse recorte sem entradas;
-os helpers upstream de setup também requerem configuração e dados. Nenhuma
-mesh, GRIB, ERA5, `static.nc`, `init.nc` ou LBC foi criada para fabricar um
-resultado funcional.
+os helpers upstream de setup também requerem configuração e dados. No ciclo
+0006, nenhuma mesh, GRIB, ERA5, `static.nc`, `init.nc` ou LBC foi criada
+para fabricar um resultado funcional.
+
+No ciclo 0009, o mesmo binário executou case 7 com a mesh x1.10242 e oito
+datasets geográficos first-party, em exatamente uma task MPI. A execução
+produziu um CDF-2 de 18.201.336 bytes, com 0 errors/critical e validação
+independente de dimensões, configuração, campos, missing, NaN/Inf e ranges.
+Esta prova funcional é limitada à etapa static: ERA5 e `init.nc` continuam
+pendentes. A configuração e os detalhes científicos estão em
+[[../cases/first-global-240km|first-global-240km.md]] e no
+[[../decisions/0006-first-static-baseline|ADR 0006]].
 
 O compilador emitiu avisos de código legado no ESMF embedded e nas ferramentas
 de Registry, além de avisos make; não houve erro. A árvore Git completa aumenta

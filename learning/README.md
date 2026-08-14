@@ -34,6 +34,9 @@ apontar para ele.
   lookup tables e reutilização segura do framework;
 - [`commits/0008-add-first-mesh.md`](commits/0008-add-first-mesh.md): nota
   educacional sobre SCVT, NetCDF de mesh, grafo, METIS e política de dados;
+- [`commits/0009-generate-static-fields.md`](commits/0009-generate-static-fields.md):
+  nota educacional sobre WPS_GEOG, interpolação, static, GWD, Noah-MP e
+  validação física básica;
 - `commits/NNNN-<descricao>.md`: uma nota por commit posterior ao bootstrap.
 
 ## O que cada nota por commit deve ensinar

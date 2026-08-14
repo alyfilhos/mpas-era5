@@ -19,25 +19,24 @@ A partir do ciclo 0004, cada atualização distingue:
 Consequentemente, a referência abaixo é uma observação datada, não uma
 declaração eterna do `HEAD`.
 
-## Referência do ciclo 0008
+## Referência do ciclo 0009
 
-Estado atualizado em **2026-08-06** depois da aquisição, particionamento e
-validação estrutural da primeira mesh MPAS real:
+Estado atualizado em **2026-08-14** depois da aquisição geográfica, execução
+do init e validação do primeiro static produzido pelo projeto:
 
 - branch inspecionada: `main`;
 - base e `HEAD` observados antes das mudanças:
-  `d13c82f1b46832cd0d063ed8151b56d294707771`
-  (`build: add MPAS atmosphere support`);
+  `7555a96a7c706ea9e719f23ff27eaf29498ffe05`;
 - relação observada: `main` alinhada com `origin/main`;
 - worktree inicial: limpo;
-- estado produzido: mudanças do ciclo 0008 no worktree, sem commit e sem push,
+- estado produzido: mudanças do ciclo 0009 no worktree, sem commit e sem push,
   aguardando relatório pré-commit e aprovação;
 - commit que materializa este estado: **consultar Git**; nenhum SHA futuro foi
   escrito;
 - comando normativo para o `HEAD` atual: `git rev-parse HEAD`.
 
-O ciclo começou com os dois cores MPAS finalizados no commit base acima. Esta
-referência não antecipa o hash de um possível commit 0008.
+O Dockerfile e as versões de software permaneceram inalterados. Esta referência
+não antecipa o hash de um possível commit 0009.
 
 ## Ambiente definido no repositório
 
@@ -68,9 +67,11 @@ Não foi criada uma variável `METIS`: o workflow usa
 | PIO | 2.7.0 | C/Fortran static, PnetCDF habilitado; integração CDF-2 aprovada com OMPIO e ROMIO |
 | METIS | 5.1.0 | static, índices/reais 32 bits, GKlib incluída; `gpmetis` offline validado |
 | WPS/ungrib | 4.7.0 | GNU serial; sem WRF; GRIB2 privado; build e smoke offline aprovados |
-| MPAS/init_atmosphere | 8.4.1 | GNU/MPI, single precision, PIO2 e ESMF embedded; build e smoke estrutural aprovados |
+| MPAS/init_atmosphere | 8.4.1 | GNU/MPI, single precision, PIO2 e ESMF embedded; build/smoke estrutural e execução funcional static aprovados |
 | MPAS/atmosphere | 8.4.1 | GNU/MPI, single precision, PIO2, ESMF embedded, externals e lookup tables fixados; build e smoke estrutural aprovados |
-| Primeira mesh | x1.10242 | oficial, global quasi-uniforme, ~240 km, 10.242 células; NetCDF/grafo/part.4 estruturalmente validados |
+| Primeira mesh | x1.10242 | oficial, global quasi-uniforme, ~240 km, 10.242 células; NetCDF/grafo/part.4 validados e grid consumido pelo init |
+| Geografia do primeiro static | WPS first-party | 8 datasets exatos, 16.563.576.021 bytes, hashes locais/manifests validados; fora do Git/imagem |
+| Primeiro static | x1.10242 / CDF-2 | 18.201.336 bytes; 1 task MPI; Noah-MP false; campos/ranges/log validados; artefato local ignorado |
 
 A imagem validada é `mpas-era5:mpas-atmosphere-8.4.1`, com ID local
 `sha256:54281c60db053982692d21bef27cf522293e8e2568be748cf4a83f2d5f0e4c93`
@@ -283,6 +284,58 @@ Essa evidência valida aquisição, estrutura e particionamento. Não executa
 `init_atmosphere_model`, não gera `static.nc` e não prova aceitação funcional
 da mesh pelo MPAS.
 
+## Campos estáticos no ciclo 0009
+
+A inspeção do pacote `geog_low_res_mandatory.tar.gz` confirmou que ele não
+satisfaz os datasets 30s desta configuração. A baseline final usa somente
+artefatos first-party publicados na página WPS: high mandatory para seis
+diretórios e os suplementos exatos
+`modis_landuse_20class_30s.tar.bz2` e `landuse_30s.tar.bz2`. Os archives
+somam 2.826.105.956 bytes comprimidos; a extração seletiva ocupa
+16.563.576.021 bytes. Nenhum SHA-256 upstream foi encontrado, portanto os três
+hashes fixados são declaradamente locais.
+
+`scripts/data/fetch-geog.sh` valida tamanho, hash, compressão, paths, links,
+índices e manifesto antes de instalar em `data/geog/mpas-8.4.1/`. Uma
+reexecução retornou `unchanged`; conteúdo divergente é recusado.
+
+O namelist do caso fixa case 7, dimensões unitárias, GMTED2010,
+MODIFIED_IGBP_MODIS_NOAH, STATSGO e MODIS. Static interpolation e native GWD
+estão ligados; GWD GSL e todas as etapas meteorológicas estão desligados.
+Supersampling é 1, adequado à mesh de ~240 km segundo a orientação do User
+Guide. `config_noahmp_static=false` segue a baseline tutorial e impede
+reutilização com física que exija os campos Noah-MP ausentes.
+
+A execução final foi:
+
+```sh
+mpiexec -n 1 /opt/mpas-model-8.4.1/init_atmosphere_model
+```
+
+O wrapper isolou rede/rootfs/inputs, escreveu somente sob
+`data/cases/first-global-240km/static/` e levou 1.042 segundos. O output
+`x1.10242.static.nc` é CDF-2, possui 18.201.336 bytes e SHA-256
+`36e50a8f8d0233327b6505f74e2f909aaaa6c7cee03499affabadd5cc11a144f`.
+
+A validação independente confirmou `nCells=10242`, campos de terreno, land
+use, solo, vegetação, albedo e native GWD, zero missing inesperado, zero
+NaN/Inf e categorias/ranges plausíveis. O log terminou com 3.016 outputs,
+6 warnings de metadata opcional, 0 errors e 0 critical errors. A regressão da
+mesh também passou.
+
+A primeira tentativa falhou corretamente ao chegar ao native GWD porque
+`landuse_30s/` ainda não estava presente. O source exato 8.4.1 revelou essa
+leitura literal; o suplemento oficial foi adquirido, e nenhum output parcial
+foi promovido. Os logs de diagnóstico permanecem locais e ignorados.
+
+A integração agora comprovada é:
+
+```text
+x1.10242.grid.nc + WPS_GEOG → init_atmosphere static → x1.10242.static.nc
+```
+
+ERA5, WPS intermediate, `init.nc` e `atmosphere_model` continuam pendentes.
+
 ## Preservação da stack anterior
 
 - a imagem `mpas-era5:mpas-atmosphere-8.4.1` permaneceu acessível com o mesmo
@@ -290,8 +343,8 @@ da mesh pelo MPAS.
 - o `Dockerfile` não mudou e nenhuma imagem foi reconstruída;
 - `scripts/validate/mpas-init.sh` e
   `scripts/validate/mpas-atmosphere.sh` continuam presentes e executáveis;
-- esses smokes não foram reexecutados porque o ciclo altera apenas aquisição,
-  preparação, validação e documentação de dados externos;
+- esses smokes de build não foram reexecutados porque Dockerfile, binários,
+  bibliotecas e versões de software permaneceram inalterados;
 - a integração relevante `graph.info` real → METIS 5.1.0 → `part.4` passou.
 
 ## Arquiteturas adotadas
@@ -355,21 +408,33 @@ As decisões e alternativas estão em
 - `docs/cases/first-global-240km.md`: documento evolutivo do primeiro caso;
 - `learning/commits/0008-add-first-mesh.md`: nota educacional do ciclo.
 
+## Artefatos do ciclo 0009
+
+- `.gitignore`: política para dados geográficos locais;
+- `scripts/data/fetch-geog.sh`: aquisição first-party, hashes e manifesto;
+- `cases/first-global-240km/static/`: namelist e streams da release;
+- `scripts/run/generate-static.sh`: execução MPI isolada;
+- `scripts/validate/static.sh` e `tests/smoke/static_netcdf.c`: validação;
+- `docs/decisions/0006-first-static-baseline.md`: baseline geográfica/static;
+- `learning/commits/0009-generate-static-fields.md`: nota educacional.
+
 ## Componentes ainda não implementados
 
 - METIS 5.2.1 e GKlib externa;
 - PT-Scotch;
-- execução funcional de `init_atmosphere` e `atmosphere`;
 - aquisição ou preparação ERA5;
-- `static.nc` e `init.nc`; LBC permanece somente para eventual caso futuro de
-  área limitada;
-- primeira execução e validação física MPAS.
+- execução meteorológica do `init_atmosphere` para `init.nc`;
+- `init.nc`; LBC permanece somente para eventual caso futuro de área
+  limitada;
+- execução funcional e validação física do `atmosphere_model`.
 
 ## Lacunas e limitações atuais
 
-- a mesh x1.10242 e sua partição foram validadas estruturalmente, mas o consumo
-  real de `graph.info.part.4` e a execução do `init_atmosphere`
-  permanecem testes de um ciclo futuro;
+- o init consumiu `x1.10242.grid.nc` na etapa static; a partição `part.4`
+  continua destinada à futura execução meteorológica e ainda não foi
+  consumida pelo `atmosphere_model`;
+- o static tem `config_noahmp_static=false` e não serve a uma física que
+  exija os cinco campos Noah-MP ausentes;
 - a release METIS 5.1.0 não fornece suíte formal; foram usados seus grafos de
   teste, `graphchk`, o comando real MPAS e validação independente;
 - CMake emitiu aviso de depreciação e a GKlib incluída produziu avisos
@@ -383,8 +448,10 @@ As decisões e alternativas estão em
 - a Vtable ERA5 não foi escolhida e nenhum GRIB real foi processado;
 - avisos de código legado em libpng, JasPer e Fortran permanecem, apesar do
   build e da linkagem bem-sucedidos;
-- os builds estruturais de `init_atmosphere` e `atmosphere` passaram, mas
-  qualquer afirmação funcional ou científica continua pendente até a mesh ser
-  consumida com configuração e, para `init.nc`, entradas WPS/ERA5
-  representativas;
+- a etapa static do `init_atmosphere` passou funcionalmente, mas qualquer
+  afirmação sobre `init.nc` ou previsão continua pendente até entradas
+  WPS/ERA5 representativas serem produzidas e o `atmosphere_model` executar;
+- o high mandatory exige download de 2,77 GB e seus hashes são locais porque
+  o upstream não publica SHA-256;
+- os seis warnings de metadata opcional da mesh permanecem documentados;
 - a imagem Ubuntu e os pacotes APT, inclusive Python, não têm lock por digest.

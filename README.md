@@ -35,8 +35,8 @@ compilação de software científico, MPI e ferramentas utilizadas em HPC.
 ### Pré-processamento e modelo
 
 - WPS 4.7.0 / `ungrib.exe` GNU serial ✅
-- MPAS-Model 8.4.1 / `init_atmosphere_model` GNU + MPI ✅ build e smoke
-  estrutural
+- MPAS-Model 8.4.1 / `init_atmosphere_model` GNU + MPI ✅ build, smoke
+  estrutural e execução funcional static
 - MPAS-Model 8.4.1 / `atmosphere_model` GNU + MPI ✅ build e smoke
   estrutural; execução funcional ⏳
 
@@ -44,7 +44,9 @@ compilação de software científico, MPI e ferramentas utilizadas em HPC.
 
 - mesh oficial x1.10242, global quasi-uniforme, ~240 km e 10.242 células ✅
 - `x1.10242.graph.info.part.4` gerado localmente com METIS 5.1.0 e validado ✅
-- `static.nc`, ERA5, `init.nc` e execução do modelo ⏳
+- dados geográficos oficiais WPS, selecionados e validados para MPAS 8.4.1 ✅
+- `x1.10242.static.nc` gerado localmente e validado ✅
+- ERA5, `init.nc` e execução do `atmosphere_model` ⏳
 
 ## Roadmap
 
@@ -70,15 +72,30 @@ baseline em quatro partes é preparada por
 [`scripts/prepare/partition-mesh.sh`](scripts/prepare/partition-mesh.sh) e
 validada offline por [`scripts/validate/mesh.sh`](scripts/validate/mesh.sh).
 
+Os campos geográficos são adquiridos de fontes oficiais WPS por
+[`scripts/data/fetch-geog.sh`](scripts/data/fetch-geog.sh) e permanecem em
+`data/geog/mpas-8.4.1/`. A configuração versionada do primeiro static fica em
+[`cases/first-global-240km/static/`](cases/first-global-240km/static/). Para
+reproduzir e validar:
+
+```sh
+./scripts/data/fetch-geog.sh
+./scripts/run/generate-static.sh
+./scripts/validate/static.sh
+```
+
+O output local é
+`data/cases/first-global-240km/static/x1.10242.static.nc`; dados, NetCDF e
+logs continuam fora do Git.
+
 Depois:
 
 `ERA5 GRIB → Vtable → ungrib → WPS intermediate → MPAS init_atmosphere → MPAS atmosphere`
 
-A Vtable ERA5 definitiva, a geração própria de `static.nc` e as integrações
-funcionais com o MPAS ainda dependem de ciclos próprios. O estado atual prova
-a estrutura da mesh e seu particionamento, além do build dos dois executáveis,
-mas ainda não prova que `init_atmosphere` aceita a mesh nem executa uma
-previsão.
+A Vtable ERA5 definitiva, `init.nc` e a execução meteorológica ainda dependem
+de ciclos próprios. O estado atual prova que o `init_atmosphere_model` 8.4.1
+consumiu a mesh x1.10242 e produziu seus campos estáticos. Ainda não prova o
+caminho ERA5 → `init.nc` nem uma previsão com `atmosphere_model`.
 
 ## Documentação
 
