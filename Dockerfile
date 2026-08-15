@@ -739,4 +739,25 @@ RUN cd "${MPAS_MODEL_PREFIX}" \
 
 WORKDIR /workspace
 
+# Build the upstream GRIB1 inventory utility required to validate real ERA5
+# messages. Keeping this as the final layer preserves the already validated
+# WPS/ungrib and MPAS build layers in Docker cache.
+RUN cd "${WPS_PREFIX}" \
+    && ./compile g1print \
+    && test -x ungrib/src/g1print.exe \
+    && test -L util/g1print.exe \
+    && test "$(readlink util/g1print.exe)" = \
+       "../ungrib/src/g1print.exe" \
+    && ln -s ungrib/src/g1print.exe g1print.exe \
+    && test -x g1print.exe \
+    && test "$(readlink g1print.exe)" = \
+       "ungrib/src/g1print.exe" \
+    && file -L g1print.exe \
+    && ldd g1print.exe \
+    && test -z "$(ldd g1print.exe | grep -F 'not found')" \
+    && printf '%s\n' \
+       "WPS_G1PRINT_BUILD_COMMAND=./compile g1print" \
+       "WPS_G1PRINT_EXECUTABLE=g1print.exe" \
+       >> .mpas-era5-provenance
+
 CMD ["bash"]

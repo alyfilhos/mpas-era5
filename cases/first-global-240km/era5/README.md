@@ -52,6 +52,7 @@ estrutura GRIB e só então promove o arquivo de forma atômica. Uma reexecuçã
 aceita apenas um arquivo cujo tamanho e SHA-256 coincidam com o manifesto;
 conteúdo divergente nunca é sobrescrito silenciosamente.
 
-Este ciclo valida a aquisição e o transporte. A seleção definitiva da Vtable,
-o inventário semântico com ferramentas GRIB e a execução do `ungrib.exe`
-pertencem ao ciclo 0011.
+O ciclo 0010 validou aquisição e transporte. No ciclo 0011, o inventário
+semântico real casou integralmente a `Vtable.ECMWF` upstream e os dois GRIBs
+foram convertidos e combinados. A configuração correspondente está em
+[`../wps/`](../wps/); `init.nc` permanece fora desse ciclo.

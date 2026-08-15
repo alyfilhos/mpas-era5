@@ -83,13 +83,15 @@ Estas escolhas são implementações atuais, não requisitos originais imutávei
 | Bibliotecas adotadas até agora | zlib 1.3.2, HDF5 1.14.6, netCDF-C 4.10.1, netCDF-Fortran 4.6.3, PnetCDF 1.15.0, PIO 2.7.0 e METIS 5.1.0 | argumentos de build no `Dockerfile` |
 | Arquitetura de I/O inicial | HDF5/netCDF serial preservado; PIO usa PnetCDF/MPI-IO para o I/O paralelo padrão do MPAS | [[../decisions/0002-pio2-pnetcdf-with-serial-netcdf|ADR 0002]] |
 | Particionamento inicial | METIS 5.1.0 serial e externo; `gpmetis` pré-computa `graph.info.part.N` | [[../decisions/0003-metis-5.1.0-partitioning-baseline|ADR 0003]] |
-| Pré-processamento GRIB inicial | WPS 4.7.0 separado em `/opt/wps-*`; somente `ungrib.exe`, GNU serial, `--nowrf` e bibliotecas GRIB2 internas | [[../decisions/0004-wps-mpas-version-and-layout|ADR 0004]] |
+| Pré-processamento GRIB inicial | WPS 4.7.0 separado em `/opt/wps-*`; `ungrib.exe` e `g1print.exe`, GNU serial, `--nowrf`, bibliotecas GRIB2 internas e `Vtable.ECMWF` upstream validada para a baseline ERA5 | [[../decisions/0004-wps-mpas-version-and-layout|ADR 0004]] e [[../testing/validation-matrix|matriz]] |
 | Versão MPAS | MPAS-Model 8.4.1; `init_atmosphere_model` e `atmosphere_model` compilados e validados estruturalmente | [[../decisions/0004-wps-mpas-version-and-layout|ADR 0004]] |
 | Layout de instalação | `/opt/mpas` para bibliotecas, `/opt/wps-*` para WPS e `/opt/mpas-model-*` para o modelo | [[../decisions/0004-wps-mpas-version-and-layout|ADR 0004]] |
 | Primeira mesh | x1.10242 oficial, global quasi-uniforme, ~240 km e 10.242 células | [[../decisions/0005-first-mesh-baseline|ADR 0005]] |
 | Primeiro particionamento | `part.4` gerado localmente com METIS 5.1.0; quatro partições correspondem a quatro tasks MPI futuras | [[../decisions/0005-first-mesh-baseline|ADR 0005]] |
-| Primeiro caso descrito publicamente | global e de baixa resolução; mesh, geografia e static preparados; ERA5/init/previsão pendentes | [[../cases/first-global-240km|Primeiro caso]] |
+| Primeiro caso descrito publicamente | global e de baixa resolução; mesh, geografia, static, ERA5 bruto e WPS intermediate preparados; `init.nc`/previsão pendentes | [[../cases/first-global-240km|Primeiro caso]] |
 | Política da mesh | entrada científica reproduzivelmente adquirida em `data/`, fora da imagem e do Git | [`.gitignore`](../../.gitignore) e [`fetch-mesh.sh`](../../scripts/data/fetch-mesh.sh) |
+| Baseline ERA5 | 2014-09-10 00 UTC, global, 5 variáveis em 37 níveis e 19 single-level, GRIB1 real | [[../decisions/0007-first-era5-baseline|ADR 0007]] |
+| Conversão ERA5 | `Vtable.ECMWF` upstream WPS 4.7.0, pressure/single separados e WPS intermediate combinado version 5 | [[../testing/validation-matrix|matriz de validação]] |
 
 Essas decisões não autorizam alterações automáticas. Troca de MPI, estratégia
 serial/paralela do HDF5, mudanças nas versões de dependências — inclusive
@@ -98,14 +100,12 @@ global aprovado continuam sujeitos aos gates do [`AGENTS.md`](../../AGENTS.md).
 
 ## Itens deliberadamente ainda não decididos
 
-- Vtable definitiva e mapeamento de campos ERA5;
-- data/hora, duração, timestep, física e demais parâmetros do primeiro caso;
-- execução funcional do MPAS-Model 8.4.1;
+- duração, timestep, física e demais parâmetros ainda não fixados do primeiro caso;
+- execução meteorológica funcional do MPAS-Model 8.4.1;
 - eventual experimento com METIS 5.2.1 + GKlib fixada ou PT-Scotch,
   conforme [[future-experiments|future-experiments.md]];
 - eventual necessidade futura de HDF5/netCDF paralelo e
   `PIO_IOTYPE_NETCDF4P`, fora do primeiro caso;
-- período, área, níveis e variáveis ERA5;
 - critérios quantitativos finais de validação física.
 
 Esses itens devem permanecer como **a decidir** até que pesquisa oficial,

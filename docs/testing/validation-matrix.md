@@ -30,7 +30,7 @@ evidência estiverem registrados.
 | PnetCDF 1.15.0 | `make check` e `make ptest` executados com código 0 | versão, prefixo, configuração, utilitários e shared/static conferidos na instalação | F90 → PnetCDF → MPI-IO/ROMIO → OpenMPI, escrita/leitura coletiva em 4 ranks | Implementado e validado no ciclo 0002 | [`Dockerfile`](../../Dockerfile), [`pnetcdf.sh`](../../scripts/validate/pnetcdf.sh), [`pnetcdf_mpi.f90`](../../tests/smoke/pnetcdf_mpi.f90) e evidência abaixo |
 | PIO 2.7.0 | CTest: 109/109 testes aprovados | versão, configuração, headers, módulos, bibliotecas e pacote CMake conferidos | C → PIO/PnetCDF → MPI-IO → OpenMPI; CDF-2 escrito e relido em 4 ranks com OMPIO e ROMIO | Implementado e validado no ciclo 0003 | [`Dockerfile`](../../Dockerfile), [`pio.sh`](../../scripts/validate/pio.sh), [`pio_pnetcdf.c`](../../tests/smoke/pio_pnetcdf.c) e evidência abaixo |
 | METIS 5.1.0 | não há `make check`/CTest formal; `graphchk` e `gpmetis` passaram no `4elt.graph` fornecido upstream | versão por macros, ferramentas, biblioteca, help e opções conferidos | fixture → `gpmetis` → `graph.info.part.4`; estrutura, IDs, quatro partições, edge cut e conectividade validados | Implementado e validado no ciclo 0004 | [`Dockerfile`](../../Dockerfile), [`metis.sh`](../../scripts/validate/metis.sh), [`graph.info`](../../tests/fixtures/metis/graph.info) e evidência abaixo |
-| WPS 4.7.0 / ungrib | não foi identificada suíte formal para este recorte; build aplicável `configure` + `compile ungrib` passou | executável, links, `file`, `ldd`, `configure.wps`, proveniência, GRIB2 privado e Vtables conferidos offline | ERA5 GRIB → ungrib → WPS intermediate pendente; nenhum dado artificial ou aleatório foi usado | Build e smoke validados no ciclo 0005; integração funcional pendente | [`Dockerfile`](../../Dockerfile), [`wps-ungrib.sh`](../../scripts/validate/wps-ungrib.sh) e evidência abaixo |
+| WPS 4.7.0 / ungrib | não foi identificada suíte formal para este recorte; `configure`, `compile ungrib` e alvo incremental `compile g1print` passaram | executáveis, links, `file`, `ldd`, configuração, proveniência, GRIB2 privado e Vtable upstream conferidos offline | 204 mensagens ERA5 GRIB1 → `Vtable.ECMWF` → dois ungribs → WPS intermediate: PASS | Build/smoke no ciclo 0005; inventário e integração funcional no ciclo 0011 | [`Dockerfile`](../../Dockerfile), [`wps-ungrib.sh`](../../scripts/validate/wps-ungrib.sh), [`ungrib-era5.sh`](../../scripts/run/ungrib-era5.sh) e [`wps-era5.sh`](../../scripts/validate/wps-era5.sh) |
 | MPAS 8.4.1 `init_atmosphere` | a tag não contém suíte autocontida; build real do core passou | executável/defaults/proveniência conferidos e static NetCDF validado independentemente | mesh + WPS_GEOG → static: PASS; mesh + WPS/ERA5 → `init.nc` pendente | Build/smoke estrutural nos ciclos 0006/0007; execução static funcional no ciclo 0009 | [`Dockerfile`](../../Dockerfile), [`mpas-init.sh`](../../scripts/validate/mpas-init.sh), [`generate-static.sh`](../../scripts/run/generate-static.sh), [`static.sh`](../../scripts/validate/static.sh) e evidência abaixo |
 | MPAS 8.4.1 `atmosphere` | a tag não contém suíte autocontida aplicável sem mesh, `init.nc` e configuração; o build real do core passou | executável, defaults, configuração, pins, lookup tables, `file`, `ldd` e símbolos conferidos offline | `init.nc` + mesh + partição → `atmosphere_model` pendente | Build e smoke estrutural validados no ciclo 0007; funcional/científico pendentes | [`Dockerfile`](../../Dockerfile), [`mpas-atmosphere.sh`](../../scripts/validate/mpas-atmosphere.sh) e evidência abaixo |
 
@@ -38,9 +38,10 @@ evidência estiverem registrados.
 
 | Componente | Upstream test | Smoke test | Integration test | Status | Evidência |
 |---|---|---|---|---|---|
-| ERA5 / cliente CDS | O dataset não possui suite; build do cliente executou `pip check` sem dependências quebradas | Python 3.12.13, `cdsapi==0.7.7`, lock, requests, parser/framing, manifestos e reexecução idempotente validados | Probes autenticados + pressure/single global → GRIB1 bruto: PASS; ERA5 → ungrib pertence ao ciclo 0011 | Baseline, aquisição e transporte bruto validados no ciclo 0010 | [`docker/cds/`](../../docker/cds/), [`fetch-era5.py`](../../scripts/data/fetch-era5.py), [`fetch-era5.sh`](../../scripts/data/fetch-era5.sh), [`era5.sh`](../../scripts/validate/era5.sh) e evidência do ciclo 0010 |
+| ERA5 / cliente CDS | O dataset não possui suite; build do cliente executou `pip check` sem dependências quebradas | Python 3.12.13, `cdsapi==0.7.7`, lock, requests, framing, manifestos e reexecução idempotente validados | Probes + pressure/single global → GRIB1 bruto: PASS; GRIB real → WPS intermediate: PASS | Aquisição validada no ciclo 0010 e conversão no 0011 | [`era5.sh`](../../scripts/validate/era5.sh), [`wps-era5.sh`](../../scripts/validate/wps-era5.sh) e evidências abaixo |
 | Mesh pública inicial | Fonte/proveniência e integridade do pacote x1.10242 confirmadas; `graphchk` aprovado no grafo real | NetCDF, dimensões, variáveis, grafo, part.4, edge cut, balanceamento e conectividade conferidos offline | `graph.info` real → METIS 5.1.0 → `part.4`: PASS; mesh real → init static: PASS | x1.10242 validada no ciclo 0008 e consumida funcionalmente no ciclo 0009 | [`fetch-mesh.sh`](../../scripts/data/fetch-mesh.sh), [`partition-mesh.sh`](../../scripts/prepare/partition-mesh.sh), [`mesh.sh`](../../scripts/validate/mesh.sh) e evidências abaixo |
 | `static.nc` | Não se aplica | CDF-2, dimensões, atributos, Registry/source, campos, missing, NaN/Inf, categorias e ranges conferidos | x1.10242 + WPS_GEOG → init case 7 → `x1.10242.static.nc`: PASS em 1 task MPI | Gerado e validado no ciclo 0009; local/ignorado; Noah-MP ausente por decisão | [`generate-static.sh`](../../scripts/run/generate-static.sh), [`static.sh`](../../scripts/validate/static.sh), [`static_netcdf.c`](../../tests/smoke/static_netcdf.c) e evidência abaixo |
+| WPS intermediate ERA5 | Não se aplica | parser streaming valida records Fortran big-endian, version 5, headers, projeção, slabs e EOF | GRIB/g1print → Vtable → logs → pressure/single/combined: PASS; campos funcionais e 37 níveis confirmados | Gerado e validado no ciclo 0011; três arquivos/logs/manifesto locais e ignorados | [`wps-intermediate.py`](../../scripts/validate/wps-intermediate.py), [`wps-era5.py`](../../scripts/validate/wps-era5.py) e evidência do ciclo 0011 |
 | `init.nc` | Não se aplica | Planejado: verificar estrutura, completude, tempo e faixas físicas iniciais | Planejado: arquivo aceito por `atmosphere` em execução curta | Não gerado | [[../project/requirements|REQ-CASE-002]] |
 | LBC | Não se aplica | Planejado somente para área limitada: verificar sequência temporal, cobertura e continuidade | Planejado somente quando aplicável: execução curta consome todos os contornos | Não se aplica ao primeiro caso global; condicional para casos futuros | [[../project/requirements|REQ-CASE-003]] |
 | Primeira execução | Não se aplica | Planejado: execução curta termina sem erro e produz logs/saídas esperados | Planejado: pipeline completo reproduz a execução a partir das entradas registradas | Não executada | [[../project/requirements|REQ-RUN-001]] |
@@ -454,6 +455,86 @@ ambos são superados pelos PASS registrados no ciclo 0009 abaixo.
 | Raw transport validation | PASS |
 | ERA5 → ungrib | PENDING, ciclo 0011 |
 | ERA5 → `init.nc` | PENDING, ciclo posterior |
+
+## Evidência do ciclo 0011 — ERA5 para WPS intermediate
+
+| Campo | Evidência real |
+|---|---|
+| Data/base | 2026-08-15; `78fd3a26187305612223a06ba65a52325b95d908` (`data: add reproducible ERA5 acquisition`) |
+| Imagem | `mpas-era5:mpas-atmosphere-8.4.1`; ID `sha256:9c9479db0bae4db1e8d827bf522caab312ad097217aba962cb399f18b74e93a8`; 467.002.046 bytes |
+| Ferramentas | `/opt/wps/ungrib.exe`, `/opt/wps/g1print.exe`, `/opt/wps/link_grib.csh` e `/opt/wps/ungrib/Variable_Tables/Vtable.ECMWF`: presentes e funcionais |
+| Ajuste de imagem | a imagem anterior não continha `g1print`; somente o target upstream `./compile g1print` da mesma tag 4.7.0 foi acrescentado depois das camadas existentes; nenhuma versão ou core MPAS mudou |
+| Regressão de entrada | `./scripts/validate/era5.sh`: PASS antes e dentro da validação integrada; nenhum retrieve/download |
+| Pressure GRIB | GRIB Edition 1; 185 mensagens; 2014-09-10 00 UTC; forecast zero; 5 parâmetros × os 37 níveis solicitados |
+| Single GRIB | GRIB Edition 1; 19 mensagens; 2014-09-10 00 UTC; forecast zero; 19 tuples semânticos distintos |
+| Vtable | upstream WPS 4.7.0 usada diretamente; SHA-256 local `989bf7227ae5c822bfdd8467267dacc41396e08f2270735eac08c56a0096b335`; nenhum arquivo custom e nenhum ADR novo |
+| Execução | rede desligada, rootfs read-only, UID/GID do host, capabilities removidas, `no-new-privileges`, GRIB/config read-only e workspace novo/writable por conjunto |
+| Pressure command | `./scripts/run/ungrib-era5.sh`; internamente `link_grib.csh /input/era5.grib` e `/opt/wps/ungrib.exe`, namelist `prefix='ERA5_PRES'` |
+| Single command | mesma invocação, segundo workspace limpo, `prefix='ERA5_SFC'`; nenhum `GRIBFILE.*` reaproveitado |
+| Logs | pressure: 23.763 bytes, SHA-256 `7d5aee76e36af5295f68be1377fb79750ee546fe8495fff1a77447e311a78e4e`; single: 2.953 bytes, SHA-256 `27d79466b5f31479683875447f5bbbc4f319215ec868e126919a29afb49df9c3`; ambos contêm sucesso explícito |
+| Pressure intermediate | 768.340.520 bytes; SHA-256 `f0a47a4eee5fb29ae37e6cbe8ffc19fbb68a394d8a7e14bd7e57c714cecdae8b`; 185 slabs |
+| Single intermediate | 78.910.648 bytes; SHA-256 `e1ea9841ee7a2b085e204e111d3747af87a746b4fd7c5eca2f2894d4d3a8400e`; 19 slabs |
+| Combined intermediate | 847.251.168 bytes; SHA-256 `2d7a3ac93d1c904e45b3a19a9f524e6367f7fe72abab41a5263888f1a72b50f0`; 204 slabs; bytes e headers exatamente pressure seguidos de single |
+| Grade observada | 1440×721; cilíndrica equidistante `iproj=0`; `SWCORNER`; 0,25°; cobertura 180° × 360°; timestamp 2014-09-10_00:00:00 |
+| Estrutura | 4-byte big-endian leading/trailing markers coerentes; version 5; data, field, units, xlvl, dimensões, projeção, flag lógica, `nx*ny*4` bytes por slab e EOF exato: PASS; seis casos sintéticos aceitaram o válido e rejeitaram version/marker/slab/EOF inválidos |
+| Idempotência | reexecução retornou intermediates/combined `unchanged`, preservou logs canônicos de sucesso e não sobrescreveu conteúdo divergente |
+| Git hygiene | GRIBs, intermediates, logs e manifestos ignorados e não rastreados: PASS |
+| Limite | não executou `init_atmosphere_model` meteorológico e não gerou `init.nc` |
+
+### Inventário GRIB1 e correspondência com `Vtable.ECMWF`
+
+Cada linha abaixo representa um tuple semântico único. O validador exige uma e
+somente uma entrada da Vtable por mensagem; portanto a coluna de níveis também
+explica a identificação de todas as 204 mensagens, e não apenas sua contagem.
+
+| Fonte | Parâmetro | Level type / níveis observados | Entrada/campo Vtable | Mensagens |
+|---|---:|---|---|---:|
+| pressure | 129 | 100; 37 níveis de 1 a 1000 hPa aprovados | `GEOPT`; convertido upstream para `HGT` | 37 |
+| pressure | 157 | 100; mesmos 37 níveis | `RH` | 37 |
+| pressure | 130 | 100; mesmos 37 níveis | `TT` | 37 |
+| pressure | 131 | 100; mesmos 37 níveis | `UU` | 37 |
+| pressure | 132 | 100; mesmos 37 níveis | `VV` | 37 |
+| single | 165, 166, 167, 168 | 1; superfície 0/0 | `UU`, `VV`, `TT`, `DEWPT`; `DEWPT` + `TT` vira `RH` | 4 |
+| single | 129, 134, 151, 172, 235 | 1; superfície 0/0 | `SOILGEO`, `PSFC`, `PMSL`, `LANDSEA`, `SKINTEMP`; `SOILGEO` vira `SOILHGT` | 5 |
+| single | 31, 141 | 1; superfície 0/0 | `SEAICE`, `SNOW_EC`; snow vira `SNOW` | 2 |
+| single | 139, 170, 183, 236 | 112; 0/7, 7/28, 28/100, 100/255 | `ST000007`, `ST007028`, `ST028100`, `ST100289` | 4 |
+| single | 39, 40, 41, 42 | 112; 0/7, 7/28, 28/100, 100/255 | `SM000007`, `SM007028`, `SM028100`, `SM100289` | 4 |
+
+O valor GRIB1 255 da última camada é a codificação observada; a linha
+upstream nomeia o campo como camada 100–289 cm. Isso foi validado contra a
+request e a própria tabela, não reinterpretado por uma lista inventada.
+
+### Inventário final do combined
+
+| Campo | Slabs / função |
+|---|---|
+| `HGT` | 37; altura geopotencial 3-D para interpolação vertical |
+| `TT`, `UU`, `VV`, `RH` | 38 cada; 37 isobáricos + um nível próximo à superfície |
+| `PSFC`, `PMSL`, `SOILHGT` | 1 cada; pressão de superfície, MSLP e terreno/geopotencial de superfície |
+| `LANDSEA`, `SKINTEMP`, `SEAICE`, `SNOW` | 1 cada; máscara, skin/SST input, gelo marinho e neve |
+| `ST000007`, `ST007028`, `ST028100`, `ST100289` | 1 cada; quatro temperaturas de solo |
+| `SM000007`, `SM007028`, `SM028100`, `SM100289` | 1 cada; quatro umidades de solo |
+
+As conversões `GEOPT→HGT`, `DEWPT→RH`, `SOILGEO→SOILHGT` e
+`SNOW_EC→SNOW` substituem os campos fonte. Nenhum campo adicional fora desse
+inventário foi produzido.
+
+### Gates do ciclo 0011
+
+| Gate | Estado |
+|---|---|
+| ERA5 raw regression | PASS |
+| WPS tools / version / linkage | PASS |
+| `g1print` pressure semantic inventory | PASS, 185 |
+| `g1print` single semantic inventory | PASS, 19 |
+| GRIB ↔ requests ↔ Vtable | PASS, 204 correspondências únicas |
+| Pressure ungrib / explicit log success | PASS |
+| Single ungrib / explicit log success | PASS |
+| WPS intermediate structural parser | PASS; cinco corrupções rejeitadas no teste negativo |
+| Combined exact concatenation | PASS |
+| Required ERA5 field inventory | PASS |
+| Generated artifact Git hygiene | PASS |
+| Meteorological `init_atmosphere` / `init.nc` | NOT RUN, ciclo 0012 |
 
 ## Evidência mínima de um resultado futuro
 

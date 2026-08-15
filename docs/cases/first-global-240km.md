@@ -2,14 +2,14 @@
 
 ## Status
 
-**Mesh, dados geográficos, campos estáticos e ERA5 bruto validados.**
+**Mesh, dados geográficos, campos estáticos, ERA5 bruto, Vtable e WPS intermediate validados.**
 
 O ciclo 0009 executou pela primeira vez o `init_atmosphere_model` 8.4.1
 sobre a mesh real x1.10242 e produziu
 `data/cases/first-global-240km/static/x1.10242.static.nc`. O ciclo 0010
-aprovou e versionou a seleção ERA5, construiu seu cliente dedicado, validou os
-probes e adquiriu os dois GRIBs globais. `ungrib`, `init.nc` e a previsão
-continuam fora deste estágio.
+adquiriu os dois GRIBs globais. O ciclo 0011 validou a `Vtable.ECMWF`, executou
+`ungrib` separadamente e produziu o WPS intermediate combinado. `init.nc` e a
+previsão continuam fora deste estágio.
 
 ## Baseline
 
@@ -86,6 +86,42 @@ Uma segunda execução reconheceu ambos como `unchanged` e não submeteu novo
 retrieve. O sucesso dos dois datasets confirma autenticação e termos sem
 expor o token; os checksums identificam os bytes recebidos e não são hashes
 publicados pelo CDS.
+
+## WPS intermediate ERA5
+
+O ciclo 0011 usou `g1print.exe` da própria tag WPS 4.7.0 para provar edição,
+tempo, parameter code, level type e níveis de cada GRIB. As 185 mensagens
+pressure e 19 single-level casaram, uma a uma, a `Vtable.ECMWF` upstream; não
+foi necessário copiar ou modificar a tabela.
+
+Pressure e single-level foram processados em workspaces isolados e limpos,
+com prefixes `ERA5_PRES` e `ERA5_SFC`. Ambos os logs registram sucesso
+explícito. Somente depois da validação estrutural individual os arquivos foram
+concatenados e promovidos:
+
+| Arquivo local | Bytes | SHA-256 | Slabs |
+|---|---:|---|---:|
+| `ERA5_PRES:2014-09-10_00` | 768.340.520 | `f0a47a4eee5fb29ae37e6cbe8ffc19fbb68a394d8a7e14bd7e57c714cecdae8b` | 185 |
+| `ERA5_SFC:2014-09-10_00` | 78.910.648 | `e1ea9841ee7a2b085e204e111d3747af87a746b4fd7c5eca2f2894d4d3a8400e` | 19 |
+| `ERA5:2014-09-10_00` | 847.251.168 | `2d7a3ac93d1c904e45b3a19a9f524e6367f7fe72abab41a5263888f1a72b50f0` | 204 |
+
+O parser versionado confirmou formato WPS intermediate version 5 em registros
+Fortran sequential big-endian, grade cilíndrica equidistante 1440×721,
+0,25°, cobertura global e timestamp correto. O inventário final fornece
+`HGT/RH/TT/UU/VV` nos 37 níveis, pressões e terreno superficiais, vento e
+termometria próximos à superfície, neve, gelo, skin temperature e quatro
+camadas de temperatura/umidade do solo.
+
+Configuração, execução e validação:
+
+```sh
+./scripts/validate/era5.sh
+./scripts/run/ungrib-era5.sh
+./scripts/validate/wps-era5.sh
+```
+
+Os três intermediates, dois logs e manifesto ficam em
+`data/cases/first-global-240km/wps/`, ignorados pelo Git.
 
 ## Dados geográficos adotados
 
@@ -269,17 +305,20 @@ x1.10242.static.nc ✅
         ↓
 ERA5 pressure + single-level GRIB ✅
         ↓
-WPS intermediate / init.nc ⏳
+Vtable.ECMWF + WPS 4.7.0 ungrib ✅
+        ↓
+ERA5:2014-09-10_00 ✅
+        ↓
+init.nc ⏳
 ```
 
-Isto prova pela primeira vez que o init consumiu a mesh real escolhida e
-interpolou campos estáticos. Não prova ERA5 → WPS intermediate → `init.nc`,
-não prova compatibilidade com Noah-MP, não executa `atmosphere_model` e não
-constitui validação meteorológica de uma previsão.
+Isto prova a geração dos campos estáticos e, separadamente, o caminho
+ERA5 real → WPS intermediate combinado. Não prova WPS intermediate →
+`init.nc`, não prova compatibilidade com Noah-MP, não executa
+`atmosphere_model` e não constitui validação meteorológica de uma previsão.
 
 ## Próximas decisões ainda pendentes
 
-- Vtable e mapeamento ERA5 → WPS intermediate;
 - geração e validação de `init.nc`;
 - duração, timestep e configuração de physics;
 - execução do `atmosphere_model` com partição compatível;

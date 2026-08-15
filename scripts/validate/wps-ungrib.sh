@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-IMAGE="${WPS_IMAGE:-mpas-era5:wps-4.7.0}"
+IMAGE="${WPS_IMAGE:-mpas-era5:mpas-atmosphere-8.4.1}"
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
 cd "${PROJECT_ROOT}"
@@ -31,6 +31,22 @@ docker run --rm \
         test "$(readlink -f /opt/wps/ungrib.exe)" = \
              "${wps_prefix}/ungrib/src/ungrib.exe"
 
+        test -x "${wps_prefix}/g1print.exe"
+        test -x /opt/wps/g1print.exe
+        test -x "${wps_prefix}/util/g1print.exe"
+        test "$(readlink "${wps_prefix}/g1print.exe")" = \
+             "ungrib/src/g1print.exe"
+        test "$(readlink "${wps_prefix}/util/g1print.exe")" = \
+             "../ungrib/src/g1print.exe"
+        test "$(readlink -f /opt/wps/g1print.exe)" = \
+             "${wps_prefix}/ungrib/src/g1print.exe"
+        test -x "${wps_prefix}/link_grib.csh"
+        file -L /opt/wps/g1print.exe \
+            | grep -F "ELF 64-bit LSB pie executable, x86-64"
+        ldd /opt/wps/g1print.exe
+        ldd /opt/wps/g1print.exe | grep -F "libgfortran.so"
+        test -z "$(ldd /opt/wps/g1print.exe | grep -F "not found")"
+
         file -L /opt/wps/ungrib.exe \
             | grep -F "ELF 64-bit LSB pie executable, x86-64"
         file -L /opt/wps/ungrib.exe | grep -F "dynamically linked"
@@ -52,6 +68,10 @@ docker run --rm \
             "${provenance}"
         grep -F \
             "WPS_SHA256_ORIGIN=locally calculated from two independent downloads on 2026-08-05; no upstream SHA-256 was found" \
+            "${provenance}"
+        grep -Fx "WPS_G1PRINT_BUILD_COMMAND=./compile g1print" \
+            "${provenance}"
+        grep -Fx "WPS_G1PRINT_EXECUTABLE=g1print.exe" \
             "${provenance}"
         grep -F "WRF Pre-Processing System Version 4.7.0" \
             "${wps_prefix}/README"
@@ -101,7 +121,7 @@ docker run --rm \
         test ! -e "${wps_prefix}/metgrid.exe"
 
         printf "%s\n" \
-            "BUILD: configure --nowrf --build-grib2-libs + ./compile ungrib: PASS" \
-            "SMOKE: executable, symlinks, file, ldd, configure.wps, provenance, GRIB2 libraries and Vtables: PASS" \
-            "FUNCTIONAL INTEGRATION: ERA5 GRIB -> ungrib -> WPS intermediate: PENDING"
+            "BUILD: configure + compile ungrib + incremental compile g1print: PASS" \
+            "SMOKE: ungrib/g1print/link_grib, links, ldd, config, provenance, GRIB2 and Vtables: PASS" \
+            "FUNCTIONAL INTEGRATION: run scripts/validate/wps-era5.sh"
     '

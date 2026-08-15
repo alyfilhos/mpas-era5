@@ -46,8 +46,8 @@ compilação de software científico, MPI e ferramentas utilizadas em HPC.
 - `x1.10242.graph.info.part.4` gerado localmente com METIS 5.1.0 e validado ✅
 - dados geográficos oficiais WPS, selecionados e validados para MPAS 8.4.1 ✅
 - `x1.10242.static.nc` gerado localmente e validado ✅
-- baseline/request/client ERA5 definidos e ERA5 bruto global adquirido e
-  validado ✅; `init.nc` e execução do `atmosphere_model` ⏳
+- ERA5 bruto global, `Vtable.ECMWF`, `ungrib` e WPS intermediate combinado
+  validados ✅; `init.nc` e execução do `atmosphere_model` ⏳
 
 ## Roadmap
 
@@ -109,14 +109,31 @@ downloads globais passaram; os GRIBs e o manifesto ficam em
 mensagens pressure-level e 19 single-level, todas GRIB edição 1, com tamanho e
 SHA-256 registrados localmente.
 
-Depois:
+Para reproduzir a conversão offline e sua validação cruzada:
+
+```sh
+./scripts/validate/era5.sh
+./scripts/run/ungrib-era5.sh
+./scripts/validate/wps-era5.sh
+```
+
+As configurações versionadas estão em
+[`cases/first-global-240km/wps/`](cases/first-global-240km/wps/). O wrapper
+processa pressure e single-level em workspaces limpos com a tabela upstream
+`Vtable.ECMWF`, preserva os dois resultados e promove atomicamente sua
+concatenação exata. Intermediates, logs e manifesto ficam em
+`data/cases/first-global-240km/wps/`, fora do Git.
+
+O caminho atual é:
 
 `ERA5 GRIB → Vtable → ungrib → WPS intermediate → MPAS init_atmosphere → MPAS atmosphere`
 
-A Vtable ERA5 definitiva, `init.nc` e a execução meteorológica ainda dependem
-de ciclos próprios. O estado atual prova que o `init_atmosphere_model` 8.4.1
-consumiu a mesh x1.10242 e produziu seus campos estáticos. Ainda não prova o
-caminho ERA5 → `init.nc` nem uma previsão com `atmosphere_model`.
+A `Vtable.ECMWF` da própria tag WPS 4.7.0 foi validada contra todos os 204
+registros GRIB reais. O `ungrib` produziu 185 slabs pressure e 19 surface; o
+arquivo combinado version 5 tem 204 slabs em grade global regular
+1440×721, 0,25°, timestamp 2014-09-10 00 UTC. Isso prova a etapa ERA5 → WPS
+intermediate. A execução meteorológica do `init_atmosphere_model`, `init.nc` e
+a previsão continuam reservadas aos ciclos seguintes.
 
 ## Documentação
 

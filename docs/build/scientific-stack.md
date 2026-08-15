@@ -28,7 +28,8 @@ mantendo as dependências científicas sob `/opt/mpas`.
 | METIS | 5.1.0 | particionamento serial offline do grafo da mesh para os ranks MPI |
 
 WPS não é uma biblioteca da stack. A instalação separada
-`/opt/wps-4.7.0` fornece somente `ungrib.exe`. MPAS-Model também usa prefixo
+`/opt/wps-4.7.0` fornece `ungrib.exe`, `g1print.exe` e `link_grib.csh`, sem
+`geogrid` ou `metgrid`. MPAS-Model também usa prefixo
 separado: `/opt/mpas-model-8.4.1` contém os cores `init_atmosphere` e
 `atmosphere`, compilados em ciclos incrementais na mesma árvore.
 
@@ -401,7 +402,7 @@ Detalhes e limitações estão em
 [[../decisions/0003-metis-5.1.0-partitioning-baseline|ADR 0003]] e alternativas
 futuras em [[../project/future-experiments|future-experiments.md]].
 
-## WPS 4.7.0 — somente ungrib
+## WPS 4.7.0 — ungrib e auditoria GRIB1
 
 WPS, o WRF Preprocessing System, reúne ferramentas de preparação de entradas;
 WRF é o modelo atmosférico separado. Os três programas principais do WPS têm
@@ -413,8 +414,9 @@ responsabilidades diferentes:
 - `metgrid` interpola os campos intermediários para a grade do modelo.
 
 O pipeline MPAS usa `ungrib` para chegar ao formato intermediário que
-`init_atmosphere` consumirá em um ciclo funcional. O build atual não precisa
-de WRF, `geogrid` ou `metgrid`; por isso eles não foram construídos.
+`init_atmosphere` consumirá no ciclo meteorológico. `g1print` inventaria GRIB1
+com o mesmo código WPS e `link_grib.csh` cria a sequência `GRIBFILE.AAA`.
+O build não precisa de WRF, `geogrid` ou `metgrid`; eles não foram construídos.
 
 ### Layout e isolamento
 
@@ -427,14 +429,15 @@ de WRF, `geogrid` ou `metgrid`; por isso eles não foram construídos.
 /opt/mpas-model -> /opt/mpas-model-8.4.1
 ```
 
-`ungrib.exe` permanece no layout upstream:
+Os executáveis permanecem no layout upstream:
 
 ```text
-/opt/wps-4.7.0/ungrib.exe -> ungrib/src/ungrib.exe
-/opt/wps/ungrib.exe       -> /opt/wps-4.7.0/ungrib/src/ungrib.exe
+/opt/wps-4.7.0/ungrib.exe  -> ungrib/src/ungrib.exe
+/opt/wps-4.7.0/g1print.exe -> ungrib/src/g1print.exe
+/opt/wps/g1print.exe       -> /opt/wps-4.7.0/ungrib/src/g1print.exe
 ```
 
-Ele não é copiado para `/opt/mpas/bin`. Essa separação impede que o source do
+Eles não são copiados para `/opt/mpas/bin`. Essa separação impede que o source do
 WPS e suas dependências privadas sejam confundidos com a ABI da stack
 científica compartilhada.
 
@@ -477,14 +480,23 @@ localiza exatamente `Linux x86_64, gfortran` com marca `serial`, exige uma
 - `INTERNAL_GRIB2_PATH=/opt/wps-4.7.0/grib2`;
 - `-DUSE_JPEG2000 -DUSE_PNG`.
 
-Somente o alvo aprovado é executado:
+O build original executa somente o componente aprovado:
 
 ```sh
 ./compile ungrib
 ```
 
-Executar `./compile` sem alvo tentaria construir todos os componentes e não
-faz parte da receita.
+A imagem publicada não continha `g1print.exe`. Diante da exigência de auditar
+os GRIBs reais com o próprio WPS, o ciclo 0011 acrescentou apenas o alvo
+upstream na mesma árvore já configurada:
+
+```sh
+./compile g1print
+```
+
+As camadas WPS/MPAS anteriores foram recuperadas do cache. Executar
+`./compile` sem alvo tentaria construir todos os componentes e continua fora
+da receita.
 
 ### Proveniência e integridade
 
@@ -514,16 +526,27 @@ existência de:
 - `Vtable.ERA-interim.ml`;
 - `Vtable.ERA-interim.pl`.
 
-Esses nomes foram inspecionados, não selecionados. Em especial, tabelas
-ERA-Interim não se tornam automaticamente corretas para ERA5. A integração
-funcional `ERA5 GRIB → ungrib → WPS intermediate` permanece pendente até que
-variáveis, níveis, amostra real e Vtable sejam aprovados. Não foi criado GRIB
-falso nem baixado dataset aleatório.
+No ciclo 0005 esses nomes foram apenas inspecionados. No ciclo 0011,
+`g1print` provou que cada uma das 204 mensagens ERA5 GRIB1 reais encontra uma
+única entrada necessária na `Vtable.ECMWF`: parameter code, level type e
+níveis casaram. A tabela upstream foi usada diretamente, sem cópia ou
+customização.
+
+Duas execuções isoladas produziram 185 slabs pressure e 19 surface, ambas com
+sucesso explícito. O combined exato possui 847.251.168 bytes, SHA-256
+`2d7a3ac93d1c904e45b3a19a9f524e6367f7fe72abab41a5263888f1a72b50f0` e
+204 registros. O parser streaming confirmou WPS intermediate version 5,
+Fortran sequential records big-endian, grade `iproj=0` 1440×721 a 0,25°,
+timestamp correto, metadata e tamanhos `nx*ny*4`.
+
+O inventário contém os cinco campos 3-D nos 37 níveis e todos os campos de
+superfície/solo da baseline. Isso encerra ERA5 GRIB → WPS intermediate, mas
+não executa o `init_atmosphere` meteorológico nem comprova `init.nc`.
 
 O build das bibliotecas internas e do código legado produziu avisos de
 formatação, `tmpnam`, uso após `realloc`, tipos/ranks Fortran e receitas make
-sobrescritas. Não houve erro de compilação ou linkagem; esses avisos continuam
-como dívida técnica a observar quando dados reais forem processados.
+sobrescritas. Não houve erro de compilação ou linkagem; os dados reais foram
+processados com sucesso, mas os avisos legados permanecem como dívida técnica.
 
 Detalhes auditáveis estão em
 [[../testing/validation-matrix|validation-matrix.md]] e a decisão de versão e

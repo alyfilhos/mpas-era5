@@ -28,7 +28,11 @@ CDS
                                       ↓
                          data/era5/2014-09-10_00/ ✅ GRIB bruto
                                       ↓ ciclo 0011
-WPS 4.7.0 / ungrib ✅ ──→ WPS intermediate ──→ init meteorológico futuro
+Vtable.ECMWF + WPS 4.7.0 / ungrib ✅
+                                      ↓
+               ERA5:2014-09-10_00 ✅ WPS intermediate
+                                      ↓
+                         init meteorológico futuro
                                                     │
                                                     ▼
 PIO 2.7.0 ✅ ──→ MPAS 8.4.1
@@ -58,7 +62,7 @@ data/geog/mpas-8.4.1/ ───────────────────�
                                             ↓
                               x1.10242.static.nc ✅
                                             ↓
-                               ERA5 GRIB bruto ✅ / init.nc ⏳
+                               ERA5 GRIB + WPS intermediate ✅ / init.nc ⏳
 ```
 
 ## Stack científica
@@ -73,7 +77,7 @@ Dockerfile
 → PIO2
 → METIS
 
-/opt/wps-4.7.0 → ungrib.exe
+/opt/wps-4.7.0 → ungrib.exe + g1print.exe + link_grib.csh
 /opt/wps       → /opt/wps-4.7.0
 
 /opt/mpas-model-8.4.1 → init_atmosphere_model
@@ -215,24 +219,24 @@ imagem, nos argumentos ou no Git.
 WPS prepara dados meteorológicos por um caminho distinto da stack científica:
 
 ```text
-ERA5 GRIB local validado
+ERA5 pressure GRIB ─→ g1print ─→ Vtable.ECMWF ─→ ungrib
+       ↓                                         ↓
+ERA5_PRES:2014-09-10_00 ───────────────────────────────┐
+                                                          ├─→ ERA5:2014-09-10_00 ✅
+ERA5 single GRIB ─→ g1print ─→ Vtable.ECMWF ─→ ungrib ─┘
        ↓
-Vtable aprovada (pendente)
-       ↓
-/opt/wps/ungrib.exe
-       ↓
-WPS intermediate
-       ↓
+ERA5_SFC:2014-09-10_00
+                                                          ↓
 MPAS init_atmosphere meteorológico (static já pronto; init.nc pendente)
        ↓
 MPAS atmosphere (build pronto; execução pendente)
 ```
 
-`scripts/validate/wps-ungrib.sh` valida a instalação sem rede e sem dados.
-As bibliotecas zlib, libpng e JasPer construídas por
-`--build-grib2-libs` ficam em `/opt/wps-4.7.0/grib2`, separadas das versões da
-stack em `/opt/mpas`. A integração funcional exige ERA5 GRIB e permanece
-pendente.
+`scripts/validate/wps-ungrib.sh` valida a instalação sem rede;
+`scripts/run/ungrib-era5.sh` executa os dois workspaces isolados; o parser e
+`scripts/validate/wps-era5.sh` cruzam GRIB, Vtable, logs e 204 headers. As
+bibliotecas zlib, libpng e JasPer privadas continuam separadas da stack em
+`/opt/mpas`. Os intermediates/logs/manifesto ficam somente sob `data/`.
 
 As dependências de física do atmosphere são materializadas antes do make:
 
@@ -328,7 +332,8 @@ mpas-era5/
 │       │                                  nota educacional do ciclo 0007
 │       ├── 0008-add-first-mesh.md         nota educacional do ciclo 0008
 │       ├── 0009-generate-static-fields.md nota educacional do ciclo 0009
-│       └── 0010-add-era5-acquisition.md   nota educacional do ciclo 0010
+│       ├── 0010-add-era5-acquisition.md   nota educacional do ciclo 0010
+│       └── 0011-ungrib-era5.md           nota educacional do ciclo 0011
 ├── scripts/
 │   ├── data/
 │   │   ├── fetch-mesh.sh             aquisição first-party e integridade
@@ -336,7 +341,8 @@ mpas-era5/
 │   │   ├── fetch-era5.py             requests, CDS, GRIB e manifesto seguro
 │   │   └── fetch-era5.sh             isolamento/volumes do container CDS
 │   ├── run/
-│   │   └── generate-static.sh        init case 7, MPI 1, execução isolada
+│   │   ├── generate-static.sh        init case 7, MPI 1, execução isolada
+│   │   └── ungrib-era5.sh            dois ungribs isolados + combined atômico
 │   ├── prepare/
 │   │   └── partition-mesh.sh         graph.info + N → part.N com METIS
 │   ├── validate/
@@ -344,6 +350,9 @@ mpas-era5/
 │   │   ├── pio.sh                    validação PIO/PnetCDF e IOTYPEs
 │   │   ├── metis.sh                  partição e validação estrutural em tmpfs
 │   │   ├── wps-ungrib.sh             smoke WPS offline e read-only
+│   │   ├── wps-intermediate.py        parser Fortran sequential version 5
+│   │   ├── wps-era5.py                 cruzamento semântico e manifesto
+│   │   ├── wps-era5.sh                 integração ERA5 → combined
 │   │   ├── mpas-init.sh              smoke MPAS init offline/read-only
 │   │   ├── mpas-atmosphere.sh        smoke MPAS atmosphere offline/read-only
 │   │   ├── mesh.sh                   validação da mesh real e partição
@@ -362,17 +371,19 @@ mpas-era5/
 │   ├── meshes/x1.10242/              grid, graph.info e part.4 ignorados
 │   ├── geog/mpas-8.4.1/              oito datasets WPS ignorados
 │   ├── era5/2014-09-10_00/           GRIBs/manifesto locais validados
-│   └── cases/.../static/             NetCDF e logs ignorados
+│   ├── cases/.../static/             NetCDF e logs ignorados
+│   └── cases/.../wps/                intermediates/logs/manifesto ignorados
 ├── cases/
 │   └── first-global-240km/
 │       ├── static/                    namelist e streams versionados
-│       └── era5/                      requests globais versionadas
+│       ├── era5/                      requests globais versionadas
+│       └── wps/                       namelists ungrib pressure/single
 └── docker/
     └── cds/                           cliente de aquisição; fora da stack MPAS
 ```
 
 `scripts/validate/` contém validações instaladas e repetíveis para PnetCDF,
-PIO, METIS, WPS/ungrib, os dois cores MPAS e a mesh x1.10242.
+PIO, METIS, WPS/ungrib/ERA5 intermediate, os dois cores MPAS e a mesh x1.10242.
 `scripts/codex/` continua vazio e, por isso, não é preservado pelo Git.
 
 ## Responsabilidades e relações
@@ -386,7 +397,8 @@ PIO, METIS, WPS/ungrib, os dois cores MPAS e a mesh x1.10242.
 | `docs/decisions/` | preservar decisões significativas e alternativas | depende de proposta e decisão do usuário |
 | `docs/testing/` | distinguir teste planejado, executado e comprovado | atualizada após cada validação técnica |
 | `learning/` | explicar conceitos e raciocínio por baseline/commit | referencia estado, fontes, ADRs e testes sem substituí-los |
-| `scripts/validate/` | hospedar validações repetíveis | resultados resumidos alimentam `docs/testing/` |
+| `scripts/validate/` | hospedar validações repetíveis, incluindo parser WPS streaming | resultados resumidos alimentam `docs/testing/` |
+| `scripts/run/` | executar transformações científicas isoladas | gera static ou WPS intermediate somente sob `data/` |
 | `scripts/data/` | adquirir dados externos reproduzivelmente | usa somente fontes e hashes registrados; instala sob `data/` |
 | `scripts/prepare/` | transformar entradas sem incorporá-las à imagem | gera `graph.info.part.N` com UID/GID do usuário |
 | `tests/smoke/` | hospedar fontes mínimas independentes do build upstream | compiladas pelos scripts contra a instalação final |

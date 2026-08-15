@@ -19,7 +19,29 @@ A partir do ciclo 0004, cada atualização distingue:
 Consequentemente, a referência abaixo é uma observação datada, não uma
 declaração eterna do `HEAD`.
 
-## Referência do ciclo 0010 em andamento
+## Referência do ciclo 0011 em andamento
+
+Estado atualizado em **2026-08-15** depois do inventário semântico, da
+validação da Vtable, de duas execuções do `ungrib` e da validação do WPS
+intermediate combinado:
+
+- branch inspecionada: `main`;
+- base e `HEAD` reais: `78fd3a26187305612223a06ba65a52325b95d908`
+  (`data: add reproducible ERA5 acquisition`), alinhado com `origin/main`;
+- o trabalho foi retomado de uma execução interrompida que já continha a
+  camada incremental de `g1print` no `Dockerfile`;
+- estado produzido: configuração, wrappers, parsers, dois intermediates,
+  concatenação, logs e manifesto local validados; nenhum commit ou push;
+- dados e outputs permanecem ignorados pelo Git;
+- comando normativo para o `HEAD` atual: `git rev-parse HEAD`.
+
+A imagem publicada não continha `g1print.exe`, ferramenta explicitamente
+requerida para auditar os GRIBs reais. Com essa evidência, o `Dockerfile`
+compila somente o alvo upstream `./compile g1print` na mesma árvore/tag WPS
+4.7.0. Nenhuma versão, dependência, estratégia científica ou binário MPAS foi
+trocado; as camadas anteriores foram preservadas.
+
+## Referência do ciclo 0010 materializado no Git
 
 Estado atualizado em **2026-08-14** depois da decisão, implementação, probes,
 aquisição e validação do ERA5 bruto:
@@ -32,7 +54,9 @@ aquisição e validação do ERA5 bruto:
 - baseline aprovada: 2014-09-10 00 UTC, global, 37 pressure levels,
   5 variáveis pressure e 19 single-level, GRIB;
 - estado produzido: requests, ADR, container dedicado, cliente, probes e dois
-  GRIBs globais validados no worktree; nenhum commit ou push;
+  GRIBs globais validados;
+- commit que materializou o estado:
+  `78fd3a26187305612223a06ba65a52325b95d908`;
 - autenticação e termos: comprovados pelos retrieves bem-sucedidos dos dois
   datasets, sem token em imagem, argumentos, logs ou Git;
 - comando normativo para o `HEAD` atual: `git rev-parse HEAD`.
@@ -87,7 +111,7 @@ Não foi criada uma variável `METIS`: o workflow usa
 | PnetCDF | 1.15.0 | camada MPI-IO preservada; F90/CDF-5 em quatro ranks aprovado |
 | PIO | 2.7.0 | C/Fortran static, PnetCDF habilitado; integração CDF-2 aprovada com OMPIO e ROMIO |
 | METIS | 5.1.0 | static, índices/reais 32 bits, GKlib incluída; `gpmetis` offline validado |
-| WPS/ungrib | 4.7.0 | GNU serial; sem WRF; GRIB2 privado; build e smoke offline aprovados |
+| WPS/ungrib | 4.7.0 | GNU serial; `ungrib`, `g1print`, `link_grib` e `Vtable.ECMWF` validados offline; integração ERA5 real aprovada |
 | MPAS/init_atmosphere | 8.4.1 | GNU/MPI, single precision, PIO2 e ESMF embedded; build/smoke estrutural e execução funcional static aprovados |
 | MPAS/atmosphere | 8.4.1 | GNU/MPI, single precision, PIO2, ESMF embedded, externals e lookup tables fixados; build e smoke estrutural aprovados |
 | Primeira mesh | x1.10242 | oficial, global quasi-uniforme, ~240 km, 10.242 células; NetCDF/grafo/part.4 validados e grid consumido pelo init |
@@ -95,12 +119,13 @@ Não foi criada uma variável `METIS`: o workflow usa
 | Primeiro static | x1.10242 / CDF-2 | 18.201.336 bytes; 1 task MPI; Noah-MP false; campos/ranges/log validados; artefato local ignorado |
 | Cliente CDS | Python 3.12.13 / cdsapi 0.7.7 | imagem dedicada por digest, lock transitivo, `pip check`, versão, requests, self-test e autenticação aprovados |
 | Baseline ERA5 | 2014-09-10 00 UTC / global / GRIB | probes e dois downloads globais GRIB1 validados; 426.164.750 bytes locais no total |
+| WPS intermediate ERA5 | version 5 / global 0,25° | pressure 185 + single 19 = 204 slabs; concatenação exata, estrutura, semântica e campos funcionais validados; local/ignorado |
 
 A imagem validada é `mpas-era5:mpas-atmosphere-8.4.1`, com ID local
-`sha256:54281c60db053982692d21bef27cf522293e8e2568be748cf4a83f2d5f0e4c93`
-e tamanho reportado de 466.941.565 bytes. Todas as 27 etapas até o build de
-`init_atmosphere` foram recuperadas do cache; nenhuma camada científica
-anterior foi reconstruída ou alterada.
+`sha256:9c9479db0bae4db1e8d827bf522caab312ad097217aba962cb399f18b74e93a8`
+e tamanho reportado de 467.002.046 bytes. O último estágio acrescenta somente
+o alvo upstream `g1print` e sua proveniência; as camadas WPS/MPAS anteriores
+não foram recompiladas e nenhuma versão científica mudou.
 
 A evidência resumida está em
 [[../testing/validation-matrix|validation-matrix.md]]; nenhum log de build ou
@@ -357,7 +382,7 @@ A integração agora comprovada é:
 x1.10242.grid.nc + WPS_GEOG → init_atmosphere static → x1.10242.static.nc
 ```
 
-WPS intermediate, `init.nc` e `atmosphere_model` continuam pendentes.
+O WPS intermediate foi concluído no ciclo 0011; `init.nc` e `atmosphere_model` continuam pendentes.
 
 ## Baseline e cliente ERA5 no ciclo 0010
 
@@ -397,23 +422,69 @@ contagens e edições. Uma reexecução retornou `unchanged` para ambos sem novo
 retrieve. Os dados e o manifesto estão ignorados e não rastreados; as requests
 continuam versionáveis. O token não foi solicitado, impresso ou copiado.
 
-Logo, a evidência neste ponto é:
+O ciclo 0010 materializado comprovou:
 
 ```text
 seleção + requests + cliente isolado + credencial/termos ✅
 probe + ERA5 GRIB pressure/single-level + transporte bruto ✅
-ungrib.exe (ciclo 0011) ⏳
+ungrib.exe (ciclo 0011) → executado posteriormente ✅
 ```
+
+## Conversão ERA5 para WPS intermediate no ciclo 0011
+
+O `g1print.exe` da mesma tag WPS 4.7.0 inventariou os dois GRIBs reais. Todas
+as mensagens são GRIB1, análise de 2014-09-10 00 UTC e forecast hour zero.
+Pressure possui os parâmetros 129, 157, 130, 131 e 132, level type 100, em
+todos os 37 níveis solicitados; single possui exatamente os 19 tuples de
+parâmetro, level type e camada esperados pelas requests.
+
+Cada tuple casou uma única linha GRIB1 da
+`/opt/wps/ungrib/Variable_Tables/Vtable.ECMWF` upstream. Em particular,
+geopotencial, geopotencial de superfície, skin temperature, snow depth, sea
+ice e as oito camadas de solo casaram sem customização. A tabela tem SHA-256
+local `989bf7227ae5c822bfdd8467267dacc41396e08f2270735eac08c56a0096b335`.
+Por isso nenhuma cópia divergente nem novo ADR foi criado.
+
+Pressure e single-level foram executados separadamente, sempre offline, com
+rootfs read-only, UID/GID do host, inputs/Vtable read-only e workspace limpo.
+Cada log contém `Successful completion of ungrib.`. O parser streaming de
+Fortran sequential records validou markers big-endian, version 5, headers,
+projeção, tamanho de slabs e EOF exato antes da promoção atômica.
+
+| Artefato local ignorado | Bytes | SHA-256 | Slabs |
+|---|---:|---|---:|
+| `ERA5_PRES:2014-09-10_00` | 768.340.520 | `f0a47a4eee5fb29ae37e6cbe8ffc19fbb68a394d8a7e14bd7e57c714cecdae8b` | 185 |
+| `ERA5_SFC:2014-09-10_00` | 78.910.648 | `e1ea9841ee7a2b085e204e111d3747af87a746b4fd7c5eca2f2894d4d3a8400e` | 19 |
+| `ERA5:2014-09-10_00` | 847.251.168 | `2d7a3ac93d1c904e45b3a19a9f524e6367f7fe72abab41a5263888f1a72b50f0` | 204 |
+
+A grade observada é cilíndrica equidistante (`iproj=0`), 1440×721,
+0,25°, global, com timestamp 2014-09-10 00 UTC. O combined é byte a byte
+pressure seguido de single. O inventário final contém `HGT`, `RH`, `TT`,
+`UU` e `VV` nos 37 níveis isobáricos, além dos campos superficiais requeridos:
+`PSFC`, `PMSL`, `SOILHGT`, `TT/UU/VV/RH`, `SNOW`, `SEAICE`, `SKINTEMP`, quatro
+`ST*` e quatro `SM*`. As conversões upstream substituíram `GEOPT`, `DEWPT`,
+`SOILGEO` e `SNOW_EC`; não foram observados slabs adicionais.
+
+O ciclo comprova:
+
+```text
+ERA5 GRIB real → inventário/Vtable → WPS 4.7.0 ungrib
+               → ERA5:2014-09-10_00 ✅
+```
+
+`init_atmosphere_model` não foi executado no modo meteorológico e `init.nc`
+não foi gerado.
 
 ## Preservação da stack anterior
 
-- a imagem `mpas-era5:mpas-atmosphere-8.4.1` permaneceu acessível com o mesmo
-  ID e tamanho local registrados acima;
-- o `Dockerfile` não mudou e nenhuma imagem foi reconstruída;
+- as camadas científicas e os binários WPS/MPAS previamente validados foram
+  preservados; somente `./compile g1print` criou a camada final requerida;
+- o `Dockerfile` mudou apenas para tornar `g1print.exe` reproduzível e registrar
+  esse comando na proveniência WPS;
 - `scripts/validate/mpas-init.sh` e
   `scripts/validate/mpas-atmosphere.sh` continuam presentes e executáveis;
-- esses smokes de build não foram reexecutados porque Dockerfile, binários,
-  bibliotecas e versões de software permaneceram inalterados;
+- o smoke WPS foi reexecutado e a regressão ERA5 passou; nenhuma versão,
+  biblioteca ou configuração dos cores MPAS mudou;
 - a integração relevante `graph.info` real → METIS 5.1.0 → `part.4` passou.
 
 ## Arquiteturas adotadas
@@ -487,7 +558,7 @@ As decisões e alternativas estão em
 - `docs/decisions/0006-first-static-baseline.md`: baseline geográfica/static;
 - `learning/commits/0009-generate-static-fields.md`: nota educacional.
 
-## Artefatos do ciclo 0010 em andamento
+## Artefatos do ciclo 0010
 
 - `cases/first-global-240km/era5/`: duas requests e instruções;
 - `docker/cds/`: imagem Python/CDS separada e lock completo;
@@ -496,6 +567,15 @@ As decisões e alternativas estão em
 - `scripts/validate/era5.sh`: validação local e Git hygiene;
 - `docs/decisions/0007-first-era5-baseline.md`: decisão meteorológica;
 - `learning/commits/0010-add-era5-acquisition.md`: nota educacional.
+
+## Artefatos do ciclo 0011
+
+- `cases/first-global-240km/wps/`: namelists pressure e single-level;
+- `scripts/run/ungrib-era5.sh`: execução isolada e promoção atômica;
+- `scripts/validate/wps-intermediate.py`: parser streaming do formato version 5;
+- `scripts/validate/wps-era5.py` e `wps-era5.sh`: auditoria cruzada completa;
+- `scripts/validate/wps-ungrib.sh`: smoke estendido para `g1print`;
+- `learning/commits/0011-ungrib-era5.md`: nota educacional do ciclo.
 
 ## Componentes ainda não implementados
 
@@ -523,12 +603,12 @@ As decisões e alternativas estão em
 - HDF5 e netCDF continuam seriais por decisão anterior;
 - METIS 5.2.1 + GKlib fixada e PT-Scotch online são somente hipóteses futuras,
   sem conclusão de superioridade;
-- a Vtable ERA5 não foi escolhida e nenhum GRIB real foi processado pelo WPS;
+- a `Vtable.ECMWF` está validada somente para a baseline ERA5 real aprovada;
 - avisos de código legado em libpng, JasPer e Fortran permanecem, apesar do
   build e da linkagem bem-sucedidos;
-- a etapa static do `init_atmosphere` passou funcionalmente, mas qualquer
-  afirmação sobre `init.nc` ou previsão continua pendente até entradas
-  WPS/ERA5 representativas serem produzidas e o `atmosphere_model` executar;
+- as entradas WPS/ERA5 foram produzidas, mas qualquer afirmação sobre
+  `init.nc` ou previsão continua pendente até o `init_atmosphere` meteorológico
+  e o `atmosphere_model` executarem;
 - o high mandatory exige download de 2,77 GB e seus hashes são locais porque
   o upstream não publica SHA-256;
 - os seis warnings de metadata opcional da mesh permanecem documentados;

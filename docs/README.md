@@ -43,6 +43,7 @@ Este diretório centraliza a documentação técnica e científica do projeto.
 - [[../learning/commits/0008-add-first-mesh|Ciclo 0008 — adicionar a primeira mesh real]]
 - [[../learning/commits/0009-generate-static-fields|Ciclo 0009 — gerar campos estáticos]]
 - [[../learning/commits/0010-add-era5-acquisition|Ciclo 0010 — adquirir ERA5 reproduzivelmente]]
+- [[../learning/commits/0011-ungrib-era5|Ciclo 0011 — converter ERA5 para WPS intermediate]]
 
 ## Blocos do projeto
 

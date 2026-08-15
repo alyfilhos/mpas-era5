@@ -40,6 +40,9 @@ apontar para ele.
 - [`commits/0010-add-era5-acquisition.md`](commits/0010-add-era5-acquisition.md):
   nota educacional sobre reanálise, ERA5, pressure/single levels, GRIB, CDS,
   credenciais, requests e validação de transporte;
+- [`commits/0011-ungrib-era5.md`](commits/0011-ungrib-era5.md): nota
+  educacional sobre inventário GRIB1, Vtable, ungrib e o formato WPS
+  intermediate;
 - `commits/NNNN-<descricao>.md`: uma nota por commit posterior ao bootstrap.
 
 ## O que cada nota por commit deve ensinar
