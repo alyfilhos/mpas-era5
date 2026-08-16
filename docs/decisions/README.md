@@ -26,6 +26,8 @@ evidência. Decisões novas são listadas abaixo.
   — aceito em 2026-08-14.
 - [[0007-first-era5-baseline|ADR 0007 — baseline ERA5 do primeiro caso global]]
   — aceito em 2026-08-14.
+- [[0008-first-initial-condition-baseline|ADR 0008 — primeira baseline de condição inicial MPAS]]
+  — aceito em 2026-08-16.
 
 ## Quando criar um ADR
 

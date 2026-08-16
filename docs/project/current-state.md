@@ -19,19 +19,40 @@ A partir do ciclo 0004, cada atualização distingue:
 Consequentemente, a referência abaixo é uma observação datada, não uma
 declaração eterna do `HEAD`.
 
-## Referência do ciclo 0011 em andamento
+
+## Referência do ciclo 0012 produzido no worktree
+
+Estado atualizado em **2026-08-16** depois da execução meteorológica real do
+MPAS init e da validação estrutural/física do primeiro `init.nc`:
+
+- branch inspecionada: `main`, inicialmente alinhada com `origin/main`;
+- base e `HEAD` real: `6352463b91db6e0e56faf6b9fe283569c3119cb8`
+  (`data: convert ERA5 to WPS intermediate`);
+- worktree inicial: limpo;
+- regressões diretamente consumidas: mesh, static, ERA5, WPS intermediate e
+  MPAS init build/proveniência, todas PASS;
+- source MPAS exato: v8.4.1, commit
+  `91c5eac175eebeaf4206bacd5cb50c39dff3c152`;
+- estado produzido: configuração, runner, validador, ADR, learning note,
+  documentação e `x1.10242.init.nc` local validado;
+- imagem, Dockerfile e versões científicas inalterados;
+- nenhum commit, push ou execução do `atmosphere_model` neste ciclo;
+- comando normativo para o `HEAD` atual: `git rev-parse HEAD`.
+
+## Ciclo 0011 materializado no commit publicado
 
 Estado atualizado em **2026-08-15** depois do inventário semântico, da
 validação da Vtable, de duas execuções do `ungrib` e da validação do WPS
 intermediate combinado:
 
 - branch inspecionada: `main`;
-- base e `HEAD` reais: `78fd3a26187305612223a06ba65a52325b95d908`
+- base real antes das mudanças: `78fd3a26187305612223a06ba65a52325b95d908`
   (`data: add reproducible ERA5 acquisition`), alinhado com `origin/main`;
 - o trabalho foi retomado de uma execução interrompida que já continha a
   camada incremental de `g1print` no `Dockerfile`;
-- estado produzido: configuração, wrappers, parsers, dois intermediates,
-  concatenação, logs e manifesto local validados; nenhum commit ou push;
+- estado materializado no commit
+  `6352463b91db6e0e56faf6b9fe283569c3119cb8`
+  (`data: convert ERA5 to WPS intermediate`);
 - dados e outputs permanecem ignorados pelo Git;
 - comando normativo para o `HEAD` atual: `git rev-parse HEAD`.
 
@@ -112,7 +133,7 @@ Não foi criada uma variável `METIS`: o workflow usa
 | PIO | 2.7.0 | C/Fortran static, PnetCDF habilitado; integração CDF-2 aprovada com OMPIO e ROMIO |
 | METIS | 5.1.0 | static, índices/reais 32 bits, GKlib incluída; `gpmetis` offline validado |
 | WPS/ungrib | 4.7.0 | GNU serial; `ungrib`, `g1print`, `link_grib` e `Vtable.ECMWF` validados offline; integração ERA5 real aprovada |
-| MPAS/init_atmosphere | 8.4.1 | GNU/MPI, single precision, PIO2 e ESMF embedded; build/smoke estrutural e execução funcional static aprovados |
+| MPAS/init_atmosphere | 8.4.1 | GNU/MPI, single precision, PIO2 e ESMF embedded; static e init meteorológico reais aprovados |
 | MPAS/atmosphere | 8.4.1 | GNU/MPI, single precision, PIO2, ESMF embedded, externals e lookup tables fixados; build e smoke estrutural aprovados |
 | Primeira mesh | x1.10242 | oficial, global quasi-uniforme, ~240 km, 10.242 células; NetCDF/grafo/part.4 validados e grid consumido pelo init |
 | Geografia do primeiro static | WPS first-party | 8 datasets exatos, 16.563.576.021 bytes, hashes locais/manifests validados; fora do Git/imagem |
@@ -120,6 +141,7 @@ Não foi criada uma variável `METIS`: o workflow usa
 | Cliente CDS | Python 3.12.13 / cdsapi 0.7.7 | imagem dedicada por digest, lock transitivo, `pip check`, versão, requests, self-test e autenticação aprovados |
 | Baseline ERA5 | 2014-09-10 00 UTC / global / GRIB | probes e dois downloads globais GRIB1 validados; 426.164.750 bytes locais no total |
 | WPS intermediate ERA5 | version 5 / global 0,25° | pressure 185 + single 19 = 204 slabs; concatenação exata, estrutura, semântica e campos funcionais validados; local/ignorado |
+| Primeiro init.nc | x1.10242 / CDF-2 | 92.641.692 bytes; 4 ranks/part.4; 55 níveis; 4 soil; topo 30 km; SHA-256 `9f2625d9f93ec873a8c1f3abef24083d1b03b910a77efea2f6dbfd2e13c36c7d`; local/ignorado |
 
 A imagem validada é `mpas-era5:mpas-atmosphere-8.4.1`, com ID local
 `sha256:9c9479db0bae4db1e8d827bf522caab312ad097217aba962cb399f18b74e93a8`
@@ -382,7 +404,7 @@ A integração agora comprovada é:
 x1.10242.grid.nc + WPS_GEOG → init_atmosphere static → x1.10242.static.nc
 ```
 
-O WPS intermediate foi concluído no ciclo 0011; `init.nc` e `atmosphere_model` continuam pendentes.
+O WPS intermediate e o `init.nc` foram concluídos; somente a execução do `atmosphere_model` continua pendente.
 
 ## Baseline e cliente ERA5 no ciclo 0010
 
@@ -475,17 +497,52 @@ ERA5 GRIB real → inventário/Vtable → WPS 4.7.0 ungrib
 `init_atmosphere_model` não foi executado no modo meteorológico e `init.nc`
 não foi gerado.
 
+## Condição inicial meteorológica no ciclo 0012
+
+A configuração do init real usa case 7, ERA5 global em 2014-09-10 00 UTC,
+38 first-guess levels, 55 níveis MPAS, topo de 30 km, quatro camadas de solo,
+RH, Noah-MP false, lapse-rate, vertical/met interpolation e quatro ranks com
+`part.4`. Não gera static, GWD, LBC ou surface update.
+
+O runner executou:
+
+```text
+mpiexec -n 4 /opt/mpas-model-8.4.1/init_atmosphere_model
+```
+
+A execução científica levou 6,86265 s no timer MPAS e 7 s no manifesto. O log
+terminou com 594 outputs, zero warnings, zero errors e zero critical errors.
+PIO/PnetCDF escreveu CDF-2 sem flag MPI-IO extra.
+
+| Artefato local ignorado | Bytes | SHA-256 |
+|---|---:|---|
+| `x1.10242.init.nc` | 92.641.692 | `9f2625d9f93ec873a8c1f3abef24083d1b03b910a77efea2f6dbfd2e13c36c7d` |
+| `log.init_atmosphere.0000.out` | 20.915 observados no diretório local | preservado fora do Git |
+| `manifest.json` | 1.043 observados no diretório local | hashes/config/comando/timestamps validados |
+
+O C independente confirmou CDF-2, 10.242 células, 55 níveis, 56 interfaces,
+quatro níveis de solo e `Time=1`; timestamp correto; zgrid crescente até 30
+km; campos atmosféricos, superfície e solo finitos e sem missing; densidade e
+pressão positivas; Noah-MP ausente. Mesh, static e init possuem as mesmas
+10.242 células.
+
+Há uma tolerância numérica documentada: seis valores `qv` entre zero e
+`-1,05322406e-05 kg/kg`, derivados da conversão direta de RH sem clamp no
+source 8.4.1. O validador permite no máximo `-2e-5` e reporta a contagem. Não
+houve pós-processamento do arquivo.
+
+O init prova `ERA5 → WPS → MPAS init`. O `atmosphere_model` continua fora do
+escopo e pendente para o ciclo 0013.
+
 ## Preservação da stack anterior
 
-- as camadas científicas e os binários WPS/MPAS previamente validados foram
-  preservados; somente `./compile g1print` criou a camada final requerida;
-- o `Dockerfile` mudou apenas para tornar `g1print.exe` reproduzível e registrar
-  esse comando na proveniência WPS;
-- `scripts/validate/mpas-init.sh` e
-  `scripts/validate/mpas-atmosphere.sh` continuam presentes e executáveis;
-- o smoke WPS foi reexecutado e a regressão ERA5 passou; nenhuma versão,
-  biblioteca ou configuração dos cores MPAS mudou;
-- a integração relevante `graph.info` real → METIS 5.1.0 → `part.4` passou.
+- a imagem científica validada e o `Dockerfile` permaneceram inalterados;
+- nenhuma versão, dependência, estratégia HDF5/netCDF ou implementação MPI foi
+  modificada;
+- `init_atmosphere_model` e `atmosphere_model` permaneceram os binários já
+  construídos e validados estruturalmente;
+- somente as regressões diretamente consumidas foram executadas;
+- a integração `part.4 ↔ 4 ranks` passou no init sem workaround MPI-IO.
 
 ## Arquiteturas adotadas
 
@@ -577,20 +634,28 @@ As decisões e alternativas estão em
 - `scripts/validate/wps-ungrib.sh`: smoke estendido para `g1print`;
 - `learning/commits/0011-ungrib-era5.md`: nota educacional do ciclo.
 
+## Artefatos do ciclo 0012
+
+- `cases/first-global-240km/init/`: namelist, streams e contrato do caso;
+- `scripts/run/generate-init.sh`: preflight, isolamento, MPI, manifesto e
+  promoção/idempotência;
+- `scripts/validate/init.sh` e `tests/smoke/init_netcdf.c`: validação de log,
+  estrutura, vertical, estado, superfície, solo e proveniência;
+- `docs/decisions/0008-first-initial-condition-baseline.md`: baseline aceita;
+- `learning/commits/0012-generate-initial-conditions.md`: nota educacional;
+- outputs locais em `data/cases/first-global-240km/init/`, ignorados pelo Git.
+
 ## Componentes ainda não implementados
 
 - METIS 5.2.1 e GKlib externa;
 - PT-Scotch;
-- execução meteorológica do `init_atmosphere` para `init.nc`;
-- `init.nc`; LBC permanece somente para eventual caso futuro de área
-  limitada;
+- LBC permanece somente para eventual caso futuro de área limitada;
 - execução funcional e validação física do `atmosphere_model`.
 
 ## Lacunas e limitações atuais
 
-- o init consumiu `x1.10242.grid.nc` na etapa static; a partição `part.4`
-  continua destinada à futura execução meteorológica e ainda não foi
-  consumida pelo `atmosphere_model`;
+- o init meteorológico consumiu `part.4` com quatro ranks; a mesma relação
+  ainda precisa ser exercitada pelo `atmosphere_model`;
 - o static tem `config_noahmp_static=false` e não serve a uma física que
   exija os cinco campos Noah-MP ausentes;
 - a release METIS 5.1.0 não fornece suíte formal; foram usados seus grafos de
@@ -606,9 +671,8 @@ As decisões e alternativas estão em
 - a `Vtable.ECMWF` está validada somente para a baseline ERA5 real aprovada;
 - avisos de código legado em libpng, JasPer e Fortran permanecem, apesar do
   build e da linkagem bem-sucedidos;
-- as entradas WPS/ERA5 foram produzidas, mas qualquer afirmação sobre
-  `init.nc` ou previsão continua pendente até o `init_atmosphere` meteorológico
-  e o `atmosphere_model` executarem;
+- o `init.nc` foi produzido; qualquer afirmação sobre previsão continua
+  pendente até o `atmosphere_model` executar;
 - o high mandatory exige download de 2,77 GB e seus hashes são locais porque
   o upstream não publica SHA-256;
 - os seis warnings de metadata opcional da mesh permanecem documentados;

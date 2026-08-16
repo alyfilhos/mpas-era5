@@ -15,7 +15,7 @@ não prova que a execução ocorreu nesta máquina nem preserva o resultado. Um
 componente só poderá receber status validado quando comando, resultado e
 evidência estiverem registrados.
 
-Última revisão: **2026-08-14**.
+Última revisão: **2026-08-16**.
 
 ## Ambiente e stack existente
 
@@ -31,7 +31,7 @@ evidência estiverem registrados.
 | PIO 2.7.0 | CTest: 109/109 testes aprovados | versão, configuração, headers, módulos, bibliotecas e pacote CMake conferidos | C → PIO/PnetCDF → MPI-IO → OpenMPI; CDF-2 escrito e relido em 4 ranks com OMPIO e ROMIO | Implementado e validado no ciclo 0003 | [`Dockerfile`](../../Dockerfile), [`pio.sh`](../../scripts/validate/pio.sh), [`pio_pnetcdf.c`](../../tests/smoke/pio_pnetcdf.c) e evidência abaixo |
 | METIS 5.1.0 | não há `make check`/CTest formal; `graphchk` e `gpmetis` passaram no `4elt.graph` fornecido upstream | versão por macros, ferramentas, biblioteca, help e opções conferidos | fixture → `gpmetis` → `graph.info.part.4`; estrutura, IDs, quatro partições, edge cut e conectividade validados | Implementado e validado no ciclo 0004 | [`Dockerfile`](../../Dockerfile), [`metis.sh`](../../scripts/validate/metis.sh), [`graph.info`](../../tests/fixtures/metis/graph.info) e evidência abaixo |
 | WPS 4.7.0 / ungrib | não foi identificada suíte formal para este recorte; `configure`, `compile ungrib` e alvo incremental `compile g1print` passaram | executáveis, links, `file`, `ldd`, configuração, proveniência, GRIB2 privado e Vtable upstream conferidos offline | 204 mensagens ERA5 GRIB1 → `Vtable.ECMWF` → dois ungribs → WPS intermediate: PASS | Build/smoke no ciclo 0005; inventário e integração funcional no ciclo 0011 | [`Dockerfile`](../../Dockerfile), [`wps-ungrib.sh`](../../scripts/validate/wps-ungrib.sh), [`ungrib-era5.sh`](../../scripts/run/ungrib-era5.sh) e [`wps-era5.sh`](../../scripts/validate/wps-era5.sh) |
-| MPAS 8.4.1 `init_atmosphere` | a tag não contém suíte autocontida; build real do core passou | executável/defaults/proveniência conferidos e static NetCDF validado independentemente | mesh + WPS_GEOG → static: PASS; mesh + WPS/ERA5 → `init.nc` pendente | Build/smoke estrutural nos ciclos 0006/0007; execução static funcional no ciclo 0009 | [`Dockerfile`](../../Dockerfile), [`mpas-init.sh`](../../scripts/validate/mpas-init.sh), [`generate-static.sh`](../../scripts/run/generate-static.sh), [`static.sh`](../../scripts/validate/static.sh) e evidência abaixo |
+| MPAS 8.4.1 `init_atmosphere` | a tag não contém suíte autocontida; build real passou | executável/defaults/source conferidos; static e init validados independentemente | mesh + WPS_GEOG → static: PASS; static + WPS/ERA5 + part.4 → `init.nc`: PASS | Build nos ciclos 0006/0007; static no 0009; init meteorológico no 0012 | [`generate-init.sh`](../../scripts/run/generate-init.sh), [`init.sh`](../../scripts/validate/init.sh) e [`init_netcdf.c`](../../tests/smoke/init_netcdf.c) |
 | MPAS 8.4.1 `atmosphere` | a tag não contém suíte autocontida aplicável sem mesh, `init.nc` e configuração; o build real do core passou | executável, defaults, configuração, pins, lookup tables, `file`, `ldd` e símbolos conferidos offline | `init.nc` + mesh + partição → `atmosphere_model` pendente | Build e smoke estrutural validados no ciclo 0007; funcional/científico pendentes | [`Dockerfile`](../../Dockerfile), [`mpas-atmosphere.sh`](../../scripts/validate/mpas-atmosphere.sh) e evidência abaixo |
 
 ## Dados adquiridos e componentes futuros
@@ -39,13 +39,13 @@ evidência estiverem registrados.
 | Componente | Upstream test | Smoke test | Integration test | Status | Evidência |
 |---|---|---|---|---|---|
 | ERA5 / cliente CDS | O dataset não possui suite; build do cliente executou `pip check` sem dependências quebradas | Python 3.12.13, `cdsapi==0.7.7`, lock, requests, framing, manifestos e reexecução idempotente validados | Probes + pressure/single global → GRIB1 bruto: PASS; GRIB real → WPS intermediate: PASS | Aquisição validada no ciclo 0010 e conversão no 0011 | [`era5.sh`](../../scripts/validate/era5.sh), [`wps-era5.sh`](../../scripts/validate/wps-era5.sh) e evidências abaixo |
-| Mesh pública inicial | Fonte/proveniência e integridade do pacote x1.10242 confirmadas; `graphchk` aprovado no grafo real | NetCDF, dimensões, variáveis, grafo, part.4, edge cut, balanceamento e conectividade conferidos offline | `graph.info` real → METIS 5.1.0 → `part.4`: PASS; mesh real → init static: PASS | x1.10242 validada no ciclo 0008 e consumida funcionalmente no ciclo 0009 | [`fetch-mesh.sh`](../../scripts/data/fetch-mesh.sh), [`partition-mesh.sh`](../../scripts/prepare/partition-mesh.sh), [`mesh.sh`](../../scripts/validate/mesh.sh) e evidências abaixo |
+| Mesh pública inicial | Fonte/proveniência e integridade do pacote x1.10242 confirmadas; `graphchk` aprovado no grafo real | NetCDF, dimensões, variáveis, grafo, part.4, edge cut, balanceamento e conectividade conferidos offline | `graph.info` real → METIS 5.1.0 → `part.4`: PASS; mesh real → init static: PASS | x1.10242 validada no ciclo 0008; consumida por static no 0009 e init real no 0012 | [`fetch-mesh.sh`](../../scripts/data/fetch-mesh.sh), [`partition-mesh.sh`](../../scripts/prepare/partition-mesh.sh), [`mesh.sh`](../../scripts/validate/mesh.sh) e evidências abaixo |
 | `static.nc` | Não se aplica | CDF-2, dimensões, atributos, Registry/source, campos, missing, NaN/Inf, categorias e ranges conferidos | x1.10242 + WPS_GEOG → init case 7 → `x1.10242.static.nc`: PASS em 1 task MPI | Gerado e validado no ciclo 0009; local/ignorado; Noah-MP ausente por decisão | [`generate-static.sh`](../../scripts/run/generate-static.sh), [`static.sh`](../../scripts/validate/static.sh), [`static_netcdf.c`](../../tests/smoke/static_netcdf.c) e evidência abaixo |
 | WPS intermediate ERA5 | Não se aplica | parser streaming valida records Fortran big-endian, version 5, headers, projeção, slabs e EOF | GRIB/g1print → Vtable → logs → pressure/single/combined: PASS; campos funcionais e 37 níveis confirmados | Gerado e validado no ciclo 0011; três arquivos/logs/manifesto locais e ignorados | [`wps-intermediate.py`](../../scripts/validate/wps-intermediate.py), [`wps-era5.py`](../../scripts/validate/wps-era5.py) e evidência do ciclo 0011 |
-| `init.nc` | Não se aplica | Planejado: verificar estrutura, completude, tempo e faixas físicas iniciais | Planejado: arquivo aceito por `atmosphere` em execução curta | Não gerado | [[../project/requirements|REQ-CASE-002]] |
+| `x1.10242.init.nc` | Não se aplica | CDF-2, dimensões, timestamp, zgrid, campos Registry, missing/NaN/Inf, ranges, EOS, solo e manifesto | static + ERA5 intermediate + part.4 → init case 7 em 4 ranks: PASS | Gerado e validado no ciclo 0012; local e ignorado | [`generate-init.sh`](../../scripts/run/generate-init.sh), [`init.sh`](../../scripts/validate/init.sh), [`init_netcdf.c`](../../tests/smoke/init_netcdf.c) |
 | LBC | Não se aplica | Planejado somente para área limitada: verificar sequência temporal, cobertura e continuidade | Planejado somente quando aplicável: execução curta consome todos os contornos | Não se aplica ao primeiro caso global; condicional para casos futuros | [[../project/requirements|REQ-CASE-003]] |
-| Primeira execução | Não se aplica | Planejado: execução curta termina sem erro e produz logs/saídas esperados | Planejado: pipeline completo reproduz a execução a partir das entradas registradas | Não executada | [[../project/requirements|REQ-RUN-001]] |
-| Validação física | Não se aplica | Planejado: checagens de sanidade, conservação, extremos, NaN/Inf e coerência temporal/espacial | Planejado: comparar entradas, estado inicial e evolução conforme critérios aprovados | Critérios quantitativos a decidir | [[../project/requirements|REQ-VAL-001]] |
+| Primeira previsão | Não se aplica | Planejado: atmosphere termina sem erro e produz logs/saídas | Planejado: pipeline completo reproduz a evolução a partir do init validado | Não executada; ciclo 0013 | [[../project/requirements|REQ-RUN-001]] |
+| Validação física | Não se aplica | init: sanidade, extremos amplos, NaN/Inf/missing, vertical e EOS aprovados | previsão: comparar estado inicial e evolução; ainda pendente | Init validado no ciclo 0012; critérios temporais a decidir | [[../project/requirements|REQ-VAL-001]] |
 
 ## Evidência do ciclo 0002 — PnetCDF 1.15.0
 
@@ -534,7 +534,7 @@ inventário foi produzido.
 | Combined exact concatenation | PASS |
 | Required ERA5 field inventory | PASS |
 | Generated artifact Git hygiene | PASS |
-| Meteorological `init_atmosphere` / `init.nc` | NOT RUN, ciclo 0012 |
+| Meteorological `init_atmosphere` / `init.nc` | NOT RUN no ciclo 0011; concluído no ciclo 0012 |
 
 ## Evidência mínima de um resultado futuro
 
@@ -553,3 +553,40 @@ Cada atualização de status deve registrar:
 Não versionar credenciais, ERA5 volumoso, saídas MPAS grandes ou logs com
 segredos. Resultados resumidos devem ser suficientes para auditar o teste e
 indicar onde artefatos externos controlados podem ser encontrados.
+
+## Evidência do ciclo 0012 — primeira condição inicial MPAS
+
+| Item | Evidência observada |
+|---|---|
+| Base Git | `6352463b91db6e0e56faf6b9fe283569c3119cb8`; worktree inicial limpo |
+| Regressões de entrada | `mesh.sh`, `static.sh`, `era5.sh`, `wps-era5.sh`, `mpas-init.sh`: PASS |
+| Source | MPAS v8.4.1 / commit `91c5eac175eebeaf4206bacd5cb50c39dff3c152`; defaults/Registry/case/readers conferidos |
+| Configuração | case 7; 2014-09-10 00 UTC; nvert 55; nfg 38; solo 4/4; ztop 30 km; RH; Noah-MP false; lapse-rate; vertical/met true |
+| Streams | static input; `x1.10242.init.nc`; package `initial_conds`; nenhum LBC/surface update produzido |
+| MPI | `mpiexec -n 4`; `x1.10242.graph.info.part.4`; sem flags MPI-IO adicionais |
+| Isolamento | rede/rootfs/capabilities desligados; `no-new-privileges`; UID/GID host; entradas read-only |
+| Tempo | timer MPAS 6,86265 s; manifesto 7 s |
+| Log | 594 outputs; 0 warnings; 0 errors; 0 critical; completion marker presente |
+| Output | CDF-2; 92.641.692 bytes; SHA-256 `9f2625d9f93ec873a8c1f3abef24083d1b03b910a77efea2f6dbfd2e13c36c7d` |
+| Dimensões | nCells 10242; nEdges 30720; nVertices 20480; nVertLevels 55; nVertLevelsP1 56; nSoilLevels 4; Time 1 |
+| Timestamp | `xtime` e `initial_time` = `2014-09-10_00:00:00` |
+| Vertical | monotônica; espessura 46,8237305–927,277344 m; topo 30.000 m |
+| Atmosfera | rho 0,0110501181–1,50876665; theta 230,88118–899,896301; u -115,570831–114,740211; w -0,146966845–0,179505661 |
+| EOS | pressão derivada 675,040744–103.881,919 Pa; temperatura 181,985102–314,156535 K |
+| Superfície | PSFC 52.894,9805–104.173,656 Pa; skin 207,381104–316,890839 K; SST 207,650192–318,184326 K; xice/seaice 0–1 |
+| Solo | 4 níveis; tslb 212,806412–316,811157 K; smois 6,41365614e-06–1; sh2o 0–1; dzs positivo 0,1–1 m |
+| Missing/nonfinite | zero fill/missing e zero NaN/Inf em todos os campos varridos |
+| Umidade | q2 não negativa; qv com 6 overshoots numéricos, mínimo -1,05322406e-05, dentro da tolerância source-aware -2e-5; RH mínimo -0,152862608% |
+| Noah-MP | `soilcomp`, `soilcl1..4` ausentes como esperado |
+| Coerência horizontal | mesh = static = init = 10.242 células |
+| Coerência vertical | 37 níveis isobáricos + superfície = 38 first guess → 55 níveis MPAS |
+| Coerência do solo | WPS 4 → nfgsoil 4 → MPAS 4 |
+| Resultado | `init_validation=PASS`; runner idempotente `init_generation=unchanged` |
+
+Mensagens informativas: SST inicializada de SKINTEMP; correção interna de
+pequenos `Bad sm_fg`; `SEAICE_FRACTIONAL`, OMLD e climatologia QNWFA/QNIFA
+opcionais ausentes; quatro notas de underflow/denormal no launcher, sem
+NaN/Inf ou erro de log. Nenhum workaround ROMIO foi usado.
+
+Limite: prova ERA5 → WPS → MPAS init. O `atmosphere_model` não foi executado e
+a previsão continua não validada.

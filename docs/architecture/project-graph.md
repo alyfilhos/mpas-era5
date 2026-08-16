@@ -32,11 +32,13 @@ Vtable.ECMWF + WPS 4.7.0 / ungrib ✅
                                       ↓
                ERA5:2014-09-10_00 ✅ WPS intermediate
                                       ↓
-                         init meteorológico futuro
-                                                    │
-                                                    ▼
+                    init_atmosphere_model / 4 ranks ✅
+                                      ↓
+                         x1.10242.init.nc ✅
+                                      │
+                                      ▼
 PIO 2.7.0 ✅ ──→ MPAS 8.4.1
-                    ├── init_atmosphere_model ✅ static funcional
+                    ├── init_atmosphere_model ✅ static e init meteorológico
                     └── atmosphere_model ✅ estrutural; execução ⏳
 
 MPAS-Atmosphere Meshes (oficial)
@@ -50,7 +52,7 @@ data/meshes/x1.10242/
               METIS 5.1.0                   │
                       ↓                     │
           x1.10242.graph.info.part.4         │
-              (previsão futura)             │
+              (init e previsão)             │
                                             │
 WPS Geographic Static Data (oficial)        │
         ↓                                   │
@@ -62,7 +64,7 @@ data/geog/mpas-8.4.1/ ───────────────────�
                                             ↓
                               x1.10242.static.nc ✅
                                             ↓
-                               ERA5 GRIB + WPS intermediate ✅ / init.nc ⏳
+                               ERA5 intermediate + part.4 → init.nc ✅ / atmosphere ⏳
 ```
 
 ## Stack científica
@@ -89,7 +91,8 @@ No ciclo 0007, a stack científica sob `/opt/mpas` permaneceu inalterada e
 todas as camadas até o init foram recuperadas do cache. O core `atmosphere`
 foi acrescentado à mesma árvore `/opt/mpas-model-8.4.1`; os dois executáveis
 estão presentes. No ciclo 0009 o init executou funcionalmente a etapa static
-com a mesh real; a execução meteorológica e o atmosphere continuam pendentes.
+com a mesh real; no ciclo 0012 executou o init meteorológico com ERA5 e
+part.4. Somente o atmosphere continua pendente.
 
 PnetCDF não depende da seta HDF5 → netCDF neste ciclo. A ordem no `Dockerfile`
 preserva a stack já construída, mas o caminho funcional novo é independente:
@@ -227,7 +230,7 @@ ERA5 single GRIB ─→ g1print ─→ Vtable.ECMWF ─→ ungrib ─┘
        ↓
 ERA5_SFC:2014-09-10_00
                                                           ↓
-MPAS init_atmosphere meteorológico (static já pronto; init.nc pendente)
+MPAS init_atmosphere meteorológico / 4 ranks ✅ → x1.10242.init.nc ✅
        ↓
 MPAS atmosphere (build pronto; execução pendente)
 ```
@@ -289,7 +292,7 @@ mpas-era5/
 │   ├── build/
 │   │   └── scientific-stack.md       documentação técnica da stack
 │   ├── cases/
-│   │   └── first-global-240km.md     mesh, geografia e static prontos
+│   │   └── first-global-240km.md     mesh, geografia, static e init prontos
 │   ├── project/
 │   │   ├── requirements.md           escopo original versus decisões
 │   │   ├── current-state.md          estado produzido e referência Git real
@@ -312,8 +315,10 @@ mpas-era5/
 │   │   │                              x1.10242 e part.4 aprovadas
 │   │   ├── 0006-first-static-baseline.md
 │   │   │                              geografia, 1 task, supersampling e Noah
-│   │   └── 0007-first-era5-baseline.md
-│   │                                  instante, inventário e cliente CDS
+│   │   ├── 0007-first-era5-baseline.md
+│   │   │                              instante, inventário e cliente CDS
+│   │   └── 0008-first-initial-condition-baseline.md
+│   │                                  55 níveis, 4 ranks e initial_conds
 │   ├── testing/
 │   │   └── validation-matrix.md      testes, status e evidências
 │   └── logs/                         reservado; atualmente vazio
@@ -333,7 +338,8 @@ mpas-era5/
 │       ├── 0008-add-first-mesh.md         nota educacional do ciclo 0008
 │       ├── 0009-generate-static-fields.md nota educacional do ciclo 0009
 │       ├── 0010-add-era5-acquisition.md   nota educacional do ciclo 0010
-│       └── 0011-ungrib-era5.md           nota educacional do ciclo 0011
+│       ├── 0011-ungrib-era5.md           nota educacional do ciclo 0011
+│       └── 0012-generate-initial-conditions.md nota educacional do ciclo 0012
 ├── scripts/
 │   ├── data/
 │   │   ├── fetch-mesh.sh             aquisição first-party e integridade
@@ -342,7 +348,8 @@ mpas-era5/
 │   │   └── fetch-era5.sh             isolamento/volumes do container CDS
 │   ├── run/
 │   │   ├── generate-static.sh        init case 7, MPI 1, execução isolada
-│   │   └── ungrib-era5.sh            dois ungribs isolados + combined atômico
+│   │   ├── ungrib-era5.sh            dois ungribs isolados + combined atômico
+│   │   └── generate-init.sh           init case 7, MPI 4 e manifesto
 │   ├── prepare/
 │   │   └── partition-mesh.sh         graph.info + N → part.N com METIS
 │   ├── validate/
@@ -357,7 +364,8 @@ mpas-era5/
 │   │   ├── mpas-atmosphere.sh        smoke MPAS atmosphere offline/read-only
 │   │   ├── mesh.sh                   validação da mesh real e partição
 │   │   ├── static.sh                 estrutura, campos, ranges e log MPAS
-│   │   └── era5.sh                   transporte GRIB, manifesto e Git hygiene
+│   │   ├── era5.sh                   transporte GRIB, manifesto e Git hygiene
+│   │   └── init.sh                    estrutura, física, log e manifesto do init
 │   └── codex/                        automações de suporte a ciclos futuros
 ├── tests/
 │   ├── fixtures/
@@ -366,18 +374,21 @@ mpas-era5/
 │   └── smoke/
 │       ├── pnetcdf_mpi.f90           I/O coletivo CDF-5 em 4 ranks
 │       ├── pio_pnetcdf.c             PIO explícito sobre PnetCDF em 4 ranks
-│       └── static_netcdf.c           validador independente do static
+│       ├── static_netcdf.c           validador independente do static
+│       └── init_netcdf.c             validador independente do init
 ├── data/                              entradas/saídas científicas fora do Git
 │   ├── meshes/x1.10242/              grid, graph.info e part.4 ignorados
 │   ├── geog/mpas-8.4.1/              oito datasets WPS ignorados
 │   ├── era5/2014-09-10_00/           GRIBs/manifesto locais validados
 │   ├── cases/.../static/             NetCDF e logs ignorados
-│   └── cases/.../wps/                intermediates/logs/manifesto ignorados
+│   ├── cases/.../wps/                intermediates/logs/manifesto ignorados
+│   └── cases/.../init/               init.nc/log/manifesto ignorados
 ├── cases/
 │   └── first-global-240km/
 │       ├── static/                    namelist e streams versionados
 │       ├── era5/                      requests globais versionadas
-│       └── wps/                       namelists ungrib pressure/single
+│       ├── wps/                       namelists ungrib pressure/single
+│       └── init/                      namelist/streams meteorológicos
 └── docker/
     └── cds/                           cliente de aquisição; fora da stack MPAS
 ```
@@ -398,7 +409,7 @@ PIO, METIS, WPS/ungrib/ERA5 intermediate, os dois cores MPAS e a mesh x1.10242.
 | `docs/testing/` | distinguir teste planejado, executado e comprovado | atualizada após cada validação técnica |
 | `learning/` | explicar conceitos e raciocínio por baseline/commit | referencia estado, fontes, ADRs e testes sem substituí-los |
 | `scripts/validate/` | hospedar validações repetíveis, incluindo parser WPS streaming | resultados resumidos alimentam `docs/testing/` |
-| `scripts/run/` | executar transformações científicas isoladas | gera static ou WPS intermediate somente sob `data/` |
+| `scripts/run/` | executar transformações científicas isoladas | gera static, WPS intermediate ou init somente sob `data/` |
 | `scripts/data/` | adquirir dados externos reproduzivelmente | usa somente fontes e hashes registrados; instala sob `data/` |
 | `scripts/prepare/` | transformar entradas sem incorporá-las à imagem | gera `graph.info.part.N` com UID/GID do usuário |
 | `tests/smoke/` | hospedar fontes mínimas independentes do build upstream | compiladas pelos scripts contra a instalação final |

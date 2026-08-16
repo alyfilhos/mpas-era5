@@ -36,7 +36,7 @@ compilação de software científico, MPI e ferramentas utilizadas em HPC.
 
 - WPS 4.7.0 / `ungrib.exe` GNU serial ✅
 - MPAS-Model 8.4.1 / `init_atmosphere_model` GNU + MPI ✅ build, smoke
-  estrutural e execução funcional static
+  estrutural e execução funcional static e meteorológica com ERA5
 - MPAS-Model 8.4.1 / `atmosphere_model` GNU + MPI ✅ build e smoke
   estrutural; execução funcional ⏳
 
@@ -46,8 +46,10 @@ compilação de software científico, MPI e ferramentas utilizadas em HPC.
 - `x1.10242.graph.info.part.4` gerado localmente com METIS 5.1.0 e validado ✅
 - dados geográficos oficiais WPS, selecionados e validados para MPAS 8.4.1 ✅
 - `x1.10242.static.nc` gerado localmente e validado ✅
-- ERA5 bruto global, `Vtable.ECMWF`, `ungrib` e WPS intermediate combinado
-  validados ✅; `init.nc` e execução do `atmosphere_model` ⏳
+- ERA5 bruto global, `Vtable.ECMWF`, `ungrib` e WPS intermediate
+  combinado validados ✅
+- `x1.10242.init.nc` gerado com 4 ranks e validado estrutural e fisicamente ✅
+- execução funcional do `atmosphere_model` ⏳
 
 ## Roadmap
 
@@ -62,8 +64,8 @@ MPAS-Model usam árvores separadas: `/opt/wps-4.7.0` com `/opt/wps`, e
 `geogrid` e `metgrid` continuam fora da imagem.
 
 O METIS é usado offline: `gpmetis` transforma `graph.info` em
-`graph.info.part.N`, e `N` deve corresponder ao número de tasks MPI da futura
-execução MPAS. O backlog de alternativas de particionamento está em
+`graph.info.part.N`, e `N` deve corresponder ao número de tasks MPI da
+execução MPAS que consome a partição. O backlog de alternativas está em
 [`docs/project/future-experiments.md`](docs/project/future-experiments.md).
 
 A primeira mesh real é adquirida reproduzivelmente por
@@ -128,12 +130,28 @@ O caminho atual é:
 
 `ERA5 GRIB → Vtable → ungrib → WPS intermediate → MPAS init_atmosphere → MPAS atmosphere`
 
+A configuração meteorológica versionada está em
+[`cases/first-global-240km/init/`](cases/first-global-240km/init/). Com static,
+intermediate e part.4 já validados, a reprodução local é:
+
+```sh
+./scripts/run/generate-init.sh
+./scripts/validate/init.sh
+```
+
+O runner usa quatro ranks, rede desligada, rootfs e entradas read-only e não
+sobrescreve output divergente. O arquivo local ignorado
+`data/cases/first-global-240km/init/x1.10242.init.nc` foi validado como CDF-2,
+92.641.692 bytes, SHA-256
+`9f2625d9f93ec873a8c1f3abef24083d1b03b910a77efea2f6dbfd2e13c36c7d`,
+10.242 células, 55 níveis, quatro camadas de solo e timestamp correto.
+
 A `Vtable.ECMWF` da própria tag WPS 4.7.0 foi validada contra todos os 204
 registros GRIB reais. O `ungrib` produziu 185 slabs pressure e 19 surface; o
 arquivo combinado version 5 tem 204 slabs em grade global regular
-1440×721, 0,25°, timestamp 2014-09-10 00 UTC. Isso prova a etapa ERA5 → WPS
-intermediate. A execução meteorológica do `init_atmosphere_model`, `init.nc` e
-a previsão continuam reservadas aos ciclos seguintes.
+1440×721, 0,25°, timestamp 2014-09-10 00 UTC. Isso prova ERA5 → WPS →
+MPAS init. A previsão e a validação temporal continuam reservadas ao
+`atmosphere_model`, que não foi executado neste ciclo.
 
 ## Documentação
 

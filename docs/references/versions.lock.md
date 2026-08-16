@@ -7,7 +7,7 @@ comprovadas pelo repositório e destaca explicitamente o que ainda depende de
 decisão. Ele não substitui hashes de artefatos, digest da imagem, lock de
 pacotes do sistema ou testes de compatibilidade.
 
-Última conferência: **2026-08-15**.
+Última conferência: **2026-08-16**.
 
 ## Ambiente e versões adotadas
 
@@ -28,16 +28,17 @@ pacotes do sistema ou testes de compatibilidade.
 | PIO | 2.7.0 (`pio2_7_0`) | adotada e validada | release oficial atual; SHA-256 local verificado; CMake; C/Fortran; timing desabilitado; PnetCDF habilitado; [[../decisions/0002-pio2-pnetcdf-with-serial-netcdf|ADR 0002]] |
 | METIS | 5.1.0 | adotada e validada | tarball first-party histórico; SHA-256 local confirmado em dois downloads; static; `IDXTYPEWIDTH=32`; `REALTYPEWIDTH=32`; GKlib incluída; `gpmetis` offline; [[../decisions/0003-metis-5.1.0-partitioning-baseline|ADR 0003]] |
 | WPS | 4.7.0 (`v4.7.0`) | adotada; `ungrib` e `g1print` validados | commit `5feccecd63384381b6942371c7a837f66e4ccb84`; GNU serial; `--nowrf`; `--build-grib2-libs`; `./compile ungrib` e alvo incremental `./compile g1print`; SHA-256 local confirmado em dois downloads; [[../decisions/0004-wps-mpas-version-and-layout|ADR 0004]] |
-| MPAS-Model | 8.4.1 (`v8.4.1`) | adotada; `init_atmosphere` executado funcionalmente para static; `atmosphere` validado estruturalmente | tag/commit `91c5eac175eebeaf4206bacd5cb50c39dff3c152`; GNU/MPI; single precision; PIO2; ESMF embedded; static case 7 PASS; [[../decisions/0004-wps-mpas-version-and-layout|ADR 0004]] |
+| MPAS-Model | 8.4.1 (`v8.4.1`) | adotada; `init_atmosphere` executado para static e condição inicial meteorológica; `atmosphere` validado estruturalmente | tag/commit `91c5eac175eebeaf4206bacd5cb50c39dff3c152`; GNU/MPI; single precision; PIO2; ESMF embedded; static case 7 PASS; [[../decisions/0004-wps-mpas-version-and-layout|ADR 0004]] |
 | MMM-physics | `20250616-MPASv8.3` | external atmosphere adotado pelo source MPAS | commit `a4baf7f3243d1db0dbc5f63473f895bdbdc05c30`; checkout detached e limpo |
 | UGWP | `MPAS_20241223` | external atmosphere adotado pelo source MPAS | commit `c1c893edcf171af5639af60e3a3a528816f6cc2b`; checkout detached e limpo |
 | MPAS-Data | `v8.2` | lookup tables adotadas pelo script MPAS 8.4.1 | commit `c57dbc7be629802c6e848770a9e44b9bc602be41`; `COMPATIBILITY` 8.2; 16 arquivos com manifesto SHA-256 |
-| Mesh MPAS | x1.10242 / ~240 km / 10.242 células | adotada, estruturalmente validada e consumida pelo init para static | pacote oficial first-party; global quasi-uniforme/SCVT; SHA-256 local confirmado em dois downloads; `part.4` gerado com METIS 5.1.0; [[../decisions/0005-first-mesh-baseline|ADR 0005]] |
+| Mesh MPAS | x1.10242 / ~240 km / 10.242 células | adotada, validada e consumida pelo init para static e condição inicial | pacote oficial first-party; global quasi-uniforme/SCVT; SHA-256 local confirmado em dois downloads; `part.4` gerado com METIS 5.1.0; [[../decisions/0005-first-mesh-baseline|ADR 0005]] |
 | WPS_GEOG do primeiro static | high mandatory + MODIS landuse 30s + USGS landuse 30s | adotado e validado para MPAS 8.4.1 | três artefatos first-party, tamanhos/hashes abaixo; extração seletiva 16.563.576.021 bytes; [[../decisions/0006-first-static-baseline|ADR 0006]] |
 | Static x1.10242 | CDF-2, `config_noahmp_static=false`, supersampling 1 | gerado e validado localmente; não versionado | 18.201.336 bytes; SHA-256 observado `36e50a8f8d0233327b6505f74e2f909aaaa6c7cee03499affabadd5cc11a144f`; 1 task MPI; não usar com física que exija Noah-MP |
 | Baseline ERA5 | 2014-09-10 00 UTC, global, GRIB, 37 pressure levels | selecionada, adquirida, validada e convertida localmente | pressure: 384.168.780 bytes, SHA-256 `11a0a10a5727a19f64c529179af8b9e5fc4f92cdb60eb32ac90c68926b2e06ac`; single: 41.995.970 bytes, SHA-256 `5d0c6aeeef07c5109f044428266d822928c2cf4ccda1ccbb430c916f0b5b693b`; [[../decisions/0007-first-era5-baseline|ADR 0007]] |
 | Vtable ERA5 | `Vtable.ECMWF` upstream WPS 4.7.0 | adotada diretamente para esta baseline real | todas as 204 mensagens casam uma única entrada por parameter/level type/levels; SHA-256 local `989bf7227ae5c822bfdd8467267dacc41396e08f2270735eac08c56a0096b335`; nenhuma cópia no repositório |
 | WPS intermediate ERA5 | format version 5, 1440×721, `iproj=0`, 0,25° | gerado e validado localmente; não versionado | pressure 185 slabs, single 19, combined 204; combinado SHA-256 `2d7a3ac93d1c904e45b3a19a9f524e6367f7fe72abab41a5263888f1a72b50f0` |
+| Init x1.10242 | CDF-2; 55 níveis; topo 30 km; 4 soil; Time 1 | gerado e validado localmente; não versionado | 92.641.692 bytes; SHA-256 `9f2625d9f93ec873a8c1f3abef24083d1b03b910a77efea2f6dbfd2e13c36c7d`; 4 ranks/part.4; [[../decisions/0008-first-initial-condition-baseline|ADR 0008]] |
 | CMake_Fortran_utils | commit `05ff8d8e4c88786e94a02c853d3ff921113d785c` | auxiliar de build PIO fixado | checkout detached antes da configuração; evita clone sem pin executado internamente pelo PIO |
 | genf90 | commit `4816965ba946731352bad195b7d946a5fe682ff5` | auxiliar de build PIO fixado | checkout detached passado por `GENF90_PATH`; evita resolução mutável durante o build |
 
@@ -124,8 +125,7 @@ e rejeitado por ausência dos datasets requeridos, não por escolha de versão.
 - eventual experimento com METIS 5.2.1 + GKlib fixada ou PT-Scotch online;
   essas alternativas não são versões adotadas e estão somente em
   [[../project/future-experiments|future-experiments.md]];
-- execução meteorológica de `init_atmosphere` e `atmosphere` com ERA5,
-  `init.nc`, sua partição e entradas representativas; a etapa static já passou;
+- execução funcional e validação científica do `atmosphere` com o `init.nc` já produzido e a partição representativa;
 
 Essas lacunas não devem ser preenchidas por suposição. Qualquer fixação ou
 mudança deve atualizar o registro de fontes, este arquivo, a matriz de

@@ -43,6 +43,7 @@ apontar para ele.
 - [`commits/0011-ungrib-era5.md`](commits/0011-ungrib-era5.md): nota
   educacional sobre inventário GRIB1, Vtable, ungrib e o formato WPS
   intermediate;
+- [`commits/0012-generate-initial-conditions.md`](commits/0012-generate-initial-conditions.md): nota educacional sobre grade vertical, interpolação, MPI, PIO, estado inicial e validação física;
 - `commits/NNNN-<descricao>.md`: uma nota por commit posterior ao bootstrap.
 
 ## O que cada nota por commit deve ensinar

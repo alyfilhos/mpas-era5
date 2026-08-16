@@ -2,14 +2,13 @@
 
 ## Status
 
-**Mesh, dados geográficos, campos estáticos, ERA5 bruto, Vtable e WPS intermediate validados.**
+**Mesh, static, ERA5, WPS intermediate e condição inicial MPAS validados.**
 
 O ciclo 0009 executou pela primeira vez o `init_atmosphere_model` 8.4.1
 sobre a mesh real x1.10242 e produziu
 `data/cases/first-global-240km/static/x1.10242.static.nc`. O ciclo 0010
 adquiriu os dois GRIBs globais. O ciclo 0011 validou a `Vtable.ECMWF`, executou
-`ungrib` separadamente e produziu o WPS intermediate combinado. `init.nc` e a
-previsão continuam fora deste estágio.
+`ungrib` separadamente e produziu o WPS intermediate combinado. O ciclo 0012 executou o init meteorológico em quatro ranks e validou `x1.10242.init.nc`. Somente a previsão continua fora deste estágio.
 
 ## Baseline
 
@@ -19,14 +18,16 @@ previsão continuam fora deste estágio.
 | Tipo | global, SCVT quasi-uniforme |
 | Resolução nominal | aproximadamente 240 km |
 | Células horizontais | 10.242 |
-| Particionamento do caso futuro | `x1.10242.graph.info.part.4` |
+| Particionamento do init e da primeira previsão | `x1.10242.graph.info.part.4` |
 | MPAS | 8.4.1, imagem `mpas-era5:mpas-atmosphere-8.4.1` |
 | Etapa static | exatamente uma task MPI |
-| Output | `x1.10242.static.nc`, CDF-2 / 64-bit offset |
+| Output static | `x1.10242.static.nc`, CDF-2 / 64-bit offset |
+| Init meteorológico | 4 ranks com `part.4`; 55 níveis MPAS; topo 30 km |
+| Output init | `x1.10242.init.nc`, CDF-2 / 64-bit offset |
 
-A mesh fica em `data/meshes/x1.10242/`; dados geográficos ficam em
-`data/geog/mpas-8.4.1/`; o output e os logs ficam em
-`data/cases/first-global-240km/static/`. Todos são ignorados pelo Git. O
+A mesh fica em `data/meshes/x1.10242/`; os dados geográficos ficam em
+`data/geog/mpas-8.4.1/`; static e init, com seus logs, ficam sob
+`data/cases/first-global-240km/`. Todos são ignorados pelo Git. O
 repositório preserva somente aquisição, configuração, execução e validação.
 
 ## Baseline meteorológica ERA5
@@ -292,34 +293,127 @@ As categorias são inteiras e permanecem nos limites dos arquivos `index`.
 O zero em `soiltemp` ocorre sobre água. O limite de convexidade GWD foi
 derivado da fórmula do source 8.4.1, não de uma suposição de normalização.
 
+## Init meteorológico
+
+O ciclo 0012 partiu dos defaults gerados pelo MPAS 8.4.1 e do source exato
+`v8.4.1`. A configuração versionada está em
+[`cases/first-global-240km/init/`](../../cases/first-global-240km/init/) e fixa:
+
+| Grupo | Configuração efetiva |
+|---|---|
+| Caso/tempo | case 7; `2014-09-10_00:00:00` |
+| Modelo vertical | 55 níveis; topo 30.000 m; grade terrain-following suavizada |
+| First guess | 38 níveis = 37 isobáricos + superfície especial |
+| Solo | 4 first-guess e 4 MPAS |
+| Meteorologia | prefix `ERA5`; RH, não specific humidity; lapse-rate |
+| Stages | vertical grid e met interp ligados; static/GWD desligados |
+| Superfície | SST separado desligado; sea ice fracionário ligado |
+| Noah-MP | desligado, coerente com o static existente |
+| MPI/decomposição | 4 ranks e `x1.10242.graph.info.part.4` |
+| Streams ativos | input static e output `initial_conds`; sem LBC/surface update |
+
+O comando científico exato foi:
+
+```sh
+mpiexec -n 4 /opt/mpas-model-8.4.1/init_atmosphere_model
+```
+
+O container executou offline, com rootfs read-only, capabilities removidas,
+`no-new-privileges`, UID/GID do host e entradas/configuração read-only. O
+workspace foi o único bind writable. A segunda invocação comprovou
+idempotência com `init_generation=unchanged`.
+
+### Output e log observados
+
+| Propriedade | Resultado |
+|---|---|
+| Arquivo | `data/cases/first-global-240km/init/x1.10242.init.nc` |
+| Formato | CDF-2 / NetCDF 64-bit offset |
+| Tamanho | 92.641.692 bytes |
+| SHA-256 | `9f2625d9f93ec873a8c1f3abef24083d1b03b910a77efea2f6dbfd2e13c36c7d` |
+| Tempo | 7 s no manifesto; timer MPAS 6,86265 s |
+| Dimensões | `nCells=10242`, `nVertLevels=55`, `nVertLevelsP1=56`, `nSoilLevels=4`, `Time=1` |
+| Tempo do estado | `xtime=initial_time=2014-09-10_00:00:00` |
+| Log | 594 outputs; 0 warnings; 0 errors; 0 critical |
+
+O log confirma 38 first-guess levels, constrói a grade vertical, interpola os
+37 níveis de GHT/TT/U/V/RH e o nível especial de superfície, usa SKINTEMP para
+inicializar SST e processa SEAICE, SNOW e quatro camadas ST/SM. O caso global
+não entra no caminho de LBC.
+
+Mensagens informativas, embora não contem como warnings do MPAS:
+
+- pequenos `Bad sm_fg` foram corrigidos pela checagem de consistência; o solo
+  final não possui valor negativo, missing ou não finito;
+- o arquivo opcional `SEAICE_FRACTIONAL` não existe, mas `SEAICE` da entrada
+  principal gerou `xice/seaice` válidos entre 0 e 1;
+- OMLD não foi fornecido nem exigido pela baseline;
+- QNWFA/QNIFA mensal não foi encontrado e os aerossóis foram inicializados em
+  zero; a adequação para a futura física permanece uma pendência do forecast;
+- os quatro ranks sinalizaram underflow/denormal ao launcher após a conclusão,
+  sem NaN/Inf ou incremento dos contadores do log.
+
+### Validação estrutural e física
+
+O smoke netCDF-C deriva nomes/shapes do Registry/package `initial_conds`. Todos
+os campos varridos têm zero fill/missing e zero NaN/Inf. A grade vertical é
+estritamente crescente, com espessuras de 46,8237305 a 927,277344 m e topo de
+30.000 m.
+
+| Campo | Mínimo | Máximo |
+|---|---:|---:|
+| `rho` | 0,0110501181 | 1,50876665 kg/m³ |
+| `theta` | 230,88118 | 899,896301 K |
+| pressão derivada por EOS | 675,040744 | 103.881,919 Pa |
+| temperatura derivada por EOS | 181,985102 | 314,156535 K |
+| `u` | -115,570831 | 114,740211 m/s |
+| `w` | -0,146966845 | 0,179505661 m/s |
+| `surface_pressure` | 52.894,9805 | 104.173,656 Pa |
+| `skintemp` | 207,381104 | 316,890839 K |
+| `sst` | 207,650192 | 318,184326 K |
+| `t2m` | 208,159317 | 311,030151 K |
+| `q2` | 5,16655018e-06 | 0,0245520175 kg/kg |
+| `tslb` | 212,806412 | 316,811157 K |
+| `smois` | 6,41365614e-06 | 1 |
+| `sh2o` | 0 | 1 |
+| `dzs` | 0,1 | 1 m |
+| `zs` | 0,05 | 1,5 m |
+
+O source 8.4.1 converte RH diretamente sem clamp inferior. Seis dos 563.310
+valores de `qv` apresentam overshoot negativo pequeno, mínimo
+`-1,05322406e-05 kg/kg`; dois valores de RH chegam a `-0,152862608%`. O
+arquivo MPAS não foi pós-processado. O validador conta e limita explicitamente
+essa tolerância (`qv >= -2e-5`, `RH >= -0,2%`); valores além disso falham. A
+preparação do forecast deve reavaliar essa dívida.
+
+`soilcomp` e `soilcl1..4` estão ausentes, como exige
+`config_noahmp_static=false`, e não por falha de inicialização.
+
 ## O que este estágio prova
 
 ```text
-x1.10242.grid.nc ✅
-        +
-dados geográficos oficiais WPS ✅
-        ↓
-init_atmosphere_model 8.4.1, 1 task MPI
-        ↓
 x1.10242.static.nc ✅
-        ↓
-ERA5 pressure + single-level GRIB ✅
-        ↓
-Vtable.ECMWF + WPS 4.7.0 ungrib ✅
-        ↓
+        +
 ERA5:2014-09-10_00 ✅
+        +
+x1.10242.graph.info.part.4 ✅
         ↓
-init.nc ⏳
+init_atmosphere_model 8.4.1 / 4 ranks ✅
+        ↓
+x1.10242.init.nc ✅
+        ↓
+atmosphere_model ⏳
 ```
 
-Isto prova a geração dos campos estáticos e, separadamente, o caminho
-ERA5 real → WPS intermediate combinado. Não prova WPS intermediate →
-`init.nc`, não prova compatibilidade com Noah-MP, não executa
-`atmosphere_model` e não constitui validação meteorológica de uma previsão.
+Isto prova `ERA5 → WPS → MPAS init`, inclusive I/O PIO/PnetCDF com a partição
+real. Não prova `init.nc → atmosphere_model → forecast`, estabilidade temporal,
+conservação ou qualidade meteorológica. O atmosphere não foi executado neste
+ciclo.
 
 ## Próximas decisões ainda pendentes
 
-- geração e validação de `init.nc`;
 - duração, timestep e configuração de physics;
-- execução do `atmosphere_model` com partição compatível;
-- validação científica quantitativa.
+- tratamento explícito da pequena tolerância negativa de qv antes do forecast;
+- necessidade de climatologias opcionais para a física adotada;
+- execução do `atmosphere_model` com a mesma partição de quatro ranks;
+- validação científica quantitativa da evolução.

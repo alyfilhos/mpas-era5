@@ -26,6 +26,7 @@ Este diretório centraliza a documentação técnica e científica do projeto.
 - [[decisions/0005-first-mesh-baseline|ADR 0005 — primeira mesh e part.4]]
 - [[decisions/0006-first-static-baseline|ADR 0006 — primeira baseline static]]
 - [[decisions/0007-first-era5-baseline|ADR 0007 — primeira baseline ERA5]]
+- [[decisions/0008-first-initial-condition-baseline|ADR 0008 — primeira condição inicial MPAS]]
 - [[testing/validation-matrix|Matriz de validação]]
 - [[cases/first-global-240km|Primeiro caso global de ~240 km]]
 
@@ -44,6 +45,7 @@ Este diretório centraliza a documentação técnica e científica do projeto.
 - [[../learning/commits/0009-generate-static-fields|Ciclo 0009 — gerar campos estáticos]]
 - [[../learning/commits/0010-add-era5-acquisition|Ciclo 0010 — adquirir ERA5 reproduzivelmente]]
 - [[../learning/commits/0011-ungrib-era5|Ciclo 0011 — converter ERA5 para WPS intermediate]]
+- [[../learning/commits/0012-generate-initial-conditions|Ciclo 0012 — gerar condições iniciais MPAS]]
 
 ## Blocos do projeto
 
