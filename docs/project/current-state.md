@@ -20,13 +20,38 @@ Consequentemente, a referência abaixo é uma observação datada, não uma
 declaração eterna do `HEAD`.
 
 
-## Referência do ciclo 0013 produzido no worktree
+## Referência do ciclo 0014 em validação no worktree
+
+Estado atualizado em **2026-08-21** depois da validação científica e visual da
+primeira hora, sem nova integração do modelo:
+
+- branch inspecionada: `main`, inicialmente alinhada com `origin/main`;
+- base e `HEAD` real:
+  `66ffe7746b4ba144f179d4cea3011e1f0b178d38`
+  (`run: add first MPAS atmosphere integration`);
+- worktree inicial: limpo;
+- `init.sh` e `atmosphere-run.sh`: PASS sobre os artefatos canônicos;
+- imagem de análise separada, fixada e executada com `--network none`,
+  `--read-only` e inputs read-only;
+- integridade, estabilidade numérica e sanity científico: PASS;
+- forecast skill: `NOT_EVALUATED`;
+- spin-up: `INSUFFICIENT_TEMPORAL_WINDOW`;
+- 11 valores `q2 < 0` localizados e explicados como comportamento numérico
+  limitado/documentado da extrapolação da surface layer, sem clamp;
+- massa de ar seco: diagnóstico de conservação REPORT-ONLY;
+- água: inventário incompleto REPORT-ONLY, sem reivindicar fechamento;
+- sete figuras, `summary.json` e tabela das células `q2` produzidos em
+  `docs/assets/validation/0014/`;
+- `run-001`, os quatro NetCDFs e a imagem científica permaneceram inalterados;
+- nenhum commit ou push foi executado; o ciclo aguarda aprovação pré-commit.
+
+## Ciclo 0013 materializado no commit real
 
 Estado atualizado em **2026-08-21** depois da primeira integração temporal
 real do MPAS Atmosphere:
 
 - branch inspecionada: `main`, inicialmente alinhada com `origin/main`;
-- base e `HEAD` real:
+- base real do ciclo:
   `0d499294e94661444243f9dbdadae0c776fa5c23`
   (`data: generate MPAS initial conditions`);
 - o worktree inicial já continha arquivos não commitados exatamente no escopo
@@ -42,8 +67,10 @@ real do MPAS Atmosphere:
   zero errors/critical e evolução prognóstica validada;
 - execução local em
   `data/cases/first-global-240km/atmosphere/run-001/`, ignorada pelo Git;
-- imagem, Dockerfile, dependências e versões científicas inalterados;
-- nenhum commit ou push neste ciclo; o estado aguarda aprovação pré-commit.
+- estado materializado no commit
+  `66ffe7746b4ba144f179d4cea3011e1f0b178d38`
+  (`run: add first MPAS atmosphere integration`);
+- imagem, Dockerfile, dependências e versões científicas inalterados.
 
 ## Ciclo 0012 materializado no commit real
 

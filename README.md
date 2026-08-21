@@ -194,3 +194,27 @@ O material didático e as notas de aprendizado por ciclo estão em:
 - MPAS-Model
 - MPAS-Atmosphere Meshes
 - ECMWF Climate Data Store
+
+## Validação científica da primeira hora
+
+O run canônico de 00→01 UTC recebeu sanity científico e numérico no ciclo
+0014. A análise não usa ERA5 futuro nem observações: por isso
+`scientific_sanity=PASS`, mas `forecast_skill=NOT_EVALUATED` e
+`spinup=INSUFFICIENT_TEMPORAL_WINDOW`.
+
+A stack Python fica separada da imagem MPAS/WPS em
+[`docker/analysis/`](docker/analysis/). Para construir uma vez e executar a
+análise offline, read-only e sem modificar os NetCDFs:
+
+```sh
+docker build --file docker/analysis/Dockerfile \
+  --tag mpas-era5:analysis-0014 .
+./scripts/validate/scientific-run.sh
+```
+
+O validador roda primeiro a regressão funcional do `run-001`, monta history,
+diagnostics e init read-only e grava somente os artefatos pequenos em
+[`docs/assets/validation/0014/`](docs/assets/validation/0014/). O plano,
+método, estatísticas, investigação de `q2`, diagnósticos de massa/água e
+limites das conclusões estão em
+[`docs/validation/first-atmosphere-run.md`](docs/validation/first-atmosphere-run.md).

@@ -85,3 +85,7 @@ learning/commits/0002-add-pnetcdf.md
 A numeração identifica o ciclo/commit educacional e não substitui o hash Git.
 Se um ciclo não resultar em commit, a nota permanece como trabalho do ciclo e
 deve ser revisada antes de uma aprovação futura.
+
+- [`commits/0014-validate-first-forecast.md`](commits/0014-validate-first-forecast.md):
+  sanity científico, estatística espacial, q2/surface layer, inventários,
+  Mollweide e análise reproduzível em container separado.

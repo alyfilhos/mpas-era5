@@ -62,3 +62,10 @@ Este diretório centraliza a documentação técnica e científica do projeto.
 
 O [[architecture/project-graph|grafo do projeto]] é a referência para localizar
 diretórios, documentos e relações entre as partes do repositório.
+
+## Ciclo 0014
+
+- [[validation/first-atmosphere-run|Validação científica da primeira hora]]
+- [[decisions/0009-separate-analysis-container|ADR 0009 — container de análise]]
+- [Artefatos científicos](assets/validation/0014/)
+- [[../learning/commits/0014-validate-first-forecast|Learning note — validar a primeira previsão]]

@@ -105,8 +105,9 @@ global aprovado continuam sujeitos aos gates do [`AGENTS.md`](../../AGENTS.md).
   conforme [[future-experiments|future-experiments.md]];
 - eventual necessidade futura de HDF5/netCDF paralelo e
   `PIO_IOTYPE_NETCDF4P`, fora do primeiro caso;
-- critérios quantitativos finais de validação meteorológica além do smoke de
-  estabilidade e evolução temporal do ciclo 0013.
+- desenho futuro de forecast verification, incluindo verdade de referência,
+  métricas de skill e tolerâncias sustentadas; o ciclo 0014 concluiu sanity
+  científico, não verificação meteorológica.
 
 Esses itens devem permanecer como **a decidir** até que pesquisa oficial,
 proposta e decisão do usuário sejam registradas.
@@ -116,3 +117,20 @@ proposta e decisão do usuário sejam registradas.
 O ciclo 0001 cria somente governança, rastreabilidade, documentação e material
 de aprendizado. Ele não implementa PnetCDF, não muda dependências, não altera a
 arquitetura científica e não executa commit ou push.
+
+## Materialização de REQ-VAL-001 no ciclo 0014
+
+| Item | Estado | Evidência |
+|---|---|---|
+| Integridade dos quatro NetCDFs | PASS | hashes do manifesto, CDF-2, timestamps/dimensões e 0 NaN/Inf/missing |
+| Estabilidade e sanity físico | PASS | pressão/densidade/espessura/temperatura positivas; prognósticos evoluíram |
+| Diagnóstico de `q2` | REPORT-ONLY concluído | 11 células localizadas; fórmula/call path e ausência de clamp documentados |
+| Massa de ar seco | REPORT-ONLY | `sum(rho*areaCell*diff(zgrid))`, sem tolerância inventada |
+| Água | REPORT-ONLY | inventário WSM6 + precipitação, orçamento explicitamente não fechado |
+| Forecast skill | NOT_EVALUATED | não há observação nem ERA5 de 01 UTC |
+| Spin-up | INSUFFICIENT_TEMPORAL_WINDOW | somente t0 e t1 |
+
+A análise adota container próprio por [[../decisions/0009-separate-analysis-container|ADR 0009]].
+Isso não altera a decisão, a build ou as versões da stack MPAS/WPS. A execução
+normativa e seus limites estão em
+[[../validation/first-atmosphere-run|first-atmosphere-run.md]].

@@ -564,3 +564,42 @@ quantitativa, skill, equilíbrio do spin-up ou qualidade meteorológica.
 - avaliar surface update antes de previsões mais longas;
 - decidir duração e produtos de um experimento científico posterior;
 - manter esta hora como smoke funcional, não como validação final.
+
+## Validação científica e visual da primeira hora
+
+O ciclo 0014 analisou exatamente o `run-001` produzido pelo ciclo 0013, sem
+nova chamada a `atmosphere_model`. Os history/diagnostics de 00 e 01 UTC
+foram abertos explicitamente e read-only no container de análise.
+
+O resultado é `scientific_sanity=PASS`: não há corrupção, NaN/Inf, pressão ou
+densidade negativa, espessura inválida ou explosão global. `rho`, `theta`
+e `u` mudaram; a temperatura derivada permaneceu entre 182,177 e 313,264 K
+em t1; MSLP entre 926,616 e 1041,698 hPa.
+
+Os 11 valores `q2 < 0` estão todos em `xland=1` na Antártica. A surface
+layer revisada usa `q2=qsfc+(qv1-qsfc)*(psiq2/psiq)` sem clamp. Como
+`qsfc/psiq/psiq2` não foram escritos, a reconstrução exata por célula não é
+possível; a evidência sustenta comportamento numérico limitado/documentado,
+não alteração do source ou do output.
+
+A precipitação de uma hora tem máximo 4,762212 mm, média 0,0184338 mm,
+mediana zero e 41,4567% das células com valor positivo. Esses números não
+medem skill de precipitação numa mesh de 240 km.
+
+A SST permaneceu idêntica por configuração. `skintemp` evoluiu. Não foi
+gerado `sfc_update.nc`: uma integração mais longa deverá decidir
+explicitamente a atualização superficial, e esta hora não mede o erro de
+manter SST fixa.
+
+Reprodução:
+
+```sh
+docker build --file docker/analysis/Dockerfile \
+  --tag mpas-era5:analysis-0014 .
+./scripts/validate/scientific-run.sh
+```
+
+Resultados: [[../validation/first-atmosphere-run|documento científico]],
+[`summary.json`](../assets/validation/0014/summary.json) e
+[`figuras selecionadas`](../assets/validation/0014/). Forecast skill continua
+`NOT_EVALUATED`; spin-up continua `INSUFFICIENT_TEMPORAL_WINDOW`.

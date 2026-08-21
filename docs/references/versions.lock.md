@@ -7,7 +7,7 @@ comprovadas pelo repositório e destaca explicitamente o que ainda depende de
 decisão. Ele não substitui hashes de artefatos, digest da imagem, lock de
 pacotes do sistema ou testes de compatibilidade.
 
-Última conferência: **2026-08-16**.
+Última conferência: **2026-08-21**.
 
 ## Ambiente e versões adotadas
 
@@ -39,7 +39,7 @@ pacotes do sistema ou testes de compatibilidade.
 | Vtable ERA5 | `Vtable.ECMWF` upstream WPS 4.7.0 | adotada diretamente para esta baseline real | todas as 204 mensagens casam uma única entrada por parameter/level type/levels; SHA-256 local `989bf7227ae5c822bfdd8467267dacc41396e08f2270735eac08c56a0096b335`; nenhuma cópia no repositório |
 | WPS intermediate ERA5 | format version 5, 1440×721, `iproj=0`, 0,25° | gerado e validado localmente; não versionado | pressure 185 slabs, single 19, combined 204; combinado SHA-256 `2d7a3ac93d1c904e45b3a19a9f524e6367f7fe72abab41a5263888f1a72b50f0` |
 | Init x1.10242 | CDF-2; 55 níveis; topo 30 km; 4 soil; Time 1 | gerado e validado localmente; não versionado | 92.641.692 bytes; SHA-256 `9f2625d9f93ec873a8c1f3abef24083d1b03b910a77efea2f6dbfd2e13c36c7d`; 4 ranks/part.4; [[../decisions/0008-first-initial-condition-baseline|ADR 0008]] |
-| Primeira integração x1.10242 | 1 hora; `dt=1200 s`; 4 ranks; `mesoscale_reference` | executada e validada localmente; outputs não versionados | 00→01 UTC; history/diag CDF-2; 0 errors/critical; SST fixa; validação meteorológica ampla permanece pendente |
+| Primeira integração x1.10242 | 1 hora; `dt=1200 s`; 4 ranks; `mesoscale_reference` | executada e validada localmente; outputs não versionados | 00→01 UTC; history/diag CDF-2; 0 errors/critical; SST fixa; sanity científico PASS no ciclo 0014; skill não avaliado |
 | CMake_Fortran_utils | commit `05ff8d8e4c88786e94a02c853d3ff921113d785c` | auxiliar de build PIO fixado | checkout detached antes da configuração; evita clone sem pin executado internamente pelo PIO |
 | genf90 | commit `4816965ba946731352bad195b7d946a5fe682ff5` | auxiliar de build PIO fixado | checkout detached passado por `GENF90_PATH`; evita resolução mutável durante o build |
 
@@ -147,3 +147,31 @@ Uma versão passa de **a decidir** para **adotada** somente depois de:
 O status **adotada** não significa automaticamente **validada**. A validação é
 registrada separadamente em
 [[../testing/validation-matrix|validation-matrix.md]].
+
+## Ambiente de análise adotado no ciclo 0014
+
+Esta stack é independente da imagem científica e foi aprovada em 2026-08-21:
+
+| Componente | Pin | Validação |
+|---|---|---|
+| Base | `python:3.12.13-slim-bookworm@sha256:d50fb7611f86d04a3b0471b46d7557818d88983fc3136726336b2a4c657aa30b` | digest resolvido no build |
+| NumPy | 2.5.2 | import/version, análise float64 e wheel SHA-256 |
+| xarray | 2026.7.0 | import/version e leitura explícita com backend netCDF4 |
+| netCDF4-python | 1.7.4 | import/version e leitura CDF-2 |
+| Matplotlib | 3.11.1 | Agg, Mollweide e sete PNGs válidos |
+| Lock transitivo | 16 distribuições exatas | `pip --require-hashes` e `pip check` |
+
+Pins principais:
+
+```text
+ANALYSIS_PYTHON_IMAGE=python:3.12.13-slim-bookworm
+ANALYSIS_PYTHON_IMAGE_DIGEST=sha256:d50fb7611f86d04a3b0471b46d7557818d88983fc3136726336b2a4c657aa30b
+NUMPY_VERSION=2.5.2
+XARRAY_VERSION=2026.7.0
+NETCDF4_PYTHON_VERSION=1.7.4
+MATPLOTLIB_VERSION=3.11.1
+```
+
+O lock de wheels é específico da plataforma Linux x86-64/CPython 3.12. A
+imagem foi construída com rede, mas seu runtime científico passou com
+`--network none --read-only`. Jupyter e Cartopy não foram adotados.

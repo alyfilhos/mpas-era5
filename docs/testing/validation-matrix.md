@@ -32,7 +32,7 @@ evidência estiverem registrados.
 | METIS 5.1.0 | não há `make check`/CTest formal; `graphchk` e `gpmetis` passaram no `4elt.graph` fornecido upstream | versão por macros, ferramentas, biblioteca, help e opções conferidos | fixture → `gpmetis` → `graph.info.part.4`; estrutura, IDs, quatro partições, edge cut e conectividade validados | Implementado e validado no ciclo 0004 | [`Dockerfile`](../../Dockerfile), [`metis.sh`](../../scripts/validate/metis.sh), [`graph.info`](../../tests/fixtures/metis/graph.info) e evidência abaixo |
 | WPS 4.7.0 / ungrib | não foi identificada suíte formal para este recorte; `configure`, `compile ungrib` e alvo incremental `compile g1print` passaram | executáveis, links, `file`, `ldd`, configuração, proveniência, GRIB2 privado e Vtable upstream conferidos offline | 204 mensagens ERA5 GRIB1 → `Vtable.ECMWF` → dois ungribs → WPS intermediate: PASS | Build/smoke no ciclo 0005; inventário e integração funcional no ciclo 0011 | [`Dockerfile`](../../Dockerfile), [`wps-ungrib.sh`](../../scripts/validate/wps-ungrib.sh), [`ungrib-era5.sh`](../../scripts/run/ungrib-era5.sh) e [`wps-era5.sh`](../../scripts/validate/wps-era5.sh) |
 | MPAS 8.4.1 `init_atmosphere` | a tag não contém suíte autocontida; build real passou | executável/defaults/source conferidos; static e init validados independentemente | mesh + WPS_GEOG → static: PASS; static + WPS/ERA5 + part.4 → `init.nc`: PASS | Build nos ciclos 0006/0007; static no 0009; init meteorológico no 0012 | [`generate-init.sh`](../../scripts/run/generate-init.sh), [`init.sh`](../../scripts/validate/init.sh) e [`init_netcdf.c`](../../tests/smoke/init_netcdf.c) |
-| MPAS 8.4.1 `atmosphere` | a tag não contém suíte autocontida aplicável sem mesh, `init.nc` e configuração; o build real do core passou | executável/defaults/tabelas conferidos; log, manifesto e quatro NetCDFs validados | `init.nc` + mesh + part.4 → 1 hora em 4 ranks → history/diag: PASS | Build/smoke no 0007; primeira integração funcional no 0013; ciência ampla pendente | [`run-atmosphere.sh`](../../scripts/run/run-atmosphere.sh), [`atmosphere-run.sh`](../../scripts/validate/atmosphere-run.sh) e [`atmosphere_netcdf.c`](../../tests/smoke/atmosphere_netcdf.c) |
+| MPAS 8.4.1 `atmosphere` | a tag não contém suíte autocontida aplicável sem mesh, `init.nc` e configuração; o build real do core passou | executável/defaults/tabelas conferidos; log, manifesto e quatro NetCDFs validados | `init.nc` + mesh + part.4 → 1 hora em 4 ranks → history/diag: PASS | Build/smoke no 0007; run funcional no 0013; sanity científico no 0014; skill permanece não avaliado | [`run-atmosphere.sh`](../../scripts/run/run-atmosphere.sh), [`atmosphere-run.sh`](../../scripts/validate/atmosphere-run.sh), [`scientific-run.sh`](../../scripts/validate/scientific-run.sh) |
 
 ## Dados adquiridos e componentes futuros
 
@@ -45,7 +45,7 @@ evidência estiverem registrados.
 | `x1.10242.init.nc` | Não se aplica | CDF-2, dimensões, timestamp, zgrid, campos Registry, missing/NaN/Inf, ranges, EOS, solo e manifesto | static + ERA5 intermediate + part.4 → init case 7 em 4 ranks: PASS | Gerado e validado no ciclo 0012; local e ignorado | [`generate-init.sh`](../../scripts/run/generate-init.sh), [`init.sh`](../../scripts/validate/init.sh), [`init_netcdf.c`](../../tests/smoke/init_netcdf.c) |
 | LBC | Não se aplica | Planejado somente para área limitada: verificar sequência temporal, cobertura e continuidade | Planejado somente quando aplicável: execução curta consome todos os contornos | Não se aplica ao primeiro caso global; condicional para casos futuros | [[../project/requirements|REQ-CASE-003]] |
 | Primeira previsão | Não se aplica | término normal, 0 errors/critical, timestamps, dimensões, ranges e outputs: PASS | pipeline completo reproduziu evolução de 00 a 01 UTC em 4 ranks | Primeira hora funcional aprovada no ciclo 0013 | [[../project/requirements|REQ-RUN-001]] e evidência abaixo |
-| Validação física | Não se aplica | init e primeira hora sem NaN/Inf; pressão/densidade positivas; campos plausíveis | estado inicial/final comparados; `rho/theta/u/qv` evoluíram; SST ficou fixa | Sanidade/evolução funcional PASS; qualidade meteorológica ampla pendente | [[../project/requirements|REQ-VAL-001]] e evidência abaixo |
+| Validação física | Não se aplica | init e primeira hora sem NaN/Inf; pressão/densidade positivas; q2/precipitação/SST investigados | estado inicial/final, massa seca, inventário de água e figuras reproduzíveis | Scientific sanity PASS; forecast skill NOT_EVALUATED; spin-up INSUFFICIENT_TEMPORAL_WINDOW | [[../validation/first-atmosphere-run|plano e resultado]] |
 
 ## Evidência do ciclo 0002 — PnetCDF 1.15.0
 
@@ -641,3 +641,45 @@ pós-processamento do init ou dos outputs.
 Limite: o ciclo prova leitura do init, partição, inicialização física, avanço
 temporal e I/O. Não avalia conservação, spin-up, skill ou qualidade
 meteorológica e não autoriza automaticamente previsões longas com SST fixa.
+
+## Evidência do ciclo 0014 — sanity científico da primeira hora
+
+| Camada | Evidência | Resultado |
+|---|---|---|
+| Regressão funcional | `init.sh` e `atmosphere-run.sh` sobre os outputs existentes | PASS |
+| Ambiente de análise | Python 3.12.13 por digest; NumPy 2.5.2, xarray 2026.7.0, netCDF4 1.7.4, Matplotlib 3.11.1 e transitivas com hashes; `pip check` | PASS |
+| Isolamento | `--network none --read-only --cap-drop ALL`; run/init read-only; somente output gravável | PASS |
+| Integridade | quatro CDF-2, timestamps 00/01, 10.242 células, 55/56 níveis, 47.603.258 números finitos, missing=NaN=Inf=0 | PASS |
+| Estabilidade | área e espessura positivas; rho/pressure/T/surface pressure/MSLP positivos; rho/theta/u evoluíram; WSM6 t1 não negativo | PASS |
+| Superfície | SST exatamente igual por array/hash; gelo em [0,1]; neve não negativa; `skintemp` mudou em 3.295 células | PASS |
+| Precipitação | acumulados finitos, não negativos e não decrescentes; máximo 4,762212 mm; 4.246 células >0 | PASS |
+| `q2` | 11 negativos (0,107401%), todos `xland=1` na Antártica; mínimo -4,71175474e-4 kg kg⁻¹ | REPORT-ONLY |
+| Massa seca | delta relativo -1,58621045e-11 pela geometria Registry/source | REPORT-ONLY, sem threshold |
+| Água | espécies WSM6 e precipitação inventariadas; fluxos necessários ausentes | REPORT-ONLY, orçamento não fechado |
+| Skill | nenhuma verdade futura utilizada | NOT_EVALUATED |
+| Spin-up | somente dois instantes separados por 1 h | INSUFFICIENT_TEMPORAL_WINDOW |
+
+Comando exercitado:
+
+```sh
+docker build --progress=plain \
+  --file docker/analysis/Dockerfile \
+  --tag mpas-era5:analysis-0014 .
+./scripts/validate/scientific-run.sh
+```
+
+Saída normativa:
+
+```text
+functional_validation=PASS
+numerical_sanity=PASS
+scientific_sanity=PASS
+forecast_skill=NOT_EVALUATED
+spinup=INSUFFICIENT_TEMPORAL_WINDOW
+```
+
+O validator conferiu schema JSON, classes PASS/FAIL versus REPORT-ONLY, 11
+linhas no CSV e sete PNGs válidos/não vazios. A fonte completa é
+[`summary.json`](../assets/validation/0014/summary.json); interpretação e
+limitações estão em
+[[../validation/first-atmosphere-run|first-atmosphere-run.md]].

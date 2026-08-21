@@ -6,7 +6,7 @@ Este registro documenta de onde vêm requisitos, fatos técnicos, versões e
 orientações de troubleshooting. Uma fonte deve ser classificada antes de ser
 usada; autoridade e utilidade não são a mesma coisa.
 
-Última revisão deste registro: **2026-08-15**.
+Última revisão deste registro: **2026-08-21**.
 
 ## Classes de fonte
 
@@ -279,3 +279,19 @@ Toda nova fonte deve registrar:
 URLs não abertas ou não presentes em uma fonte já rastreada devem permanecer
 fora do registro até verificação. Em caso de conflito entre fontes oficiais, o
 ciclo deve parar e apresentar o conflito ao usuário.
+
+## Fontes adicionadas no ciclo 0014
+
+| ID | Classe | Fonte oficial/exata | Uso e verificação |
+|---|---|---|---|
+| DOC-MPAS-VAL-001 | source exato | MPAS-Model 8.4.1 `Registry.xml`, `mpas_atm_core.F`, `mpas_atmphys_init_microphysics.F` e caminho `mpas_atmphys_driver.F → driver_sfclayer → sfclayer_to_MPAS → module_sf_sfclayrev.F → sf_sfclayrev_pre_run` | significado/staggering de rho/zgrid/areaCell/u/w/scalars, massa de camada e chamada da surface layer; source commit `91c5eac...` inspecionado em 2026-08-21 |
+| DOC-MMM-SFCLAYREV-001 | source exato | MMM-physics commit `a4baf7f3243d1db0dbc5f63473f895bdbdc05c30`, `physics_mmm/sf_sfclayrev.F90` | fórmula `q2=qsfc+(qx-qsfc)*psiq2/psiq` e ausência de clamp, inspecionadas na imagem MPAS adotada em 2026-08-21 |
+| REL-NUMPY-001 | release oficial | [NumPy 2.5.2 no PyPI](https://pypi.org/project/numpy/2.5.2/) | Python ≥3.12; wheel CPython 3.12 x86-64 baixado e SHA-256 fixado em 2026-08-21 |
+| REL-XARRAY-001 | release oficial | [xarray 2026.7.0 no PyPI](https://pypi.org/project/xarray/2026.7.0/) | Python ≥3.11 e compatibilidade resolvida com NumPy/pandas/packaging; build/import PASS em 2026-08-21 |
+| REL-NETCDF4-PY-001 | release oficial | [netCDF4 1.7.4 no PyPI](https://pypi.org/project/netCDF4/1.7.4/) | backend read-only para CDF-2; wheel abi3 fixado por hash e quatro arquivos abertos em 2026-08-21 |
+| REL-MATPLOTLIB-001 | release oficial | [Matplotlib 3.11.1 no PyPI](https://pypi.org/project/matplotlib/3.11.1/) | backend Agg e projeção Mollweide sem Cartopy; sete PNGs validados em 2026-08-21 |
+
+A base Python reutiliza [[#Documentação oficial|DOC-PYTHON-IMAGE-001]] e o
+digest já comprovado para `python:3.12.13-slim-bookworm`. As 16 dependências
+diretas/transitivas e seus hashes estão em
+[`docker/analysis/requirements.lock`](../../docker/analysis/requirements.lock).

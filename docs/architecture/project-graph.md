@@ -451,3 +451,28 @@ PIO, METIS, WPS/ungrib/ERA5 intermediate, os dois cores MPAS e a mesh x1.10242.
 - [[../cases/first-global-240km|Primeiro caso global de ~240 km]]
 - [[../testing/validation-matrix|Matriz de validação]]
 - [[../../learning/README|Índice de aprendizado]]
+
+## Fluxo de análise científica do ciclo 0014
+
+```text
+run-001 history/diag
+        ↓ (bind mount read-only)
+docker/analysis/
+        ↓ (--network none, root filesystem read-only)
+scripts/analyze/first-atmosphere-run.py
+        ↓
+scientific summary
+        ├── physical/numerical checks
+        ├── q2 investigation
+        ├── budget diagnostics
+        └── figures
+                ↓
+docs/assets/validation/0014/
+```
+
+`scripts/validate/scientific-run.sh` orquestra a regressão
+`atmosphere-run.sh`, executa a imagem isolada e valida schema, classes de
+critério, CSV e PNGs. O `Dockerfile` raiz continua responsável somente por
+MPAS/MPI/WPS; `docker/cds/` somente pela aquisição; `docker/analysis/`
+somente pela leitura e visualização de outputs. A decisão está em
+[[../decisions/0009-separate-analysis-container|ADR 0009]].

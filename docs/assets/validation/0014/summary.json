@@ -1,0 +1,3823 @@
+{
+  "analysis": {
+    "analyzed_variables": [
+      "derived:temperature",
+      "derived:wind_speed_10m",
+      "diagnostics:mslp",
+      "diagnostics:precipw",
+      "diagnostics:q2",
+      "diagnostics:rainc",
+      "diagnostics:rainnc",
+      "diagnostics:t2m",
+      "diagnostics:u10",
+      "diagnostics:v10",
+      "diagnostics:xland",
+      "history:acsnow",
+      "history:areaCell",
+      "history:pressure",
+      "history:qc",
+      "history:qg",
+      "history:qi",
+      "history:qr",
+      "history:qs",
+      "history:qv",
+      "history:rho",
+      "history:skintemp",
+      "history:snow",
+      "history:snowh",
+      "history:sst",
+      "history:surface_pressure",
+      "history:theta",
+      "history:u",
+      "history:w",
+      "history:xice",
+      "history:zgrid"
+    ],
+    "criteria_document": "docs/validation/first-atmosphere-run.md",
+    "dependencies": {
+      "matplotlib": "3.11.1",
+      "netCDF4": "1.7.4",
+      "numpy": "2.5.2",
+      "xarray": "2026.7.0"
+    },
+    "input_access": "read-only (enforced by container mount)",
+    "name": "first-atmosphere-run",
+    "python": "3.12.13",
+    "statistics": "float64 accumulation; population standard deviation (ddof=0)"
+  },
+  "criteria": [
+    {
+      "class": "PASS_FAIL",
+      "evidence": {
+        "diag.2014-09-10_00.00.00.nc": "2014-09-10_00:00:00",
+        "diag.2014-09-10_01.00.00.nc": "2014-09-10_01:00:00",
+        "history.2014-09-10_00.00.00.nc": "2014-09-10_00:00:00",
+        "history.2014-09-10_01.00.00.nc": "2014-09-10_01:00:00",
+        "init.nc": "2014-09-10_00:00:00"
+      },
+      "id": "timestamps",
+      "result": "PASS"
+    },
+    {
+      "class": "PASS_FAIL",
+      "evidence": {
+        "diag_t0": {
+          "StrLen": 64,
+          "Time": 1,
+          "nCells": 10242,
+          "nIsoLevelsT": 5,
+          "nIsoLevelsZ": 13,
+          "nVertices": 20480
+        },
+        "diag_t1": {
+          "StrLen": 64,
+          "Time": 1,
+          "nCells": 10242,
+          "nIsoLevelsT": 5,
+          "nIsoLevelsZ": 13,
+          "nVertices": 20480
+        },
+        "history_t0": {
+          "StrLen": 64,
+          "TWO": 2,
+          "Time": 1,
+          "maxEdges": 10,
+          "maxEdges2": 20,
+          "nCells": 10242,
+          "nEdges": 30720,
+          "nMonths": 12,
+          "nOznLevels": 59,
+          "nSoilLevels": 4,
+          "nVertLevels": 55,
+          "nVertLevelsP1": 56,
+          "nVertices": 20480,
+          "vertexDegree": 3
+        },
+        "history_t1": {
+          "StrLen": 64,
+          "TWO": 2,
+          "Time": 1,
+          "maxEdges": 10,
+          "maxEdges2": 20,
+          "nCells": 10242,
+          "nEdges": 30720,
+          "nMonths": 12,
+          "nOznLevels": 59,
+          "nSoilLevels": 4,
+          "nVertLevels": 55,
+          "nVertLevelsP1": 56,
+          "nVertices": 20480,
+          "vertexDegree": 3
+        }
+      },
+      "id": "dimensions",
+      "result": "PASS"
+    },
+    {
+      "class": "PASS_FAIL",
+      "evidence": {
+        "inf_count": 0,
+        "missing_count": 0,
+        "nan_count": 0,
+        "numeric_value_count": 47603258
+      },
+      "id": "global_finitude_and_missing",
+      "result": "PASS"
+    },
+    {
+      "class": "PASS_FAIL",
+      "evidence": {
+        "min_m2": 36358180864.0
+      },
+      "id": "positive_cell_area",
+      "result": "PASS"
+    },
+    {
+      "class": "PASS_FAIL",
+      "evidence": {
+        "t0_min_m": 46.82373046875,
+        "t1_min_m": 46.82373046875
+      },
+      "id": "positive_layer_thickness",
+      "result": "PASS"
+    },
+    {
+      "class": "PASS_FAIL",
+      "evidence": {
+        "pressure_min_t0_t1_Pa": [
+          675.040771484375,
+          674.0712890625
+        ],
+        "rho_min_t0_t1": [
+          0.011050118133425713,
+          0.011050061322748661
+        ],
+        "temperature_min_t0_t1_K": [
+          181.98510593488083,
+          182.17730727777086
+        ]
+      },
+      "id": "positive_density_pressure_temperature",
+      "result": "PASS"
+    },
+    {
+      "class": "PASS_FAIL",
+      "evidence": {
+        "rho_identical": false,
+        "theta_identical": false,
+        "u_identical": false
+      },
+      "id": "prognostic_state_evolved",
+      "result": "PASS"
+    },
+    {
+      "class": "PASS_FAIL",
+      "evidence": {
+        "qc": 0,
+        "qg": 0,
+        "qi": 0,
+        "qr": 0,
+        "qs": 0,
+        "qv": 0
+      },
+      "id": "nonnegative_wsm6_species_at_t1",
+      "result": "PASS"
+    },
+    {
+      "class": "PASS_FAIL",
+      "evidence": {
+        "array_equal": true,
+        "config_sst_update": false,
+        "sha256_t0": "888c9574961395fc8bb4ca10a2cdf56d217275c8f9aef76543b758add632c6df",
+        "sha256_t1": "888c9574961395fc8bb4ca10a2cdf56d217275c8f9aef76543b758add632c6df"
+      },
+      "id": "fixed_sst",
+      "result": "PASS"
+    },
+    {
+      "class": "PASS_FAIL",
+      "evidence": {
+        "t0_min_max": [
+          0.0,
+          1.0
+        ],
+        "t1_min_max": [
+          0.0,
+          1.0
+        ]
+      },
+      "id": "sea_ice_fraction_range",
+      "result": "PASS"
+    },
+    {
+      "class": "PASS_FAIL",
+      "evidence": {
+        "acsnow": {
+          "negative_t0": 0,
+          "negative_t1": 0
+        },
+        "snow": {
+          "negative_t0": 0,
+          "negative_t1": 0
+        },
+        "snowh": {
+          "negative_t0": 0,
+          "negative_t1": 0
+        }
+      },
+      "id": "nonnegative_snow_fields",
+      "result": "PASS"
+    },
+    {
+      "class": "PASS_FAIL",
+      "evidence": {
+        "bucket_mm": 0.0,
+        "decreased_cells": 0,
+        "negative_accumulated_t0": 0,
+        "negative_accumulated_t1": 0
+      },
+      "id": "nonnegative_monotonic_precipitation",
+      "result": "PASS"
+    },
+    {
+      "class": "REPORT_ONLY",
+      "evidence": {
+        "relative_delta": -1.5862104544337476e-11,
+        "threshold": null
+      },
+      "id": "dry_air_mass_change",
+      "result": "REPORTED"
+    },
+    {
+      "class": "REPORT_ONLY",
+      "evidence": {
+        "budget_closed": false
+      },
+      "id": "water_inventory_change",
+      "result": "REPORTED"
+    },
+    {
+      "class": "REPORT_ONLY",
+      "evidence": {
+        "count": 11,
+        "minimum": -0.00047117547364905477
+      },
+      "id": "q2_negative_values",
+      "result": "REPORTED"
+    }
+  ],
+  "dimensions": {
+    "diag_t0": {
+      "StrLen": 64,
+      "Time": 1,
+      "nCells": 10242,
+      "nIsoLevelsT": 5,
+      "nIsoLevelsZ": 13,
+      "nVertices": 20480
+    },
+    "diag_t1": {
+      "StrLen": 64,
+      "Time": 1,
+      "nCells": 10242,
+      "nIsoLevelsT": 5,
+      "nIsoLevelsZ": 13,
+      "nVertices": 20480
+    },
+    "history_t0": {
+      "StrLen": 64,
+      "TWO": 2,
+      "Time": 1,
+      "maxEdges": 10,
+      "maxEdges2": 20,
+      "nCells": 10242,
+      "nEdges": 30720,
+      "nMonths": 12,
+      "nOznLevels": 59,
+      "nSoilLevels": 4,
+      "nVertLevels": 55,
+      "nVertLevelsP1": 56,
+      "nVertices": 20480,
+      "vertexDegree": 3
+    },
+    "history_t1": {
+      "StrLen": 64,
+      "TWO": 2,
+      "Time": 1,
+      "maxEdges": 10,
+      "maxEdges2": 20,
+      "nCells": 10242,
+      "nEdges": 30720,
+      "nMonths": 12,
+      "nOznLevels": 59,
+      "nSoilLevels": 4,
+      "nVertLevels": 55,
+      "nVertLevelsP1": 56,
+      "nVertices": 20480,
+      "vertexDegree": 3
+    }
+  },
+  "dry_air_mass": {
+    "absolute_delta": -80147456.0,
+    "classification": "REPORT_ONLY",
+    "method": "sum(rho * areaCell * diff(zgrid))",
+    "name": "dry-air mass conservation diagnostic",
+    "relative_delta": -1.5862104544337476e-11,
+    "source_basis": "rho is dry-air density; zgrid interfaces and areaCell define geometric volume",
+    "t0": 5.052763066588878e+18,
+    "t1": 5.05276306650873e+18,
+    "threshold": null,
+    "units": "kg",
+    "zgrid_arrays_identical": true
+  },
+  "fields": {
+    "acsnow": {
+      "arrays_identical": false,
+      "change_t1_minus_t0": {
+        "count": 10242,
+        "finite_count": 10242,
+        "inf_count": 0,
+        "max": 0.1798982471227646,
+        "mean": 0.0004345314903816105,
+        "min": 0.0,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 0,
+        "percentiles": {
+          "p01": 0.0,
+          "p05": 0.0,
+          "p25": 0.0,
+          "p50": 0.0,
+          "p75": 0.0,
+          "p95": 5.809446093962785e-07,
+          "p99": 0.012650359040126206
+        },
+        "std": 0.0043800692569089805,
+        "zero_count": 9470
+      },
+      "dimensions": [
+        "nCells"
+      ],
+      "long_name": "accumulated snow",
+      "physical_limit_basis": "finiteness only; no narrower supported bound defined for this field",
+      "physical_limit_violations": {
+        "nonfinite_t0": 0,
+        "nonfinite_t1": 0
+      },
+      "relative_change_of_mean": null,
+      "shape": [
+        10242
+      ],
+      "source_files": [
+        "history.2014-09-10_00.00.00.nc",
+        "history.2014-09-10_01.00.00.nc"
+      ],
+      "t0": {
+        "count": 10242,
+        "finite_count": 10242,
+        "inf_count": 0,
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 0,
+        "percentiles": {
+          "p01": 0.0,
+          "p05": 0.0,
+          "p25": 0.0,
+          "p50": 0.0,
+          "p75": 0.0,
+          "p95": 0.0,
+          "p99": 0.0
+        },
+        "std": 0.0,
+        "zero_count": 10242
+      },
+      "t1": {
+        "count": 10242,
+        "finite_count": 10242,
+        "inf_count": 0,
+        "max": 0.1798982471227646,
+        "mean": 0.0004345314903816105,
+        "min": 0.0,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 0,
+        "percentiles": {
+          "p01": 0.0,
+          "p05": 0.0,
+          "p25": 0.0,
+          "p50": 0.0,
+          "p75": 0.0,
+          "p95": 5.809446093962785e-07,
+          "p99": 0.012650359040126206
+        },
+        "std": 0.0043800692569089805,
+        "zero_count": 9470
+      },
+      "t1_extrema": {
+        "max": {
+          "cell_id": 7900,
+          "cell_index_zero_based": 7899,
+          "indices_zero_based": {
+            "nCells": 7899
+          },
+          "latitude_degrees": -74.2209268046714,
+          "longitude_degrees": -124.33281944403753,
+          "value": 0.1798982471227646
+        },
+        "min": {
+          "cell_id": 1,
+          "cell_index_zero_based": 0,
+          "indices_zero_based": {
+            "nCells": 0
+          },
+          "latitude_degrees": 26.56505088990245,
+          "longitude_degrees": -174.95294964726781,
+          "value": 0.0
+        }
+      },
+      "units": "kg m^{-2}",
+      "variable": "acsnow"
+    },
+    "mslp": {
+      "arrays_identical": false,
+      "change_t1_minus_t0": {
+        "count": 10242,
+        "finite_count": 10242,
+        "inf_count": 0,
+        "max": 458.8671875,
+        "mean": 1.710117500244093,
+        "min": -742.6875,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 5289,
+        "percentiles": {
+          "p01": -167.186953125,
+          "p05": -91.139453125,
+          "p25": -41.35546875,
+          "p50": -2.7890625,
+          "p75": 41.720703125,
+          "p95": 110.05234374999995,
+          "p99": 199.61187500000017
+        },
+        "std": 69.83865208003786,
+        "zero_count": 0
+      },
+      "dimensions": [
+        "nCells"
+      ],
+      "long_name": "Mean sea-level pressure",
+      "physical_limit_basis": "finiteness only; no narrower supported bound defined for this field",
+      "physical_limit_violations": {
+        "nonfinite_t0": 0,
+        "nonfinite_t1": 0
+      },
+      "relative_change_of_mean": 1.6916776798540428e-05,
+      "shape": [
+        10242
+      ],
+      "source_files": [
+        "diag.2014-09-10_00.00.00.nc",
+        "diag.2014-09-10_01.00.00.nc"
+      ],
+      "t0": {
+        "count": 10242,
+        "finite_count": 10242,
+        "inf_count": 0,
+        "max": 104171.1171875,
+        "mean": 101090.03154748828,
+        "min": 92572.6875,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 0,
+        "percentiles": {
+          "p01": 96490.953359375,
+          "p05": 98399.382421875,
+          "p25": 100902.837890625,
+          "p50": 101274.34765625,
+          "p75": 101718.18359375,
+          "p95": 102578.925,
+          "p99": 103262.854296875
+        },
+        "std": 1223.9011584906298,
+        "zero_count": 0
+      },
+      "t1": {
+        "count": 10242,
+        "finite_count": 10242,
+        "inf_count": 0,
+        "max": 104169.765625,
+        "mean": 101091.74166498853,
+        "min": 92661.5625,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 0,
+        "percentiles": {
+          "p01": 96469.8634375,
+          "p05": 98398.676171875,
+          "p25": 100927.166015625,
+          "p50": 101273.8828125,
+          "p75": 101709.939453125,
+          "p95": 102568.524609375,
+          "p99": 103261.295390625
+        },
+        "std": 1221.408676537164,
+        "zero_count": 0
+      },
+      "t1_extrema": {
+        "max": {
+          "cell_id": 5944,
+          "cell_index_zero_based": 5943,
+          "indices_zero_based": {
+            "nCells": 5943
+          },
+          "latitude_degrees": -36.916369916691444,
+          "longitude_degrees": -117.21065334738506,
+          "value": 104169.765625
+        },
+        "min": {
+          "cell_id": 7904,
+          "cell_index_zero_based": 7903,
+          "indices_zero_based": {
+            "nCells": 7903
+          },
+          "latitude_degrees": -69.4459825370505,
+          "longitude_degrees": -133.2864324647372,
+          "value": 92661.5625
+        }
+      },
+      "units": "Pa",
+      "variable": "mslp"
+    },
+    "precipw": {
+      "arrays_identical": false,
+      "change_t1_minus_t0": {
+        "count": 10242,
+        "finite_count": 10242,
+        "inf_count": 0,
+        "max": 4.5036773681640625,
+        "mean": -0.18677950415486028,
+        "min": -6.747467041015625,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 7063,
+        "percentiles": {
+          "p01": -1.546715602874756,
+          "p05": -0.9512056350708007,
+          "p25": -0.42980408668518066,
+          "p50": -0.14104008674621582,
+          "p75": 0.050183773040771484,
+          "p95": 0.5099243640899649,
+          "p99": 1.1281652450561526
+        },
+        "std": 0.49073738533934896,
+        "zero_count": 0
+      },
+      "dimensions": [
+        "nCells"
+      ],
+      "long_name": "precipitable water",
+      "physical_limit_basis": "finiteness only; no narrower supported bound defined for this field",
+      "physical_limit_violations": {
+        "nonfinite_t0": 0,
+        "nonfinite_t1": 0
+      },
+      "relative_change_of_mean": -0.007330868188182399,
+      "shape": [
+        10242
+      ],
+      "source_files": [
+        "diag.2014-09-10_00.00.00.nc",
+        "diag.2014-09-10_01.00.00.nc"
+      ],
+      "t0": {
+        "count": 10242,
+        "finite_count": 10242,
+        "inf_count": 0,
+        "max": 66.98029327392578,
+        "mean": 25.478497138436396,
+        "min": 0.10570727288722992,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 0,
+        "percentiles": {
+          "p01": 0.36049299865961076,
+          "p05": 2.9892147064208987,
+          "p25": 11.595279693603516,
+          "p50": 21.83828830718994,
+          "p75": 39.06160545349121,
+          "p95": 55.10689544677732,
+          "p99": 60.07062782287598
+        },
+        "std": 16.5765786274315,
+        "zero_count": 0
+      },
+      "t1": {
+        "count": 10242,
+        "finite_count": 10242,
+        "inf_count": 0,
+        "max": 66.39002990722656,
+        "mean": 25.291717634281536,
+        "min": 0.11632239073514938,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 0,
+        "percentiles": {
+          "p01": 0.3596643427014351,
+          "p05": 2.9775479674339302,
+          "p25": 11.581676483154297,
+          "p50": 21.726961135864258,
+          "p75": 38.6978645324707,
+          "p95": 54.71088047027587,
+          "p99": 59.78153900146485
+        },
+        "std": 16.443770239690366,
+        "zero_count": 0
+      },
+      "t1_extrema": {
+        "max": {
+          "cell_id": 6584,
+          "cell_index_zero_based": 6583,
+          "indices_zero_based": {
+            "nCells": 6583
+          },
+          "latitude_degrees": 35.614371936346934,
+          "longitude_degrees": 154.10933967694427,
+          "value": 66.39002990722656
+        },
+        "min": {
+          "cell_id": 1124,
+          "cell_index_zero_based": 1123,
+          "indices_zero_based": {
+            "nCells": 1123
+          },
+          "latitude_degrees": -72.23820485088673,
+          "longitude_degrees": 90.10157424762542,
+          "value": 0.11632239073514938
+        }
+      },
+      "units": "kg m^{-2}",
+      "variable": "precipw"
+    },
+    "pressure": {
+      "arrays_identical": false,
+      "change_t1_minus_t0": {
+        "count": 563310,
+        "finite_count": 563310,
+        "inf_count": 0,
+        "max": 457.0546875,
+        "mean": -1.9274732124456062,
+        "min": -739.828125,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 313186,
+        "percentiles": {
+          "p01": -101.890625,
+          "p05": -59.1484375,
+          "p25": -18.61328125,
+          "p50": -2.5274658203125,
+          "p75": 11.58782958984375,
+          "p95": 62.125,
+          "p99": 117.8203125
+        },
+        "std": 39.1335837777577,
+        "zero_count": 21
+      },
+      "dimensions": [
+        "nCells",
+        "nVertLevels"
+      ],
+      "long_name": "Pressure",
+      "physical_limit_basis": "finiteness only; no narrower supported bound defined for this field",
+      "physical_limit_violations": {
+        "nonfinite_t0": 0,
+        "nonfinite_t1": 0
+      },
+      "relative_change_of_mean": -4.370658384078943e-05,
+      "shape": [
+        10242,
+        55
+      ],
+      "source_files": [
+        "history.2014-09-10_00.00.00.nc",
+        "history.2014-09-10_01.00.00.nc"
+      ],
+      "t0": {
+        "count": 563310,
+        "finite_count": 563310,
+        "inf_count": 0,
+        "max": 103880.4296875,
+        "mean": 44100.29435080119,
+        "min": 675.040771484375,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 0,
+        "percentiles": {
+          "p01": 1246.6991943359376,
+          "p05": 1671.1863891601563,
+          "p25": 8529.05322265625,
+          "p50": 39069.689453125,
+          "p75": 77798.736328125,
+          "p95": 98202.68281249999,
+          "p99": 100975.18906250001
+        },
+        "std": 34797.41707234055,
+        "zero_count": 0
+      },
+      "t1": {
+        "count": 563310,
+        "finite_count": 563310,
+        "inf_count": 0,
+        "max": 103879.53125,
+        "mean": 44098.36687758874,
+        "min": 674.0712890625,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 0,
+        "percentiles": {
+          "p01": 1246.4695629882813,
+          "p05": 1670.9406494140626,
+          "p25": 8527.59228515625,
+          "p50": 39067.453125,
+          "p75": 77792.935546875,
+          "p95": 98205.35937499999,
+          "p99": 100972.962421875
+        },
+        "std": 34797.34372187989,
+        "zero_count": 0
+      },
+      "t1_extrema": {
+        "max": {
+          "cell_id": 5944,
+          "cell_index_zero_based": 5943,
+          "indices_zero_based": {
+            "nCells": 5943,
+            "nVertLevels": 0
+          },
+          "latitude_degrees": -36.916369916691444,
+          "longitude_degrees": -117.21065334738506,
+          "value": 103879.53125
+        },
+        "min": {
+          "cell_id": 3778,
+          "cell_index_zero_based": 3777,
+          "indices_zero_based": {
+            "nCells": 3777,
+            "nVertLevels": 54
+          },
+          "latitude_degrees": -81.38406037596559,
+          "longitude_degrees": -7.941232364007716,
+          "value": 674.0712890625
+        }
+      },
+      "units": "Pa",
+      "variable": "pressure"
+    },
+    "q2": {
+      "arrays_identical": false,
+      "change_t1_minus_t0": {
+        "count": 10242,
+        "finite_count": 10242,
+        "inf_count": 0,
+        "max": 0.00758905615657568,
+        "mean": 0.00013986900509289145,
+        "min": -0.011272391304373741,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 3157,
+        "percentiles": {
+          "p01": -0.0029202968440949916,
+          "p05": -0.0010731796734035014,
+          "p25": -6.163649959489703e-05,
+          "p50": 0.00017853034660220146,
+          "p75": 0.0004735293332487345,
+          "p95": 0.0010026183910667875,
+          "p99": 0.0028823886765167134
+        },
+        "std": 0.0008816365814439178,
+        "zero_count": 0
+      },
+      "dimensions": [
+        "nCells"
+      ],
+      "long_name": "2-meter specific humidity",
+      "physical_limit_basis": "finiteness only; no narrower supported bound defined for this field",
+      "physical_limit_violations": {
+        "nonfinite_t0": 0,
+        "nonfinite_t1": 0
+      },
+      "relative_change_of_mean": 0.013318881830905615,
+      "shape": [
+        10242
+      ],
+      "source_files": [
+        "diag.2014-09-10_00.00.00.nc",
+        "diag.2014-09-10_01.00.00.nc"
+      ],
+      "t0": {
+        "count": 10242,
+        "finite_count": 10242,
+        "inf_count": 0,
+        "max": 0.02455201745033264,
+        "mean": 0.01050155762838402,
+        "min": 5.1665501814568415e-06,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 0,
+        "percentiles": {
+          "p01": 5.635960686049657e-05,
+          "p05": 0.0011023071128875022,
+          "p25": 0.005262538208626211,
+          "p50": 0.010037593077868223,
+          "p75": 0.016298044472932816,
+          "p95": 0.019160463847219943,
+          "p99": 0.020566956084221603
+        },
+        "std": 0.0059932438373183185,
+        "zero_count": 0
+      },
+      "t1": {
+        "count": 10242,
+        "finite_count": 10242,
+        "inf_count": 0,
+        "max": 0.02468370459973812,
+        "mean": 0.010641426633476912,
+        "min": -0.00047117547364905477,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 11,
+        "percentiles": {
+          "p01": 7.595118586323224e-05,
+          "p05": 0.0010549320024438203,
+          "p25": 0.005401835078373551,
+          "p50": 0.010293839033693075,
+          "p75": 0.016436086036264896,
+          "p95": 0.019189380295574664,
+          "p99": 0.020298762898892164
+        },
+        "std": 0.006006006962967496,
+        "zero_count": 0
+      },
+      "t1_extrema": {
+        "max": {
+          "cell_id": 7934,
+          "cell_index_zero_based": 7933,
+          "indices_zero_based": {
+            "nCells": 7933
+          },
+          "latitude_degrees": 25.696855299218377,
+          "longitude_degrees": 54.253227351070535,
+          "value": 0.02468370459973812
+        },
+        "min": {
+          "cell_id": 3764,
+          "cell_index_zero_based": 3763,
+          "indices_zero_based": {
+            "nCells": 3763
+          },
+          "latitude_degrees": -81.38406037596559,
+          "longitude_degrees": 162.0353507370155,
+          "value": -0.00047117547364905477
+        }
+      },
+      "units": "kg kg^{-1}",
+      "variable": "q2"
+    },
+    "qc": {
+      "arrays_identical": false,
+      "change_t1_minus_t0": {
+        "count": 563310,
+        "finite_count": 563310,
+        "inf_count": 0,
+        "max": 0.0007170418975874782,
+        "mean": 8.362465920290671e-07,
+        "min": 0.0,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 0,
+        "percentiles": {
+          "p01": 0.0,
+          "p05": 0.0,
+          "p25": 0.0,
+          "p50": 0.0,
+          "p75": 0.0,
+          "p95": 0.0,
+          "p99": 0.0
+        },
+        "std": 1.4201557173420213e-05,
+        "zero_count": 559032
+      },
+      "dimensions": [
+        "nCells",
+        "nVertLevels"
+      ],
+      "long_name": "Cloud water mixing ratio",
+      "physical_limit_basis": "finiteness only; no narrower supported bound defined for this field",
+      "physical_limit_violations": {
+        "nonfinite_t0": 0,
+        "nonfinite_t1": 0
+      },
+      "relative_change_of_mean": null,
+      "shape": [
+        10242,
+        55
+      ],
+      "source_files": [
+        "history.2014-09-10_00.00.00.nc",
+        "history.2014-09-10_01.00.00.nc"
+      ],
+      "t0": {
+        "count": 563310,
+        "finite_count": 563310,
+        "inf_count": 0,
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 0,
+        "percentiles": {
+          "p01": 0.0,
+          "p05": 0.0,
+          "p25": 0.0,
+          "p50": 0.0,
+          "p75": 0.0,
+          "p95": 0.0,
+          "p99": 0.0
+        },
+        "std": 0.0,
+        "zero_count": 563310
+      },
+      "t1": {
+        "count": 563310,
+        "finite_count": 563310,
+        "inf_count": 0,
+        "max": 0.0007170418975874782,
+        "mean": 8.362465920290671e-07,
+        "min": 0.0,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 0,
+        "percentiles": {
+          "p01": 0.0,
+          "p05": 0.0,
+          "p25": 0.0,
+          "p50": 0.0,
+          "p75": 0.0,
+          "p95": 0.0,
+          "p99": 0.0
+        },
+        "std": 1.4201557173420213e-05,
+        "zero_count": 559032
+      },
+      "t1_extrema": {
+        "max": {
+          "cell_id": 1039,
+          "cell_index_zero_based": 1038,
+          "indices_zero_based": {
+            "nCells": 1038,
+            "nVertLevels": 4
+          },
+          "latitude_degrees": -39.714305683768394,
+          "longitude_degrees": -72.04728421548303,
+          "value": 0.0007170418975874782
+        },
+        "min": {
+          "cell_id": 1,
+          "cell_index_zero_based": 0,
+          "indices_zero_based": {
+            "nCells": 0,
+            "nVertLevels": 0
+          },
+          "latitude_degrees": 26.56505088990245,
+          "longitude_degrees": -174.95294964726781,
+          "value": 0.0
+        }
+      },
+      "units": "kg kg^{-1}",
+      "variable": "qc"
+    },
+    "qg": {
+      "arrays_identical": false,
+      "change_t1_minus_t0": {
+        "count": 563310,
+        "finite_count": 563310,
+        "inf_count": 0,
+        "max": 0.00023049574519973248,
+        "mean": 1.926458816172633e-08,
+        "min": 0.0,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 0,
+        "percentiles": {
+          "p01": 0.0,
+          "p05": 0.0,
+          "p25": 0.0,
+          "p50": 0.0,
+          "p75": 0.0,
+          "p95": 0.0,
+          "p99": 1.201205435119808e-10
+        },
+        "std": 7.068353877891701e-07,
+        "zero_count": 557510
+      },
+      "dimensions": [
+        "nCells",
+        "nVertLevels"
+      ],
+      "long_name": "Graupel mixing ratio",
+      "physical_limit_basis": "finiteness only; no narrower supported bound defined for this field",
+      "physical_limit_violations": {
+        "nonfinite_t0": 0,
+        "nonfinite_t1": 0
+      },
+      "relative_change_of_mean": null,
+      "shape": [
+        10242,
+        55
+      ],
+      "source_files": [
+        "history.2014-09-10_00.00.00.nc",
+        "history.2014-09-10_01.00.00.nc"
+      ],
+      "t0": {
+        "count": 563310,
+        "finite_count": 563310,
+        "inf_count": 0,
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 0,
+        "percentiles": {
+          "p01": 0.0,
+          "p05": 0.0,
+          "p25": 0.0,
+          "p50": 0.0,
+          "p75": 0.0,
+          "p95": 0.0,
+          "p99": 0.0
+        },
+        "std": 0.0,
+        "zero_count": 563310
+      },
+      "t1": {
+        "count": 563310,
+        "finite_count": 563310,
+        "inf_count": 0,
+        "max": 0.00023049574519973248,
+        "mean": 1.926458816172633e-08,
+        "min": 0.0,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 0,
+        "percentiles": {
+          "p01": 0.0,
+          "p05": 0.0,
+          "p25": 0.0,
+          "p50": 0.0,
+          "p75": 0.0,
+          "p95": 0.0,
+          "p99": 1.201205435119808e-10
+        },
+        "std": 7.068353877891701e-07,
+        "zero_count": 557510
+      },
+      "t1_extrema": {
+        "max": {
+          "cell_id": 7694,
+          "cell_index_zero_based": 7693,
+          "indices_zero_based": {
+            "nCells": 7693,
+            "nVertLevels": 22
+          },
+          "latitude_degrees": 8.49423242637119,
+          "longitude_degrees": -20.625221501801555,
+          "value": 0.00023049574519973248
+        },
+        "min": {
+          "cell_id": 1,
+          "cell_index_zero_based": 0,
+          "indices_zero_based": {
+            "nCells": 0,
+            "nVertLevels": 0
+          },
+          "latitude_degrees": 26.56505088990245,
+          "longitude_degrees": -174.95294964726781,
+          "value": 0.0
+        }
+      },
+      "units": "kg kg^{-1}",
+      "variable": "qg"
+    },
+    "qi": {
+      "arrays_identical": false,
+      "change_t1_minus_t0": {
+        "count": 563310,
+        "finite_count": 563310,
+        "inf_count": 0,
+        "max": 0.00017369202396366745,
+        "mean": 1.30569552868764e-06,
+        "min": 0.0,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 0,
+        "percentiles": {
+          "p01": 0.0,
+          "p05": 0.0,
+          "p25": 0.0,
+          "p50": 0.0,
+          "p75": 0.0,
+          "p95": 1.3448107381464033e-06,
+          "p99": 5.0852438725997074e-05
+        },
+        "std": 8.902051334839805e-06,
+        "zero_count": 515267
+      },
+      "dimensions": [
+        "nCells",
+        "nVertLevels"
+      ],
+      "long_name": "Ice mixing ratio",
+      "physical_limit_basis": "finiteness only; no narrower supported bound defined for this field",
+      "physical_limit_violations": {
+        "nonfinite_t0": 0,
+        "nonfinite_t1": 0
+      },
+      "relative_change_of_mean": null,
+      "shape": [
+        10242,
+        55
+      ],
+      "source_files": [
+        "history.2014-09-10_00.00.00.nc",
+        "history.2014-09-10_01.00.00.nc"
+      ],
+      "t0": {
+        "count": 563310,
+        "finite_count": 563310,
+        "inf_count": 0,
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 0,
+        "percentiles": {
+          "p01": 0.0,
+          "p05": 0.0,
+          "p25": 0.0,
+          "p50": 0.0,
+          "p75": 0.0,
+          "p95": 0.0,
+          "p99": 0.0
+        },
+        "std": 0.0,
+        "zero_count": 563310
+      },
+      "t1": {
+        "count": 563310,
+        "finite_count": 563310,
+        "inf_count": 0,
+        "max": 0.00017369202396366745,
+        "mean": 1.30569552868764e-06,
+        "min": 0.0,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 0,
+        "percentiles": {
+          "p01": 0.0,
+          "p05": 0.0,
+          "p25": 0.0,
+          "p50": 0.0,
+          "p75": 0.0,
+          "p95": 1.3448107381464033e-06,
+          "p99": 5.0852438725997074e-05
+        },
+        "std": 8.902051334839805e-06,
+        "zero_count": 515267
+      },
+      "t1_extrema": {
+        "max": {
+          "cell_id": 6106,
+          "cell_index_zero_based": 6105,
+          "indices_zero_based": {
+            "nCells": 6105,
+            "nVertLevels": 31
+          },
+          "latitude_degrees": 6.321154381078741,
+          "longitude_degrees": -144.54785712295745,
+          "value": 0.00017369202396366745
+        },
+        "min": {
+          "cell_id": 1,
+          "cell_index_zero_based": 0,
+          "indices_zero_based": {
+            "nCells": 0,
+            "nVertLevels": 0
+          },
+          "latitude_degrees": 26.56505088990245,
+          "longitude_degrees": -174.95294964726781,
+          "value": 0.0
+        }
+      },
+      "units": "kg kg^{-1}",
+      "variable": "qi"
+    },
+    "qr": {
+      "arrays_identical": false,
+      "change_t1_minus_t0": {
+        "count": 563310,
+        "finite_count": 563310,
+        "inf_count": 0,
+        "max": 0.0005358017515391111,
+        "mean": 3.902567783486488e-07,
+        "min": 0.0,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 0,
+        "percentiles": {
+          "p01": 0.0,
+          "p05": 0.0,
+          "p25": 0.0,
+          "p50": 0.0,
+          "p75": 0.0,
+          "p95": 0.0,
+          "p99": 0.0
+        },
+        "std": 7.184194425544348e-06,
+        "zero_count": 557750
+      },
+      "dimensions": [
+        "nCells",
+        "nVertLevels"
+      ],
+      "long_name": "Rain water mixing ratio",
+      "physical_limit_basis": "finiteness only; no narrower supported bound defined for this field",
+      "physical_limit_violations": {
+        "nonfinite_t0": 0,
+        "nonfinite_t1": 0
+      },
+      "relative_change_of_mean": null,
+      "shape": [
+        10242,
+        55
+      ],
+      "source_files": [
+        "history.2014-09-10_00.00.00.nc",
+        "history.2014-09-10_01.00.00.nc"
+      ],
+      "t0": {
+        "count": 563310,
+        "finite_count": 563310,
+        "inf_count": 0,
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 0,
+        "percentiles": {
+          "p01": 0.0,
+          "p05": 0.0,
+          "p25": 0.0,
+          "p50": 0.0,
+          "p75": 0.0,
+          "p95": 0.0,
+          "p99": 0.0
+        },
+        "std": 0.0,
+        "zero_count": 563310
+      },
+      "t1": {
+        "count": 563310,
+        "finite_count": 563310,
+        "inf_count": 0,
+        "max": 0.0005358017515391111,
+        "mean": 3.902567783486488e-07,
+        "min": 0.0,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 0,
+        "percentiles": {
+          "p01": 0.0,
+          "p05": 0.0,
+          "p25": 0.0,
+          "p50": 0.0,
+          "p75": 0.0,
+          "p95": 0.0,
+          "p99": 0.0
+        },
+        "std": 7.184194425544348e-06,
+        "zero_count": 557750
+      },
+      "t1_extrema": {
+        "max": {
+          "cell_id": 7694,
+          "cell_index_zero_based": 7693,
+          "indices_zero_based": {
+            "nCells": 7693,
+            "nVertLevels": 0
+          },
+          "latitude_degrees": 8.49423242637119,
+          "longitude_degrees": -20.625221501801555,
+          "value": 0.0005358017515391111
+        },
+        "min": {
+          "cell_id": 1,
+          "cell_index_zero_based": 0,
+          "indices_zero_based": {
+            "nCells": 0,
+            "nVertLevels": 0
+          },
+          "latitude_degrees": 26.56505088990245,
+          "longitude_degrees": -174.95294964726781,
+          "value": 0.0
+        }
+      },
+      "units": "kg kg^{-1}",
+      "variable": "qr"
+    },
+    "qs": {
+      "arrays_identical": false,
+      "change_t1_minus_t0": {
+        "count": 563310,
+        "finite_count": 563310,
+        "inf_count": 0,
+        "max": 0.0006761290715076029,
+        "mean": 6.66405541156749e-07,
+        "min": 0.0,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 0,
+        "percentiles": {
+          "p01": 0.0,
+          "p05": 0.0,
+          "p25": 0.0,
+          "p50": 0.0,
+          "p75": 0.0,
+          "p95": 0.0,
+          "p99": 6.355535077773512e-07
+        },
+        "std": 1.1321846659020547e-05,
+        "zero_count": 554558
+      },
+      "dimensions": [
+        "nCells",
+        "nVertLevels"
+      ],
+      "long_name": "Snow mixing ratio",
+      "physical_limit_basis": "finiteness only; no narrower supported bound defined for this field",
+      "physical_limit_violations": {
+        "nonfinite_t0": 0,
+        "nonfinite_t1": 0
+      },
+      "relative_change_of_mean": null,
+      "shape": [
+        10242,
+        55
+      ],
+      "source_files": [
+        "history.2014-09-10_00.00.00.nc",
+        "history.2014-09-10_01.00.00.nc"
+      ],
+      "t0": {
+        "count": 563310,
+        "finite_count": 563310,
+        "inf_count": 0,
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 0,
+        "percentiles": {
+          "p01": 0.0,
+          "p05": 0.0,
+          "p25": 0.0,
+          "p50": 0.0,
+          "p75": 0.0,
+          "p95": 0.0,
+          "p99": 0.0
+        },
+        "std": 0.0,
+        "zero_count": 563310
+      },
+      "t1": {
+        "count": 563310,
+        "finite_count": 563310,
+        "inf_count": 0,
+        "max": 0.0006761290715076029,
+        "mean": 6.66405541156749e-07,
+        "min": 0.0,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 0,
+        "percentiles": {
+          "p01": 0.0,
+          "p05": 0.0,
+          "p25": 0.0,
+          "p50": 0.0,
+          "p75": 0.0,
+          "p95": 0.0,
+          "p99": 6.355535077773512e-07
+        },
+        "std": 1.1321846659020547e-05,
+        "zero_count": 554558
+      },
+      "t1_extrema": {
+        "max": {
+          "cell_id": 5459,
+          "cell_index_zero_based": 5458,
+          "indices_zero_based": {
+            "nCells": 5458,
+            "nVertLevels": 22
+          },
+          "latitude_degrees": -36.60722189447833,
+          "longitude_degrees": -47.74874963937927,
+          "value": 0.0006761290715076029
+        },
+        "min": {
+          "cell_id": 1,
+          "cell_index_zero_based": 0,
+          "indices_zero_based": {
+            "nCells": 0,
+            "nVertLevels": 0
+          },
+          "latitude_degrees": 26.56505088990245,
+          "longitude_degrees": -174.95294964726781,
+          "value": 0.0
+        }
+      },
+      "units": "kg kg^{-1}",
+      "variable": "qs"
+    },
+    "qv": {
+      "arrays_identical": false,
+      "change_t1_minus_t0": {
+        "count": 563310,
+        "finite_count": 563310,
+        "inf_count": 0,
+        "max": 0.003638545051217079,
+        "mean": 7.202009017139604e-06,
+        "min": -0.0031477208249270916,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 283066,
+        "percentiles": {
+          "p01": -0.00034970241133123635,
+          "p05": -0.0001402532448992133,
+          "p25": -4.757031547342194e-06,
+          "p50": -1.2096279533579946e-10,
+          "p75": 7.145346899051219e-06,
+          "p95": 0.00018316323403269017,
+          "p99": 0.00042804692988283947
+        },
+        "std": 0.00012262177984352765,
+        "zero_count": 5
+      },
+      "dimensions": [
+        "nCells",
+        "nVertLevels"
+      ],
+      "long_name": "Water vapor mixing ratio",
+      "physical_limit_basis": "finiteness only; no narrower supported bound defined for this field",
+      "physical_limit_violations": {
+        "nonfinite_t0": 0,
+        "nonfinite_t1": 0
+      },
+      "relative_change_of_mean": 0.0026228632050396272,
+      "shape": [
+        10242,
+        55
+      ],
+      "source_files": [
+        "history.2014-09-10_00.00.00.nc",
+        "history.2014-09-10_01.00.00.nc"
+      ],
+      "t0": {
+        "count": 563310,
+        "finite_count": 563310,
+        "inf_count": 0,
+        "max": 0.02511253021657467,
+        "mean": 0.0027458576578835384,
+        "min": -1.0532240594329778e-05,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 6,
+        "percentiles": {
+          "p01": 2.314625853614416e-06,
+          "p05": 2.859269329746894e-06,
+          "p25": 3.84684506116173e-06,
+          "p50": 0.0001913626110763289,
+          "p75": 0.0038597549428232014,
+          "p95": 0.013807899132370946,
+          "p99": 0.01744870521128178
+        },
+        "std": 0.004507519266069495,
+        "zero_count": 0
+      },
+      "t1": {
+        "count": 563310,
+        "finite_count": 563310,
+        "inf_count": 0,
+        "max": 0.02488267607986927,
+        "mean": 0.0027530596669006775,
+        "min": 8.900796188981985e-08,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 0,
+        "percentiles": {
+          "p01": 1.9633309307209856e-06,
+          "p05": 2.8473536758610863e-06,
+          "p25": 3.8125184573800652e-06,
+          "p50": 0.00019034306023968384,
+          "p75": 0.0038611514610238373,
+          "p95": 0.013881843397393803,
+          "p99": 0.017568546012043957
+        },
+        "std": 0.004527698816415265,
+        "zero_count": 0
+      },
+      "t1_extrema": {
+        "max": {
+          "cell_id": 7106,
+          "cell_index_zero_based": 7105,
+          "indices_zero_based": {
+            "nCells": 7105,
+            "nVertLevels": 0
+          },
+          "latitude_degrees": 29.668951811039292,
+          "longitude_degrees": 73.50751354586356,
+          "value": 0.02488267607986927
+        },
+        "min": {
+          "cell_id": 6292,
+          "cell_index_zero_based": 6291,
+          "indices_zero_based": {
+            "nCells": 6291,
+            "nVertLevels": 23
+          },
+          "latitude_degrees": -56.66955703412429,
+          "longitude_degrees": -20.795375174404914,
+          "value": 8.900796188981985e-08
+        }
+      },
+      "units": "kg kg^{-1}",
+      "variable": "qv"
+    },
+    "rainc": {
+      "arrays_identical": false,
+      "change_t1_minus_t0": {
+        "count": 10242,
+        "finite_count": 10242,
+        "inf_count": 0,
+        "max": 3.645233392715454,
+        "mean": 0.012606534384971793,
+        "min": 0.0,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 0,
+        "percentiles": {
+          "p01": 0.0,
+          "p05": 0.0,
+          "p25": 0.0,
+          "p50": 0.0,
+          "p75": 0.0,
+          "p95": 0.03187506105750791,
+          "p99": 0.32676876991987286
+        },
+        "std": 0.09571996621649198,
+        "zero_count": 7789
+      },
+      "dimensions": [
+        "nCells"
+      ],
+      "long_name": "accumulated convective precipitation",
+      "physical_limit_basis": "finiteness only; no narrower supported bound defined for this field",
+      "physical_limit_violations": {
+        "nonfinite_t0": 0,
+        "nonfinite_t1": 0
+      },
+      "relative_change_of_mean": null,
+      "shape": [
+        10242
+      ],
+      "source_files": [
+        "diag.2014-09-10_00.00.00.nc",
+        "diag.2014-09-10_01.00.00.nc"
+      ],
+      "t0": {
+        "count": 10242,
+        "finite_count": 10242,
+        "inf_count": 0,
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 0,
+        "percentiles": {
+          "p01": 0.0,
+          "p05": 0.0,
+          "p25": 0.0,
+          "p50": 0.0,
+          "p75": 0.0,
+          "p95": 0.0,
+          "p99": 0.0
+        },
+        "std": 0.0,
+        "zero_count": 10242
+      },
+      "t1": {
+        "count": 10242,
+        "finite_count": 10242,
+        "inf_count": 0,
+        "max": 3.645233392715454,
+        "mean": 0.012606534384971793,
+        "min": 0.0,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 0,
+        "percentiles": {
+          "p01": 0.0,
+          "p05": 0.0,
+          "p25": 0.0,
+          "p50": 0.0,
+          "p75": 0.0,
+          "p95": 0.03187506105750791,
+          "p99": 0.32676876991987286
+        },
+        "std": 0.09571996621649198,
+        "zero_count": 7789
+      },
+      "t1_extrema": {
+        "max": {
+          "cell_id": 913,
+          "cell_index_zero_based": 912,
+          "indices_zero_based": {
+            "nCells": 912
+          },
+          "latitude_degrees": 39.714305683768394,
+          "longitude_degrees": -97.8585964097179,
+          "value": 3.645233392715454
+        },
+        "min": {
+          "cell_id": 1,
+          "cell_index_zero_based": 0,
+          "indices_zero_based": {
+            "nCells": 0
+          },
+          "latitude_degrees": 26.56505088990245,
+          "longitude_degrees": -174.95294964726781,
+          "value": 0.0
+        }
+      },
+      "units": "mm",
+      "variable": "rainc"
+    },
+    "rainnc": {
+      "arrays_identical": false,
+      "change_t1_minus_t0": {
+        "count": 10242,
+        "finite_count": 10242,
+        "inf_count": 0,
+        "max": 4.699625015258789,
+        "mean": 0.005827251475674224,
+        "min": 0.0,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 0,
+        "percentiles": {
+          "p01": 0.0,
+          "p05": 0.0,
+          "p25": 0.0,
+          "p50": 0.0,
+          "p75": 0.0,
+          "p95": 0.005474296561442262,
+          "p99": 0.13732096329331414
+        },
+        "std": 0.0725998330591919,
+        "zero_count": 7858
+      },
+      "dimensions": [
+        "nCells"
+      ],
+      "long_name": "accumulated total grid-scale precipitation",
+      "physical_limit_basis": "finiteness only; no narrower supported bound defined for this field",
+      "physical_limit_violations": {
+        "nonfinite_t0": 0,
+        "nonfinite_t1": 0
+      },
+      "relative_change_of_mean": null,
+      "shape": [
+        10242
+      ],
+      "source_files": [
+        "diag.2014-09-10_00.00.00.nc",
+        "diag.2014-09-10_01.00.00.nc"
+      ],
+      "t0": {
+        "count": 10242,
+        "finite_count": 10242,
+        "inf_count": 0,
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 0,
+        "percentiles": {
+          "p01": 0.0,
+          "p05": 0.0,
+          "p25": 0.0,
+          "p50": 0.0,
+          "p75": 0.0,
+          "p95": 0.0,
+          "p99": 0.0
+        },
+        "std": 0.0,
+        "zero_count": 10242
+      },
+      "t1": {
+        "count": 10242,
+        "finite_count": 10242,
+        "inf_count": 0,
+        "max": 4.699625015258789,
+        "mean": 0.005827251475674224,
+        "min": 0.0,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 0,
+        "percentiles": {
+          "p01": 0.0,
+          "p05": 0.0,
+          "p25": 0.0,
+          "p50": 0.0,
+          "p75": 0.0,
+          "p95": 0.005474296561442262,
+          "p99": 0.13732096329331414
+        },
+        "std": 0.0725998330591919,
+        "zero_count": 7858
+      },
+      "t1_extrema": {
+        "max": {
+          "cell_id": 7694,
+          "cell_index_zero_based": 7693,
+          "indices_zero_based": {
+            "nCells": 7693
+          },
+          "latitude_degrees": 8.49423242637119,
+          "longitude_degrees": -20.625221501801555,
+          "value": 4.699625015258789
+        },
+        "min": {
+          "cell_id": 1,
+          "cell_index_zero_based": 0,
+          "indices_zero_based": {
+            "nCells": 0
+          },
+          "latitude_degrees": 26.56505088990245,
+          "longitude_degrees": -174.95294964726781,
+          "value": 0.0
+        }
+      },
+      "units": "mm",
+      "variable": "rainnc"
+    },
+    "rho": {
+      "arrays_identical": false,
+      "change_t1_minus_t0": {
+        "count": 563310,
+        "finite_count": 563310,
+        "inf_count": 0,
+        "max": 0.023862123489379883,
+        "mean": 2.1248626658141977e-05,
+        "min": -0.020801424980163574,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 282926,
+        "percentiles": {
+          "p01": -0.0031084907054901123,
+          "p05": -0.0012136101722717285,
+          "p25": -0.00025177001953125,
+          "p50": -1.4901161193847656e-06,
+          "p75": 0.00027233362197875977,
+          "p95": 0.0013303756713867188,
+          "p99": 0.0032436525821685908
+        },
+        "std": 0.0010419701831655226,
+        "zero_count": 12
+      },
+      "dimensions": [
+        "nCells",
+        "nVertLevels"
+      ],
+      "long_name": "Dry air density",
+      "physical_limit_basis": "finiteness only; no narrower supported bound defined for this field",
+      "physical_limit_violations": {
+        "nonfinite_t0": 0,
+        "nonfinite_t1": 0
+      },
+      "relative_change_of_mean": 3.744679860011263e-05,
+      "shape": [
+        10242,
+        55
+      ],
+      "source_files": [
+        "history.2014-09-10_00.00.00.nc",
+        "history.2014-09-10_01.00.00.nc"
+      ],
+      "t0": {
+        "count": 563310,
+        "finite_count": 563310,
+        "inf_count": 0,
+        "max": 1.5087666511535645,
+        "mean": 0.56743506661272,
+        "min": 0.011050118133425713,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 0,
+        "percentiles": {
+          "p01": 0.019140631798654793,
+          "p05": 0.02612492712214589,
+          "p25": 0.14717494696378708,
+          "p50": 0.5578626692295074,
+          "p75": 0.9630198329687119,
+          "p95": 1.16967955827713,
+          "p99": 1.2410324823856353
+        },
+        "std": 0.4101066024098221,
+        "zero_count": 0
+      },
+      "t1": {
+        "count": 563310,
+        "finite_count": 563310,
+        "inf_count": 0,
+        "max": 1.506877064704895,
+        "mean": 0.5674563152393781,
+        "min": 0.011050061322748661,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 0,
+        "percentiles": {
+          "p01": 0.019133481923490764,
+          "p05": 0.026128114387392997,
+          "p25": 0.14710171148180962,
+          "p50": 0.5579382479190826,
+          "p75": 0.9631868898868561,
+          "p95": 1.169560122489929,
+          "p99": 1.2406939268112187
+        },
+        "std": 0.4101339363076747,
+        "zero_count": 0
+      },
+      "t1_extrema": {
+        "max": {
+          "cell_id": 7895,
+          "cell_index_zero_based": 7894,
+          "indices_zero_based": {
+            "nCells": 7894,
+            "nVertLevels": 0
+          },
+          "latitude_degrees": -79.43872687769758,
+          "longitude_degrees": -56.28181425250292,
+          "value": 1.506877064704895
+        },
+        "min": {
+          "cell_id": 6532,
+          "cell_index_zero_based": 6531,
+          "indices_zero_based": {
+            "nCells": 6531,
+            "nVertLevels": 54
+          },
+          "latitude_degrees": -86.88747163932501,
+          "longitude_degrees": 41.0470531757563,
+          "value": 0.011050061322748661
+        }
+      },
+      "units": "kg m^{-3}",
+      "variable": "rho"
+    },
+    "skintemp": {
+      "arrays_identical": false,
+      "change_t1_minus_t0": {
+        "count": 10242,
+        "finite_count": 10242,
+        "inf_count": 0,
+        "max": 19.217010498046875,
+        "mean": -0.1817109894412636,
+        "min": -20.2635498046875,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 2139,
+        "percentiles": {
+          "p01": -7.92361572265625,
+          "p05": -4.041812133789062,
+          "p25": 0.0,
+          "p50": 0.0,
+          "p75": 0.0,
+          "p95": 4.137043762207021,
+          "p99": 9.565135803222661
+        },
+        "std": 2.622248662795269,
+        "zero_count": 6947
+      },
+      "dimensions": [
+        "nCells"
+      ],
+      "long_name": "ground or water surface temperature",
+      "physical_limit_basis": "finiteness only; no narrower supported bound defined for this field",
+      "physical_limit_violations": {
+        "nonfinite_t0": 0,
+        "nonfinite_t1": 0
+      },
+      "relative_change_of_mean": -0.0006286274737055596,
+      "shape": [
+        10242
+      ],
+      "source_files": [
+        "history.2014-09-10_00.00.00.nc",
+        "history.2014-09-10_01.00.00.nc"
+      ],
+      "t0": {
+        "count": 10242,
+        "finite_count": 10242,
+        "inf_count": 0,
+        "max": 316.8908386230469,
+        "mean": 289.0598916558636,
+        "min": 207.381103515625,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 0,
+        "percentiles": {
+          "p01": 225.8026335144043,
+          "p05": 260.05066680908203,
+          "p25": 283.0382614135742,
+          "p50": 293.53297424316406,
+          "p75": 299.4703369140625,
+          "p95": 302.68424530029296,
+          "p99": 304.0771850585937
+        },
+        "std": 14.79699644147906,
+        "zero_count": 0
+      },
+      "t1": {
+        "count": 10242,
+        "finite_count": 10242,
+        "inf_count": 0,
+        "max": 327.5456848144531,
+        "mean": 288.8781806664224,
+        "min": 202.6330108642578,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 0,
+        "percentiles": {
+          "p01": 228.59729263305664,
+          "p05": 257.40492553710936,
+          "p25": 282.8212203979492,
+          "p50": 293.16912841796875,
+          "p75": 299.48631286621094,
+          "p95": 302.84136657714845,
+          "p99": 306.83640716552736
+        },
+        "std": 15.228517290209917,
+        "zero_count": 0
+      },
+      "t1_extrema": {
+        "max": {
+          "cell_id": 7836,
+          "cell_index_zero_based": 7835,
+          "indices_zero_based": {
+            "nCells": 7835
+          },
+          "latitude_degrees": -16.02447415140158,
+          "longitude_degrees": 136.41516089613594,
+          "value": 327.5456848144531
+        },
+        "min": {
+          "cell_id": 523,
+          "cell_index_zero_based": 522,
+          "indices_zero_based": {
+            "nCells": 522
+          },
+          "latitude_degrees": -76.78097049805137,
+          "longitude_degrees": 113.04705517933883,
+          "value": 202.6330108642578
+        }
+      },
+      "units": "K",
+      "variable": "skintemp"
+    },
+    "snow": {
+      "arrays_identical": false,
+      "change_t1_minus_t0": {
+        "count": 10242,
+        "finite_count": 10242,
+        "inf_count": 0,
+        "max": 10.159197807312012,
+        "mean": 0.48844663454953313,
+        "min": -1.5810546875,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 199,
+        "percentiles": {
+          "p01": -0.012836694195866586,
+          "p05": 0.0,
+          "p25": 0.0,
+          "p50": 0.0,
+          "p75": 0.0,
+          "p95": 0.04863281249999574,
+          "p99": 10.018242282867432
+        },
+        "std": 2.1571930960542427,
+        "zero_count": 9249
+      },
+      "dimensions": [
+        "nCells"
+      ],
+      "long_name": "snow water equivalent",
+      "physical_limit_basis": "finiteness only; no narrower supported bound defined for this field",
+      "physical_limit_violations": {
+        "nonfinite_t0": 0,
+        "nonfinite_t1": 0
+      },
+      "relative_change_of_mean": 0.0014870206790435832,
+      "shape": [
+        10242
+      ],
+      "source_files": [
+        "history.2014-09-10_00.00.00.nc",
+        "history.2014-09-10_01.00.00.nc"
+      ],
+      "t0": {
+        "count": 10242,
+        "finite_count": 10242,
+        "inf_count": 0,
+        "max": 10000.0,
+        "mean": 328.4733302187382,
+        "min": 0.0,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 0,
+        "percentiles": {
+          "p01": 0.0,
+          "p05": 0.0,
+          "p25": 0.0,
+          "p50": 0.0,
+          "p75": 0.0,
+          "p95": 0.01963596856220757,
+          "p99": 10000.0
+        },
+        "std": 1763.4179234020182,
+        "zero_count": 9709
+      },
+      "t1": {
+        "count": 10242,
+        "finite_count": 10242,
+        "inf_count": 0,
+        "max": 10000.1962890625,
+        "mean": 328.9617768532878,
+        "min": 0.0,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 0,
+        "percentiles": {
+          "p01": 0.0,
+          "p05": 0.0,
+          "p25": 0.0,
+          "p50": 0.0,
+          "p75": 0.0,
+          "p95": 10.014662408828736,
+          "p99": 10000.005859375
+        },
+        "std": 1763.3286035297456,
+        "zero_count": 9215
+      },
+      "t1_extrema": {
+        "max": {
+          "cell_id": 7900,
+          "cell_index_zero_based": 7899,
+          "indices_zero_based": {
+            "nCells": 7899
+          },
+          "latitude_degrees": -74.2209268046714,
+          "longitude_degrees": -124.33281944403753,
+          "value": 10000.1962890625
+        },
+        "min": {
+          "cell_id": 1,
+          "cell_index_zero_based": 0,
+          "indices_zero_based": {
+            "nCells": 0
+          },
+          "latitude_degrees": 26.56505088990245,
+          "longitude_degrees": -174.95294964726781,
+          "value": 0.0
+        }
+      },
+      "units": "kg m^{-2}",
+      "variable": "snow"
+    },
+    "snowh": {
+      "arrays_identical": false,
+      "change_t1_minus_t0": {
+        "count": 10242,
+        "finite_count": 10242,
+        "inf_count": 0,
+        "max": 0.05079508572816849,
+        "mean": -0.002761132530423007,
+        "min": -4.098667144775391,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 511,
+        "percentiles": {
+          "p01": -0.16331829071044923,
+          "p05": 0.0,
+          "p25": 0.0,
+          "p50": 0.0,
+          "p75": 0.0,
+          "p95": 8.068760098467028e-06,
+          "p99": 0.050090407989919185
+        },
+        "std": 0.06162432115410644,
+        "zero_count": 9194
+      },
+      "dimensions": [
+        "nCells"
+      ],
+      "long_name": "physical snow depth",
+      "physical_limit_basis": "finiteness only; no narrower supported bound defined for this field",
+      "physical_limit_violations": {
+        "nonfinite_t0": 0,
+        "nonfinite_t1": 0
+      },
+      "relative_change_of_mean": -0.001681191301886667,
+      "shape": [
+        10242
+      ],
+      "source_files": [
+        "history.2014-09-10_00.00.00.nc",
+        "history.2014-09-10_01.00.00.nc"
+      ],
+      "t0": {
+        "count": 10242,
+        "finite_count": 10242,
+        "inf_count": 0,
+        "max": 50.0,
+        "mean": 1.6423666523400833,
+        "min": 0.0,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 0,
+        "percentiles": {
+          "p01": 0.0,
+          "p05": 0.0,
+          "p25": 0.0,
+          "p50": 0.0,
+          "p75": 0.0,
+          "p95": 9.817984937395161e-05,
+          "p99": 50.0
+        },
+        "std": 8.817089620721596,
+        "zero_count": 9709
+      },
+      "t1": {
+        "count": 10242,
+        "finite_count": 10242,
+        "inf_count": 0,
+        "max": 49.992488861083984,
+        "mean": 1.6396055198096604,
+        "min": 0.0,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 0,
+        "percentiles": {
+          "p01": 0.0,
+          "p05": 0.0,
+          "p25": 0.0,
+          "p50": 0.0,
+          "p75": 0.0,
+          "p95": 0.05007257927209139,
+          "p99": 49.955505447387694
+        },
+        "std": 8.789901689866747,
+        "zero_count": 9215
+      },
+      "t1_extrema": {
+        "max": {
+          "cell_id": 523,
+          "cell_index_zero_based": 522,
+          "indices_zero_based": {
+            "nCells": 522
+          },
+          "latitude_degrees": -76.78097049805137,
+          "longitude_degrees": 113.04705517933883,
+          "value": 49.992488861083984
+        },
+        "min": {
+          "cell_id": 1,
+          "cell_index_zero_based": 0,
+          "indices_zero_based": {
+            "nCells": 0
+          },
+          "latitude_degrees": 26.56505088990245,
+          "longitude_degrees": -174.95294964726781,
+          "value": 0.0
+        }
+      },
+      "units": "m",
+      "variable": "snowh"
+    },
+    "sst": {
+      "arrays_identical": true,
+      "change_t1_minus_t0": {
+        "count": 10242,
+        "finite_count": 10242,
+        "inf_count": 0,
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 0,
+        "percentiles": {
+          "p01": 0.0,
+          "p05": 0.0,
+          "p25": 0.0,
+          "p50": 0.0,
+          "p75": 0.0,
+          "p95": 0.0,
+          "p99": 0.0
+        },
+        "std": 0.0,
+        "zero_count": 10242
+      },
+      "dimensions": [
+        "nCells"
+      ],
+      "long_name": "sea-surface temperature",
+      "physical_limit_basis": "finiteness only; no narrower supported bound defined for this field",
+      "physical_limit_violations": {
+        "nonfinite_t0": 0,
+        "nonfinite_t1": 0
+      },
+      "relative_change_of_mean": 0.0,
+      "shape": [
+        10242
+      ],
+      "source_files": [
+        "history.2014-09-10_00.00.00.nc",
+        "history.2014-09-10_01.00.00.nc"
+      ],
+      "t0": {
+        "count": 10242,
+        "finite_count": 10242,
+        "inf_count": 0,
+        "max": 318.184326171875,
+        "mean": 289.02551005385254,
+        "min": 207.6501922607422,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 0,
+        "percentiles": {
+          "p01": 225.664384765625,
+          "p05": 259.9751708984375,
+          "p25": 282.92562103271484,
+          "p50": 293.4530334472656,
+          "p75": 299.49642181396484,
+          "p95": 302.6990280151367,
+          "p99": 304.1192318725586
+        },
+        "std": 14.848210979616331,
+        "zero_count": 0
+      },
+      "t1": {
+        "count": 10242,
+        "finite_count": 10242,
+        "inf_count": 0,
+        "max": 318.184326171875,
+        "mean": 289.02551005385254,
+        "min": 207.6501922607422,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 0,
+        "percentiles": {
+          "p01": 225.664384765625,
+          "p05": 259.9751708984375,
+          "p25": 282.92562103271484,
+          "p50": 293.4530334472656,
+          "p75": 299.49642181396484,
+          "p95": 302.6990280151367,
+          "p99": 304.1192318725586
+        },
+        "std": 14.848210979616331,
+        "zero_count": 0
+      },
+      "t1_extrema": {
+        "max": {
+          "cell_id": 7239,
+          "cell_index_zero_based": 7238,
+          "indices_zero_based": {
+            "nCells": 7238
+          },
+          "latitude_degrees": 35.84064244317111,
+          "longitude_degrees": -117.16054707963386,
+          "value": 318.184326171875
+        },
+        "min": {
+          "cell_id": 5686,
+          "cell_index_zero_based": 5685,
+          "indices_zero_based": {
+            "nCells": 5685
+          },
+          "latitude_degrees": -75.01074938972415,
+          "longitude_degrees": 117.46863961024911,
+          "value": 207.6501922607422
+        }
+      },
+      "units": "K",
+      "variable": "sst"
+    },
+    "surface_pressure": {
+      "arrays_identical": false,
+      "change_t1_minus_t0": {
+        "count": 10242,
+        "finite_count": 10242,
+        "inf_count": 0,
+        "max": 458.2734375,
+        "mean": -1.662096788957235,
+        "min": -742.078125,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 5458,
+        "percentiles": {
+          "p01": -161.65890625,
+          "p05": -91.38125,
+          "p25": -42.7890625,
+          "p50": -5.1015625,
+          "p75": 38.0703125,
+          "p95": 100.91679687499989,
+          "p99": 174.47296875000012
+        },
+        "std": 66.12854810633742,
+        "zero_count": 2
+      },
+      "dimensions": [
+        "nCells"
+      ],
+      "long_name": "Diagnosed surface pressure",
+      "physical_limit_basis": "finiteness only; no narrower supported bound defined for this field",
+      "physical_limit_violations": {
+        "nonfinite_t0": 0,
+        "nonfinite_t1": 0
+      },
+      "relative_change_of_mean": -1.6874401741644463e-05,
+      "shape": [
+        10242
+      ],
+      "source_files": [
+        "history.2014-09-10_00.00.00.nc",
+        "history.2014-09-10_01.00.00.nc"
+      ],
+      "t0": {
+        "count": 10242,
+        "finite_count": 10242,
+        "inf_count": 0,
+        "max": 104173.65625,
+        "mean": 98498.11652043974,
+        "min": 52894.98046875,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 0,
+        "percentiles": {
+          "p01": 65853.431484375,
+          "p05": 86486.082421875,
+          "p25": 98165.5546875,
+          "p50": 100969.5234375,
+          "p75": 101557.859375,
+          "p95": 102506.30234375,
+          "p99": 103255.166875
+        },
+        "std": 6501.522864245246,
+        "zero_count": 0
+      },
+      "t1": {
+        "count": 10242,
+        "finite_count": 10242,
+        "inf_count": 0,
+        "max": 104170.296875,
+        "mean": 98496.45442365078,
+        "min": 53028.62109375,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 0,
+        "percentiles": {
+          "p01": 65911.646953125,
+          "p05": 86494.62734375,
+          "p25": 98159.896484375,
+          "p50": 100970.33984375,
+          "p75": 101540.6015625,
+          "p95": 102499.8875,
+          "p99": 103247.451953125
+        },
+        "std": 6494.155937895937,
+        "zero_count": 0
+      },
+      "t1_extrema": {
+        "max": {
+          "cell_id": 5944,
+          "cell_index_zero_based": 5943,
+          "indices_zero_based": {
+            "nCells": 5943
+          },
+          "latitude_degrees": -36.916369916691444,
+          "longitude_degrees": -117.21065334738506,
+          "value": 104170.296875
+        },
+        "min": {
+          "cell_id": 7116,
+          "cell_index_zero_based": 7115,
+          "indices_zero_based": {
+            "nCells": 7115
+          },
+          "latitude_degrees": 33.66388164525556,
+          "longitude_degrees": 80.74244606571293,
+          "value": 53028.62109375
+        }
+      },
+      "units": "Pa",
+      "variable": "surface_pressure"
+    },
+    "t2m": {
+      "arrays_identical": false,
+      "change_t1_minus_t0": {
+        "count": 10242,
+        "finite_count": 10242,
+        "inf_count": 0,
+        "max": 15.774887084960938,
+        "mean": -0.15943456082529353,
+        "min": -13.381744384765625,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 5860,
+        "percentiles": {
+          "p01": -5.732889099121094,
+          "p05": -2.896083068847656,
+          "p25": -0.37555694580078125,
+          "p50": -0.0595550537109375,
+          "p75": 0.211334228515625,
+          "p95": 1.96667785644531,
+          "p99": 5.6991979980468805
+        },
+        "std": 1.6999374157331408,
+        "zero_count": 0
+      },
+      "dimensions": [
+        "nCells"
+      ],
+      "long_name": "2-meter temperature",
+      "physical_limit_basis": "finiteness only; no narrower supported bound defined for this field",
+      "physical_limit_violations": {
+        "nonfinite_t0": 0,
+        "nonfinite_t1": 0
+      },
+      "relative_change_of_mean": -0.0005525808276216339,
+      "shape": [
+        10242
+      ],
+      "source_files": [
+        "diag.2014-09-10_00.00.00.nc",
+        "diag.2014-09-10_01.00.00.nc"
+      ],
+      "t0": {
+        "count": 10242,
+        "finite_count": 10242,
+        "inf_count": 0,
+        "max": 311.0301513671875,
+        "mean": 288.52713097466363,
+        "min": 208.15931701660156,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 0,
+        "percentiles": {
+          "p01": 228.32090362548828,
+          "p05": 259.88716888427734,
+          "p25": 282.7236022949219,
+          "p50": 292.96885681152344,
+          "p75": 298.79956817626953,
+          "p95": 301.3609680175781,
+          "p99": 304.6717825317383
+        },
+        "std": 14.378597078617835,
+        "zero_count": 0
+      },
+      "t1": {
+        "count": 10242,
+        "finite_count": 10242,
+        "inf_count": 0,
+        "max": 307.62176513671875,
+        "mean": 288.36769641383836,
+        "min": 208.3951416015625,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 0,
+        "percentiles": {
+          "p01": 232.5623941040039,
+          "p05": 258.7060577392578,
+          "p25": 282.8949661254883,
+          "p50": 292.6768341064453,
+          "p75": 298.62525177001953,
+          "p95": 301.3064819335938,
+          "p99": 302.80559295654297
+        },
+        "std": 14.169453473908499,
+        "zero_count": 0
+      },
+      "t1_extrema": {
+        "max": {
+          "cell_id": 3814,
+          "cell_index_zero_based": 3813,
+          "indices_zero_based": {
+            "nCells": 3813
+          },
+          "latitude_degrees": 26.99240216589181,
+          "longitude_degrees": 50.688503811916696,
+          "value": 307.62176513671875
+        },
+        "min": {
+          "cell_id": 5686,
+          "cell_index_zero_based": 5685,
+          "indices_zero_based": {
+            "nCells": 5685
+          },
+          "latitude_degrees": -75.01074938972415,
+          "longitude_degrees": 117.46863961024911,
+          "value": 208.3951416015625
+        }
+      },
+      "units": "K",
+      "variable": "t2m"
+    },
+    "temperature_derived": {
+      "arrays_identical": false,
+      "change_t1_minus_t0": {
+        "count": 563310,
+        "finite_count": 563310,
+        "inf_count": 0,
+        "max": 5.761222368584015,
+        "mean": -0.023801234716819542,
+        "min": -9.084290610414968,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 313793,
+        "percentiles": {
+          "p01": -1.1927410684811375,
+          "p05": -0.6172734431281327,
+          "p25": -0.18209219396135978,
+          "p50": -0.029751394625819216,
+          "p75": 0.12897895501771472,
+          "p95": 0.5886727172106319,
+          "p99": 1.1679576702769738
+        },
+        "std": 0.39974264515142416,
+        "zero_count": 0
+      },
+      "dimensions": [
+        "nCells",
+        "nVertLevels"
+      ],
+      "long_name": "temperature derived from MPAS theta and pressure",
+      "method": "T = theta * (pressure / 100000 Pa) ** (287.0 / 1004.5)",
+      "physical_limit_basis": "finiteness only; no narrower supported bound defined for this derived field",
+      "physical_limit_violations": {
+        "nonfinite_t0": 0,
+        "nonfinite_t1": 0
+      },
+      "relative_change_of_mean": -9.61364904563822e-05,
+      "shape": [
+        10242,
+        55
+      ],
+      "source_files": [
+        "history.2014-09-10_00.00.00.nc",
+        "history.2014-09-10_01.00.00.nc"
+      ],
+      "t0": {
+        "count": 563310,
+        "finite_count": 563310,
+        "inf_count": 0,
+        "max": 314.15514530991976,
+        "mean": 247.57752861369624,
+        "min": 181.98510593488083,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 0,
+        "percentiles": {
+          "p01": 193.72846215919915,
+          "p05": 201.52092254481022,
+          "p25": 219.50218501619173,
+          "p50": 246.1363584079279,
+          "p75": 278.0071809983824,
+          "p95": 295.1415209462843,
+          "p99": 299.7314030721389
+        },
+        "std": 32.00161585278718,
+        "zero_count": 0
+      },
+      "t1": {
+        "count": 563310,
+        "finite_count": 563310,
+        "inf_count": 0,
+        "max": 313.26438488684255,
+        "mean": 247.55372737897946,
+        "min": 182.17730727777086,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 0,
+        "percentiles": {
+          "p01": 193.73170559332007,
+          "p05": 201.5090772495512,
+          "p25": 219.4816902536283,
+          "p50": 246.09914354530463,
+          "p75": 277.99315700975734,
+          "p95": 295.1002193520187,
+          "p99": 299.79680920669614
+        },
+        "std": 31.987884143969953,
+        "zero_count": 0
+      },
+      "t1_extrema": {
+        "max": {
+          "cell_id": 369,
+          "cell_index_zero_based": 368,
+          "indices_zero_based": {
+            "nCells": 368,
+            "nVertLevels": 1
+          },
+          "latitude_degrees": 23.667107492998177,
+          "longitude_degrees": 0.5011883956815459,
+          "value": 313.26438488684255
+        },
+        "min": {
+          "cell_id": 1732,
+          "cell_index_zero_based": 1731,
+          "indices_zero_based": {
+            "nCells": 1731,
+            "nVertLevels": 45
+          },
+          "latitude_degrees": -83.59193268555055,
+          "longitude_degrees": -30.952959300481076,
+          "value": 182.17730727777086
+        }
+      },
+      "units": "K",
+      "variable": null
+    },
+    "theta": {
+      "arrays_identical": false,
+      "change_t1_minus_t0": {
+        "count": 563310,
+        "finite_count": 563310,
+        "inf_count": 0,
+        "max": 14.22772216796875,
+        "mean": -0.018981323848952646,
+        "min": -18.139923095703125,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 307291,
+        "percentiles": {
+          "p01": -2.131195068359375,
+          "p05": -0.94854736328125,
+          "p25": -0.2198486328125,
+          "p50": -0.029327392578125,
+          "p75": 0.17510986328125,
+          "p95": 0.947235107421875,
+          "p99": 2.156627502441413
+        },
+        "std": 0.6935082404667472,
+        "zero_count": 28
+      },
+      "dimensions": [
+        "nCells",
+        "nVertLevels"
+      ],
+      "long_name": "Potential temperature",
+      "physical_limit_basis": "finiteness only; no narrower supported bound defined for this field",
+      "physical_limit_violations": {
+        "nonfinite_t0": 0,
+        "nonfinite_t1": 0
+      },
+      "relative_change_of_mean": -4.893844969639386e-05,
+      "shape": [
+        10242,
+        55
+      ],
+      "source_files": [
+        "history.2014-09-10_00.00.00.nc",
+        "history.2014-09-10_01.00.00.nc"
+      ],
+      "t0": {
+        "count": 563310,
+        "finite_count": 563310,
+        "inf_count": 0,
+        "max": 899.8963012695312,
+        "mean": 387.8611596138583,
+        "min": 230.8811798095703,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 0,
+        "percentiles": {
+          "p01": 268.99760192871094,
+          "p05": 282.029638671875,
+          "p25": 301.2207946777344,
+          "p50": 325.5079803466797,
+          "p75": 420.23643493652344,
+          "p95": 718.608706665039,
+          "p99": 792.9571148681641
+        },
+        "std": 136.19013042225387,
+        "zero_count": 0
+      },
+      "t1": {
+        "count": 563310,
+        "finite_count": 563310,
+        "inf_count": 0,
+        "max": 900.140869140625,
+        "mean": 387.8421782900094,
+        "min": 231.17543029785156,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 0,
+        "percentiles": {
+          "p01": 268.92431640625,
+          "p05": 282.0078887939453,
+          "p25": 301.1724624633789,
+          "p50": 325.4747772216797,
+          "p75": 420.3101577758789,
+          "p95": 718.6659118652343,
+          "p99": 792.83599609375
+        },
+        "std": 136.1958826776039,
+        "zero_count": 0
+      },
+      "t1_extrema": {
+        "max": {
+          "cell_id": 2606,
+          "cell_index_zero_based": 2605,
+          "indices_zero_based": {
+            "nCells": 2605,
+            "nVertLevels": 54
+          },
+          "latitude_degrees": -88.20060282801664,
+          "longitude_degrees": 77.04705417754757,
+          "value": 900.140869140625
+        },
+        "min": {
+          "cell_id": 7895,
+          "cell_index_zero_based": 7894,
+          "indices_zero_based": {
+            "nCells": 7894,
+            "nVertLevels": 0
+          },
+          "latitude_degrees": -79.43872687769758,
+          "longitude_degrees": -56.28181425250292,
+          "value": 231.17543029785156
+        }
+      },
+      "units": "K",
+      "variable": "theta"
+    },
+    "u": {
+      "arrays_identical": false,
+      "change_t1_minus_t0": {
+        "count": 1689600,
+        "finite_count": 1689600,
+        "inf_count": 0,
+        "max": 43.655988693237305,
+        "mean": 0.0015400964118011233,
+        "min": -69.1452693939209,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 844578,
+        "percentiles": {
+          "p01": -3.003769721984863,
+          "p05": -1.5682392239570617,
+          "p25": -0.4321201052516699,
+          "p50": 0.0002046823501586914,
+          "p75": 0.435227632522583,
+          "p95": 1.571299219131462,
+          "p99": 3.023021483421326
+        },
+        "std": 1.0402419699829517,
+        "zero_count": 0
+      },
+      "dimensions": [
+        "nEdges",
+        "nVertLevels"
+      ],
+      "long_name": "Horizontal normal velocity at edges",
+      "physical_limit_basis": "finiteness only; no narrower supported bound defined for this field",
+      "physical_limit_violations": {
+        "nonfinite_t0": 0,
+        "nonfinite_t1": 0
+      },
+      "relative_change_of_mean": 0.11977504860071901,
+      "shape": [
+        30720,
+        55
+      ],
+      "source_files": [
+        "history.2014-09-10_00.00.00.nc",
+        "history.2014-09-10_01.00.00.nc"
+      ],
+      "t0": {
+        "count": 1689600,
+        "finite_count": 1689600,
+        "inf_count": 0,
+        "max": 114.7402114868164,
+        "mean": 0.012858240758767504,
+        "min": -115.57083129882812,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 844508,
+        "percentiles": {
+          "p01": -42.74388202667237,
+          "p05": -21.140197753906243,
+          "p25": -5.743730306625366,
+          "p50": 0.0037944354116916656,
+          "p75": 5.760254383087158,
+          "p95": 21.20434484481808,
+          "p99": 42.8771632385254
+        },
+        "std": 14.120268363403445,
+        "zero_count": 0
+      },
+      "t1": {
+        "count": 1689600,
+        "finite_count": 1689600,
+        "inf_count": 0,
+        "max": 114.30670166015625,
+        "mean": 0.014398337170568628,
+        "min": -113.96997833251953,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 844344,
+        "percentiles": {
+          "p01": -42.72446006774902,
+          "p05": -21.121064376831054,
+          "p25": -5.765334963798523,
+          "p50": 0.005488400813192129,
+          "p75": 5.7863218784332275,
+          "p95": 21.19208965301512,
+          "p99": 42.904457817077635
+        },
+        "std": 14.134884702216274,
+        "zero_count": 0
+      },
+      "t1_extrema": {
+        "max": {
+          "edge_id": 911,
+          "edge_index_zero_based": 910,
+          "indices_zero_based": {
+            "nEdges": 910,
+            "nVertLevels": 54
+          },
+          "latitude_degrees": -70.57953643798828,
+          "longitude_degrees": 134.02134351658657,
+          "value": 114.30670166015625
+        },
+        "min": {
+          "edge_id": 977,
+          "edge_index_zero_based": 976,
+          "indices_zero_based": {
+            "nEdges": 976,
+            "nVertLevels": 54
+          },
+          "latitude_degrees": -69.86919403076172,
+          "longitude_degrees": 140.37275008615975,
+          "value": -113.96997833251953
+        }
+      },
+      "units": "m s^{-1}",
+      "variable": "u"
+    },
+    "u10": {
+      "arrays_identical": false,
+      "change_t1_minus_t0": {
+        "count": 10242,
+        "finite_count": 10242,
+        "inf_count": 0,
+        "max": 15.70535945892334,
+        "mean": -0.08378907343506327,
+        "min": -64.00592994689941,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 5359,
+        "percentiles": {
+          "p01": -5.2839361891895535,
+          "p05": -1.9584665149450302,
+          "p25": -0.6071247458457947,
+          "p50": -0.052736520767211914,
+          "p75": 0.6043408513069153,
+          "p95": 2.115599281340833,
+          "p99": 3.796090289354327
+        },
+        "std": 2.187652644981944,
+        "zero_count": 0
+      },
+      "dimensions": [
+        "nCells"
+      ],
+      "long_name": "10-meter zonal wind",
+      "physical_limit_basis": "finiteness only; no narrower supported bound defined for this field",
+      "physical_limit_violations": {
+        "nonfinite_t0": 0,
+        "nonfinite_t1": 0
+      },
+      "relative_change_of_mean": -0.41719911748574146,
+      "shape": [
+        10242
+      ],
+      "source_files": [
+        "diag.2014-09-10_00.00.00.nc",
+        "diag.2014-09-10_01.00.00.nc"
+      ],
+      "t0": {
+        "count": 10242,
+        "finite_count": 10242,
+        "inf_count": 0,
+        "max": 22.631214141845703,
+        "mean": -0.2008371300975413,
+        "min": -22.861713409423828,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 5672,
+        "percentiles": {
+          "p01": -11.89326385498047,
+          "p05": -8.482502222061157,
+          "p25": -4.077214956283569,
+          "p50": -0.6089628338813782,
+          "p75": 2.8989333510398865,
+          "p95": 10.483002948760971,
+          "p99": 14.599197683334358
+        },
+        "std": 5.651188963365087,
+        "zero_count": 0
+      },
+      "t1": {
+        "count": 10242,
+        "finite_count": 10242,
+        "inf_count": 0,
+        "max": 25.20865821838379,
+        "mean": -0.2846262035326046,
+        "min": -80.72023010253906,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 5600,
+        "percentiles": {
+          "p01": -14.800351448059082,
+          "p05": -9.371756792068481,
+          "p25": -4.268368363380432,
+          "p50": -0.6014567911624908,
+          "p75": 3.0128836631774902,
+          "p95": 11.818460941314687,
+          "p99": 16.221412944793702
+        },
+        "std": 6.578349567593322,
+        "zero_count": 0
+      },
+      "t1_extrema": {
+        "max": {
+          "cell_id": 5370,
+          "cell_index_zero_based": 5369,
+          "indices_zero_based": {
+            "nCells": 5369
+          },
+          "latitude_degrees": -43.08348773717394,
+          "longitude_degrees": 66.2452466089558,
+          "value": 25.20865821838379
+        },
+        "min": {
+          "cell_id": 7850,
+          "cell_index_zero_based": 7849,
+          "indices_zero_based": {
+            "nCells": 7849
+          },
+          "latitude_degrees": -69.4459825370505,
+          "longitude_degrees": 82.7135703582869,
+          "value": -80.72023010253906
+        }
+      },
+      "units": "m s^{-1}",
+      "variable": "u10"
+    },
+    "v10": {
+      "arrays_identical": false,
+      "change_t1_minus_t0": {
+        "count": 10242,
+        "finite_count": 10242,
+        "inf_count": 0,
+        "max": 47.660767555236816,
+        "mean": 0.03794392074362686,
+        "min": -22.345356941223145,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 4726,
+        "percentiles": {
+          "p01": -4.21842628479004,
+          "p05": -2.2428159832954404,
+          "p25": -0.5537954866886139,
+          "p50": 0.08492064476013184,
+          "p75": 0.6585907936096191,
+          "p95": 1.9843522772192954,
+          "p99": 4.191928638219838
+        },
+        "std": 1.6910807514482602,
+        "zero_count": 0
+      },
+      "dimensions": [
+        "nCells"
+      ],
+      "long_name": "10-meter meridional wind",
+      "physical_limit_basis": "finiteness only; no narrower supported bound defined for this field",
+      "physical_limit_violations": {
+        "nonfinite_t0": 0,
+        "nonfinite_t1": 0
+      },
+      "relative_change_of_mean": 0.05745805770169294,
+      "shape": [
+        10242
+      ],
+      "source_files": [
+        "diag.2014-09-10_00.00.00.nc",
+        "diag.2014-09-10_01.00.00.nc"
+      ],
+      "t0": {
+        "count": 10242,
+        "finite_count": 10242,
+        "inf_count": 0,
+        "max": 21.353958129882812,
+        "mean": 0.6603759726898821,
+        "min": -23.404830932617188,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 4207,
+        "percentiles": {
+          "p01": -13.371589784622193,
+          "p05": -8.151332426071166,
+          "p25": -1.8385980129241943,
+          "p50": 0.8915189504623413,
+          "p75": 3.9513068795204163,
+          "p95": 7.424181604385372,
+          "p99": 10.87206621170044
+        },
+        "std": 4.767305226022573,
+        "zero_count": 0
+      },
+      "t1": {
+        "count": 10242,
+        "finite_count": 10242,
+        "inf_count": 0,
+        "max": 58.271568298339844,
+        "mean": 0.698319893433509,
+        "min": -31.37420082092285,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 4139,
+        "percentiles": {
+          "p01": -16.534551486968994,
+          "p05": -9.34126877784729,
+          "p25": -1.8979128897190094,
+          "p50": 0.9699177145957947,
+          "p75": 4.185818076133728,
+          "p95": 8.034062671661374,
+          "p99": 13.031409311294558
+        },
+        "std": 5.51169321567183,
+        "zero_count": 0
+      },
+      "t1_extrema": {
+        "max": {
+          "cell_id": 4807,
+          "cell_index_zero_based": 4806,
+          "indices_zero_based": {
+            "nCells": 4806
+          },
+          "latitude_degrees": -67.41607080629022,
+          "longitude_degrees": 143.85669297799987,
+          "value": 58.271568298339844
+        },
+        "min": {
+          "cell_id": 3787,
+          "cell_index_zero_based": 3786,
+          "indices_zero_based": {
+            "nCells": 3786
+          },
+          "latitude_degrees": -83.29581666427381,
+          "longitude_degrees": -122.37476813353494,
+          "value": -31.37420082092285
+        }
+      },
+      "units": "m s^{-1}",
+      "variable": "v10"
+    },
+    "w": {
+      "arrays_identical": false,
+      "change_t1_minus_t0": {
+        "count": 573552,
+        "finite_count": 573552,
+        "inf_count": 0,
+        "max": 0.6332184652565047,
+        "mean": 0.0004919764887054998,
+        "min": -0.5745398998260498,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 297011,
+        "percentiles": {
+          "p01": -0.04435782054133597,
+          "p05": -0.023614559858106076,
+          "p25": -0.006856577507278416,
+          "p50": -0.00022567009810359195,
+          "p75": 0.005589765361946775,
+          "p95": 0.0276814295153599,
+          "p99": 0.06432569081214759
+        },
+        "std": 0.01958825907707975,
+        "zero_count": 13576
+      },
+      "dimensions": [
+        "nCells",
+        "nVertLevelsP1"
+      ],
+      "long_name": "Vertical velocity at vertical cell faces",
+      "physical_limit_basis": "finiteness only; no narrower supported bound defined for this field",
+      "physical_limit_violations": {
+        "nonfinite_t0": 0,
+        "nonfinite_t1": 0
+      },
+      "relative_change_of_mean": 17.52283878966365,
+      "shape": [
+        10242,
+        56
+      ],
+      "source_files": [
+        "history.2014-09-10_00.00.00.nc",
+        "history.2014-09-10_01.00.00.nc"
+      ],
+      "t0": {
+        "count": 573552,
+        "finite_count": 573552,
+        "inf_count": 0,
+        "max": 0.17950566112995148,
+        "mean": 2.807630057041364e-05,
+        "min": -0.1469668447971344,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 272815,
+        "percentiles": {
+          "p01": -0.012017891723662615,
+          "p05": -0.002822174597531557,
+          "p25": -8.598733529652236e-06,
+          "p50": 0.0,
+          "p75": 8.78559694683645e-06,
+          "p95": 0.002732358581852166,
+          "p99": 0.012947195703163734
+        },
+        "std": 0.004450950038467835,
+        "zero_count": 20484
+      },
+      "t1": {
+        "count": 573552,
+        "finite_count": 573552,
+        "inf_count": 0,
+        "max": 0.6345505714416504,
+        "mean": 0.0005200527892759134,
+        "min": -0.5745398998260498,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 298151,
+        "percentiles": {
+          "p01": -0.04079321876168251,
+          "p05": -0.022651085723191498,
+          "p25": -0.006662064464762807,
+          "p50": -0.00024384710559388623,
+          "p75": 0.005288397544063628,
+          "p95": 0.026374386716634016,
+          "p99": 0.06278494194149967
+        },
+        "std": 0.0186620187797118,
+        "zero_count": 13575
+      },
+      "t1_extrema": {
+        "max": {
+          "cell_id": 5459,
+          "cell_index_zero_based": 5458,
+          "indices_zero_based": {
+            "nCells": 5458,
+            "nVertLevelsP1": 31
+          },
+          "latitude_degrees": -36.60722189447833,
+          "longitude_degrees": -47.74874963937927,
+          "value": 0.6345505714416504
+        },
+        "min": {
+          "cell_id": 7850,
+          "cell_index_zero_based": 7849,
+          "indices_zero_based": {
+            "nCells": 7849,
+            "nVertLevelsP1": 0
+          },
+          "latitude_degrees": -69.4459825370505,
+          "longitude_degrees": 82.7135703582869,
+          "value": -0.5745398998260498
+        }
+      },
+      "units": "m s^{-1}",
+      "variable": "w"
+    },
+    "wind_speed_10m": {
+      "arrays_identical": false,
+      "change_t1_minus_t0": {
+        "count": 10242,
+        "finite_count": 10242,
+        "inf_count": 0,
+        "max": 66.96675109863281,
+        "mean": 0.666832014596429,
+        "min": -9.597705841064453,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 3120,
+        "percentiles": {
+          "p01": -2.785980181694031,
+          "p05": -1.3752772882580757,
+          "p25": -0.1432100236415863,
+          "p50": 0.4199984073638916,
+          "p75": 1.063061237335205,
+          "p95": 3.124340057373042,
+          "p99": 7.763017258644106
+        },
+        "std": 2.3648949324395736,
+        "zero_count": 0
+      },
+      "dimensions": [
+        "nCells"
+      ],
+      "long_name": "10 m wind speed",
+      "method": "sqrt(u10**2 + v10**2)",
+      "physical_limit_basis": "finiteness only; no narrower supported bound defined for this derived field",
+      "physical_limit_violations": {
+        "nonfinite_t0": 0,
+        "nonfinite_t1": 0
+      },
+      "relative_change_of_mean": 0.10579603221476619,
+      "shape": [
+        10242
+      ],
+      "source_files": [
+        "history.2014-09-10_00.00.00.nc",
+        "history.2014-09-10_01.00.00.nc"
+      ],
+      "t0": {
+        "count": 10242,
+        "finite_count": 10242,
+        "inf_count": 0,
+        "max": 23.419878005981445,
+        "mean": 6.302996441707367,
+        "min": 0.03836797922849655,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 0,
+        "percentiles": {
+          "p01": 0.4728979563713074,
+          "p05": 1.111879926919937,
+          "p25": 3.182244122028351,
+          "p50": 5.854079961776733,
+          "p75": 8.544378280639648,
+          "p95": 13.795584297180175,
+          "p99": 17.598762664794926
+        },
+        "std": 3.925787010118561,
+        "zero_count": 0
+      },
+      "t1": {
+        "count": 10242,
+        "finite_count": 10242,
+        "inf_count": 0,
+        "max": 85.0486831665039,
+        "mean": 6.969828456303796,
+        "min": 0.02261815220117569,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 0,
+        "percentiles": {
+          "p01": 0.529336776137352,
+          "p05": 1.2334609389305116,
+          "p25": 3.3284796476364136,
+          "p50": 6.09889817237854,
+          "p75": 9.179117679595947,
+          "p95": 16.396197795867913,
+          "p99": 21.928102111816415
+        },
+        "std": 5.063950943964497,
+        "zero_count": 0
+      },
+      "t1_extrema": {
+        "max": {
+          "cell_id": 7850,
+          "cell_index_zero_based": 7849,
+          "indices_zero_based": {
+            "nCells": 7849
+          },
+          "latitude_degrees": -69.4459825370505,
+          "longitude_degrees": 82.7135703582869,
+          "value": 85.0486831665039
+        },
+        "min": {
+          "cell_id": 1902,
+          "cell_index_zero_based": 1901,
+          "indices_zero_based": {
+            "nCells": 1901
+          },
+          "latitude_degrees": 4.420119355333317,
+          "longitude_degrees": -73.6825407858108,
+          "value": 0.02261815220117569
+        }
+      },
+      "units": "m s^{-1}",
+      "variable": null
+    },
+    "xice": {
+      "arrays_identical": true,
+      "change_t1_minus_t0": {
+        "count": 10242,
+        "finite_count": 10242,
+        "inf_count": 0,
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 0,
+        "percentiles": {
+          "p01": 0.0,
+          "p05": 0.0,
+          "p25": 0.0,
+          "p50": 0.0,
+          "p75": 0.0,
+          "p95": 0.0,
+          "p99": 0.0
+        },
+        "std": 0.0,
+        "zero_count": 10242
+      },
+      "dimensions": [
+        "nCells"
+      ],
+      "long_name": "fractional area coverage of sea-ice",
+      "physical_limit_basis": "finiteness only; no narrower supported bound defined for this field",
+      "physical_limit_violations": {
+        "nonfinite_t0": 0,
+        "nonfinite_t1": 0
+      },
+      "relative_change_of_mean": 0.0,
+      "shape": [
+        10242
+      ],
+      "source_files": [
+        "history.2014-09-10_00.00.00.nc",
+        "history.2014-09-10_01.00.00.nc"
+      ],
+      "t0": {
+        "count": 10242,
+        "finite_count": 10242,
+        "inf_count": 0,
+        "max": 1.0,
+        "mean": 0.0421407569352202,
+        "min": 0.0,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 0,
+        "percentiles": {
+          "p01": 0.0,
+          "p05": 0.0,
+          "p25": 0.0,
+          "p50": 0.0,
+          "p75": 0.0,
+          "p95": 0.04763648919760472,
+          "p99": 0.9991556882858277
+        },
+        "std": 0.19025851497800852,
+        "zero_count": 9721
+      },
+      "t1": {
+        "count": 10242,
+        "finite_count": 10242,
+        "inf_count": 0,
+        "max": 1.0,
+        "mean": 0.0421407569352202,
+        "min": 0.0,
+        "missing_count": 0,
+        "nan_count": 0,
+        "negative_count": 0,
+        "percentiles": {
+          "p01": 0.0,
+          "p05": 0.0,
+          "p25": 0.0,
+          "p50": 0.0,
+          "p75": 0.0,
+          "p95": 0.04763648919760472,
+          "p99": 0.9991556882858277
+        },
+        "std": 0.19025851497800852,
+        "zero_count": 9721
+      },
+      "t1_extrema": {
+        "max": {
+          "cell_id": 3,
+          "cell_index_zero_based": 2,
+          "indices_zero_based": {
+            "nCells": 2
+          },
+          "latitude_degrees": 90.00000250447816,
+          "longitude_degrees": 117.45448745828885,
+          "value": 1.0
+        },
+        "min": {
+          "cell_id": 1,
+          "cell_index_zero_based": 0,
+          "indices_zero_based": {
+            "nCells": 0
+          },
+          "latitude_degrees": 26.56505088990245,
+          "longitude_degrees": -174.95294964726781,
+          "value": 0.0
+        }
+      },
+      "units": "unitless",
+      "variable": "xice"
+    }
+  },
+  "figures": [
+    "t2m-t1.png",
+    "delta-t2m.png",
+    "mslp-t1.png",
+    "wind10-t1.png",
+    "precipitation-1h.png",
+    "q2-negative-cells.png",
+    "temperature-profile.png"
+  ],
+  "launcher_numeric_notes": {
+    "denormal_mentions_in_rank0_log": 0,
+    "interpretation": "The four launcher notes recorded in cycle 0013 are REPORT-ONLY; the rank-0 model log does not preserve launcher stderr.",
+    "underflow_mentions_in_rank0_log": 0
+  },
+  "limitations": [
+    "No observation or future ERA5 field is used, so forecast skill is not evaluated.",
+    "Two output times cannot establish that spin-up is complete.",
+    "The water inventory lacks integrated flux terms and is not a closed conservation budget.",
+    "No approved tolerance exists for the dry-air mass delta; it is report-only.",
+    "Fixed SST over one hour does not demonstrate suitability for longer forecasts.",
+    "qsfc, psiq and psiq2 are absent, preventing exact reconstruction of negative q2 values."
+  ],
+  "numeric_audit": [
+    {
+      "filename": "history.2014-09-10_00.00.00.nc",
+      "finite_count": 22490666,
+      "inf_count": 0,
+      "missing_count": 0,
+      "nan_count": 0,
+      "numeric_value_count": 22490666,
+      "numeric_variable_count": 96,
+      "variables_with_missing_markers": {}
+    },
+    {
+      "filename": "history.2014-09-10_01.00.00.nc",
+      "finite_count": 22490666,
+      "inf_count": 0,
+      "missing_count": 0,
+      "nan_count": 0,
+      "numeric_value_count": 22490666,
+      "numeric_variable_count": 96,
+      "variables_with_missing_markers": {}
+    },
+    {
+      "filename": "diag.2014-09-10_00.00.00.nc",
+      "finite_count": 1310963,
+      "inf_count": 0,
+      "missing_count": 0,
+      "nan_count": 0,
+      "numeric_value_count": 1310963,
+      "numeric_variable_count": 107,
+      "variables_with_missing_markers": {}
+    },
+    {
+      "filename": "diag.2014-09-10_01.00.00.nc",
+      "finite_count": 1310963,
+      "inf_count": 0,
+      "missing_count": 0,
+      "nan_count": 0,
+      "numeric_value_count": 1310963,
+      "numeric_variable_count": 107,
+      "variables_with_missing_markers": {}
+    }
+  ],
+  "precipitation": {
+    "bucket_mm": 0.0,
+    "global_area_integral_kg": 9414861525281.283,
+    "maximum_location": {
+      "cell_id": 7694,
+      "cell_index_zero_based": 7693,
+      "latitude_degrees": 8.49423242637119,
+      "longitude_degrees": -20.625221501801555,
+      "value_mm": 4.762212298810482
+    },
+    "method": "(rainc + bucket*i_rainc + rainnc + bucket*i_rainnc)t1 minus t0",
+    "one_hour": {
+      "count": 10242,
+      "finite_count": 10242,
+      "inf_count": 0,
+      "max": 4.762212298810482,
+      "mean": 0.018433785860646017,
+      "min": 0.0,
+      "missing_count": 0,
+      "nan_count": 0,
+      "negative_count": 0,
+      "percentiles": {
+        "p01": 0.0,
+        "p05": 0.0,
+        "p25": 0.0,
+        "p50": 0.0,
+        "p75": 0.0005425689159892499,
+        "p95": 0.05416704071103553,
+        "p99": 0.4192826226353647
+      },
+      "std": 0.12548373911287483,
+      "zero_count": 5996
+    },
+    "positive_cell_count": 4246,
+    "positive_cell_fraction": 0.41456746729154464,
+    "units": "mm (equivalent to kg m-2)"
+  },
+  "q2_diagnostic": {
+    "call_path": [
+      "mpas_atmphys_driver.F",
+      "driver_sfclayer",
+      "sfclayer_to_MPAS",
+      "module_sf_sfclayrev.F",
+      "sf_sfclayrev_pre_run",
+      "physics_mmm/sf_sfclayrev.F90"
+    ],
+    "classification": "LIMITED_NUMERICAL_BEHAVIOR_DOCUMENTED",
+    "count": 11,
+    "criterion_class": "REPORT_ONLY",
+    "exact_cellwise_reconstruction_possible": false,
+    "fraction_of_10242_cells": 0.001074008982620582,
+    "internal_terms_available_in_output": {
+      "psiq": false,
+      "psiq2": false,
+      "qsfc": false
+    },
+    "interpretation": "The revised surface-layer interpolation is not clamped. Its stability-function ratio is not constrained by this assignment to the [0,1] interval, so extrapolation can cross zero even while first-level qv remains positive. The missing internal terms prevent an exact cellwise reconstruction from these outputs.",
+    "maximum_among_negative_kg_kg-1": -8.300179615616798e-06,
+    "mean_among_negative_kg_kg-1": -0.00011408902884630317,
+    "minimum_kg_kg-1": -0.00047117547364905477,
+    "rows_file": "q2-negative-cells.csv",
+    "source_clamp_after_formula": false,
+    "source_formula": "q2 = qsfc + (qv_level1 - qsfc) * (psiq2 / psiq)"
+  },
+  "qv_diagnostic": {
+    "causal_attribution": "NOT_ESTABLISHED: outputs do not isolate tendencies from advection and individual parameterizations",
+    "history_t0": {
+      "count": 563310,
+      "finite_count": 563310,
+      "inf_count": 0,
+      "max": 0.02511253021657467,
+      "mean": 0.0027458576578835384,
+      "min": -1.0532240594329778e-05,
+      "missing_count": 0,
+      "nan_count": 0,
+      "negative_count": 6,
+      "percentiles": {
+        "p01": 2.314625853614416e-06,
+        "p05": 2.859269329746894e-06,
+        "p25": 3.84684506116173e-06,
+        "p50": 0.0001913626110763289,
+        "p75": 0.0038597549428232014,
+        "p95": 0.013807899132370946,
+        "p99": 0.01744870521128178
+      },
+      "std": 0.004507519266069495,
+      "zero_count": 0
+    },
+    "history_t1": {
+      "count": 563310,
+      "finite_count": 563310,
+      "inf_count": 0,
+      "max": 0.02488267607986927,
+      "mean": 0.0027530596669006775,
+      "min": 8.900796188981985e-08,
+      "missing_count": 0,
+      "nan_count": 0,
+      "negative_count": 0,
+      "percentiles": {
+        "p01": 1.9633309307209856e-06,
+        "p05": 2.8473536758610863e-06,
+        "p25": 3.8125184573800652e-06,
+        "p50": 0.00019034306023968384,
+        "p75": 0.0038611514610238373,
+        "p95": 0.013881843397393803,
+        "p99": 0.017568546012043957
+      },
+      "std": 0.004527698816415265,
+      "zero_count": 0
+    },
+    "init": {
+      "count": 563310,
+      "finite_count": 563310,
+      "inf_count": 0,
+      "max": 0.02511253021657467,
+      "mean": 0.0027458576578835384,
+      "min": -1.0532240594329778e-05,
+      "missing_count": 0,
+      "nan_count": 0,
+      "negative_count": 6,
+      "percentiles": {
+        "p01": 2.314625853614416e-06,
+        "p05": 2.859269329746894e-06,
+        "p25": 3.84684506116173e-06,
+        "p50": 0.0001913626110763289,
+        "p75": 0.0038597549428232014,
+        "p95": 0.013807899132370946,
+        "p99": 0.01744870521128178
+      },
+      "std": 0.004507519266069495,
+      "zero_count": 0
+    },
+    "init_equals_history_t0": true,
+    "negative_cell_level_pairs": {
+      "history_t0": 6,
+      "history_t1": 0,
+      "init": 6
+    }
+  },
+  "run": {
+    "cycle_0013_base_commit": "0d499294e94661444243f9dbdadae0c776fa5c23",
+    "final_timestamp": "2014-09-10_01:00:00",
+    "initial_timestamp": "2014-09-10_00:00:00",
+    "materialized_by_commit": "66ffe7746b4ba144f179d4cea3011e1f0b178d38",
+    "mesh": "x1.10242 (approximately 240 km)",
+    "mpas_source_commit": "91c5eac175eebeaf4206bacd5cb50c39dff3c152",
+    "mpas_version": "8.4.1",
+    "mpi_ranks": 4,
+    "nCells": 10242,
+    "nVertLevels": 55,
+    "physics_suite": "mesoscale_reference",
+    "run_duration": "01:00:00",
+    "sst_update": false,
+    "timestep_seconds": 1200.0
+  },
+  "schema_version": "1.0.0",
+  "sst": {
+    "array_equal": true,
+    "sha256_t0": "888c9574961395fc8bb4ca10a2cdf56d217275c8f9aef76543b758add632c6df",
+    "sha256_t1": "888c9574961395fc8bb4ca10a2cdf56d217275c8f9aef76543b758add632c6df",
+    "t0": {
+      "count": 10242,
+      "finite_count": 10242,
+      "inf_count": 0,
+      "max": 318.184326171875,
+      "mean": 289.02551005385254,
+      "min": 207.6501922607422,
+      "missing_count": 0,
+      "nan_count": 0,
+      "negative_count": 0,
+      "percentiles": {
+        "p01": 225.664384765625,
+        "p05": 259.9751708984375,
+        "p25": 282.92562103271484,
+        "p50": 293.4530334472656,
+        "p75": 299.49642181396484,
+        "p95": 302.6990280151367,
+        "p99": 304.1192318725586
+      },
+      "std": 14.848210979616331,
+      "zero_count": 0
+    },
+    "t1": {
+      "count": 10242,
+      "finite_count": 10242,
+      "inf_count": 0,
+      "max": 318.184326171875,
+      "mean": 289.02551005385254,
+      "min": 207.6501922607422,
+      "missing_count": 0,
+      "nan_count": 0,
+      "negative_count": 0,
+      "percentiles": {
+        "p01": 225.664384765625,
+        "p05": 259.9751708984375,
+        "p25": 282.92562103271484,
+        "p50": 293.4530334472656,
+        "p75": 299.49642181396484,
+        "p95": 302.6990280151367,
+        "p99": 304.1192318725586
+      },
+      "std": 14.848210979616331,
+      "zero_count": 0
+    }
+  },
+  "statuses": {
+    "forecast_skill": "NOT_EVALUATED",
+    "functional_validation": "PASS",
+    "numerical_sanity": "PASS",
+    "scientific_sanity": "PASS",
+    "spinup": "INSUFFICIENT_TEMPORAL_WINDOW"
+  },
+  "surface_evolution": {
+    "skintemp_arrays_identical": false,
+    "skintemp_changed_cell_count": 3295
+  },
+  "tabular_artifacts": [
+    "q2-negative-cells.csv"
+  ],
+  "timestamps": {
+    "diag.2014-09-10_00.00.00.nc": "2014-09-10_00:00:00",
+    "diag.2014-09-10_01.00.00.nc": "2014-09-10_01:00:00",
+    "history.2014-09-10_00.00.00.nc": "2014-09-10_00:00:00",
+    "history.2014-09-10_01.00.00.nc": "2014-09-10_01:00:00",
+    "init.nc": "2014-09-10_00:00:00"
+  },
+  "water_inventory": {
+    "accumulated_precipitation": {
+      "one_hour_delta": 9414861525281.283,
+      "t0": 0.0,
+      "t1": 9414861525281.283
+    },
+    "atmospheric_species_total": {
+      "absolute_delta": 35734411794336.0,
+      "t0": 1.3011358191468084e+16,
+      "t1": 1.304709260326242e+16
+    },
+    "budget_closed": false,
+    "classification": "REPORT_ONLY_INCOMPLETE_INVENTORY",
+    "method": "sum(rho_dry * cell_volume * q_species), with accumulated precipitation integrated separately",
+    "missing_for_closure": [
+      "time-integrated surface and soil moisture fluxes",
+      "all boundary/source/sink terms used by the physics and dynamics"
+    ],
+    "observable_atmosphere_plus_accumulated_precipitation": {
+      "absolute_delta": 45149273319618.0,
+      "t0": 1.3011358191468084e+16,
+      "t1": 1.3056507464787702e+16
+    },
+    "species": {
+      "qc": {
+        "absolute_delta": 4868494845873.129,
+        "relative_delta": null,
+        "t0": 0.0,
+        "t1": 4868494845873.129,
+        "units": "kg"
+      },
+      "qg": {
+        "absolute_delta": 138647302930.21582,
+        "relative_delta": null,
+        "t0": 0.0,
+        "t1": 138647302930.21582,
+        "units": "kg"
+      },
+      "qi": {
+        "absolute_delta": 9560112430892.375,
+        "relative_delta": null,
+        "t0": 0.0,
+        "t1": 9560112430892.375,
+        "units": "kg"
+      },
+      "qr": {
+        "absolute_delta": 2054348265331.0205,
+        "relative_delta": null,
+        "t0": 0.0,
+        "t1": 2054348265331.0205,
+        "units": "kg"
+      },
+      "qs": {
+        "absolute_delta": 4756424778063.772,
+        "relative_delta": null,
+        "t0": 0.0,
+        "t1": 4756424778063.772,
+        "units": "kg"
+      },
+      "qv": {
+        "absolute_delta": 14356384171244.0,
+        "relative_delta": 0.0011033732189970674,
+        "t0": 1.3011358191468084e+16,
+        "t1": 1.3025714575639328e+16,
+        "units": "kg"
+      }
+    },
+    "units": "kg"
+  }
+}
