@@ -2,13 +2,16 @@
 
 ## Status
 
-**Mesh, static, ERA5, WPS intermediate e condição inicial MPAS validados.**
+**Pipeline até a primeira hora do MPAS Atmosphere validado funcionalmente.**
 
 O ciclo 0009 executou pela primeira vez o `init_atmosphere_model` 8.4.1
 sobre a mesh real x1.10242 e produziu
 `data/cases/first-global-240km/static/x1.10242.static.nc`. O ciclo 0010
 adquiriu os dois GRIBs globais. O ciclo 0011 validou a `Vtable.ECMWF`, executou
-`ungrib` separadamente e produziu o WPS intermediate combinado. O ciclo 0012 executou o init meteorológico em quatro ranks e validou `x1.10242.init.nc`. Somente a previsão continua fora deste estágio.
+`ungrib` separadamente e produziu o WPS intermediate combinado. O ciclo 0012
+executou o init meteorológico em quatro ranks e validou `x1.10242.init.nc`.
+O ciclo 0013 consumiu esse init e a `part.4`, avançou o relógio por uma hora
+e validou history/diagnostics em 00 e 01 UTC.
 
 ## Baseline
 
@@ -24,6 +27,10 @@ adquiriu os dois GRIBs globais. O ciclo 0011 validou a `Vtable.ECMWF`, executou
 | Output static | `x1.10242.static.nc`, CDF-2 / 64-bit offset |
 | Init meteorológico | 4 ranks com `part.4`; 55 níveis MPAS; topo 30 km |
 | Output init | `x1.10242.init.nc`, CDF-2 / 64-bit offset |
+| Primeira integração | 2014-09-10 00→01 UTC; `dt=1200 s`; 4 ranks |
+| Física | `mesoscale_reference`; Noah; radiação a cada 1 hora |
+| LBC / restart / SST update | `false` / `false` / `false` |
+| Outputs | history e diagnostics em 00 e 01 UTC, CDF-2 |
 
 A mesh fica em `data/meshes/x1.10242/`; os dados geográficos ficam em
 `data/geog/mpas-8.4.1/`; static e init, com seus logs, ficam sob
@@ -389,6 +396,139 @@ preparação do forecast deve reavaliar essa dívida.
 `soilcomp` e `soilcl1..4` estão ausentes, como exige
 `config_noahmp_static=false`, e não por falha de inicialização.
 
+## Primeira integração temporal
+
+O ciclo 0013 parte dos defaults e stream lists gerados pela build MPAS 8.4.1.
+A configuração versionada em `cases/first-global-240km/atmosphere/` altera
+somente o necessário para este caso:
+
+```fortran
+&nhyd_model
+    config_dt = 1200.0
+    config_start_time = '2014-09-10_00:00:00'
+    config_run_duration = '01:00:00'
+/
+&limited_area
+    config_apply_lbcs = false
+/
+&decomposition
+    config_block_decomp_file_prefix = 'x1.10242.graph.info.part.'
+/
+&restart
+    config_do_restart = false
+/
+&printout
+    config_print_global_minmax_vel = true
+    config_print_detailed_minmax_vel = false
+/
+&physics
+    config_sst_update = false
+    config_radtlw_interval = '01:00:00'
+    config_radtsw_interval = '01:00:00'
+    config_physics_suite = 'mesoscale_reference'
+/
+```
+
+Os streams `input`, `output` e `diagnostics` leem
+`x1.10242.init.nc` e escrevem intervalos de uma hora. O stream `surface`
+continua inativo: não há `x1.10242.sfc_update.nc` e a SST permanece igual à
+condição inicial durante este smoke curto. Isso não deve ser generalizado
+automaticamente para previsões longas.
+
+### Física resolvida no source 8.4.1
+
+`mpas_atmphys_control.F` resolve a suite sem depender de nomes presumidos:
+
+| Processo | Esquema efetivo |
+|---|---|
+| Microfísica | `mp_wsm6` |
+| Convecção | `cu_ntiedtke` |
+| Camada limite | `bl_ysu` |
+| Gravity-wave drag | `bl_ysu_gwdo` |
+| Fração de nuvem | `cld_fraction` |
+| Radiação LW / SW | `rrtmg_lw` / `rrtmg_sw` |
+| Surface layer | `sf_monin_obukhov_rev` |
+| Land-surface model | `sf_noah` |
+
+`sf_noahmp` não é selecionado, coerente com o static sem campos Noah-MP.
+O runner liga read-only no workdir as 14 tabelas top-level padronizadas da
+árvore `physics_wrf/files` já existente na imagem. Não baixa, copia para o
+repositório nem modifica `/opt/mpas-model-8.4.1`; `NoahmpTable.TBL` não é
+disponibilizada porque esta suite não a usa.
+
+### Execução e manifesto
+
+O comando científico foi:
+
+```sh
+mpiexec -n 4 /opt/mpas-model-8.4.1/atmosphere_model
+```
+
+`scripts/run/run-atmosphere.sh` executa sem rede, como UID/GID do host, com
+rootfs read-only, `cap-drop ALL`, `no-new-privileges` e escrita limitada ao
+workspace. O run canônico foi promovido atomicamente para
+`data/cases/first-global-240km/atmosphere/run-001/`; uma segunda chamada
+validou o conteúdo existente e retornou `unchanged`, sem sobrescrever bytes.
+O manifesto registra 2026-08-21T15:43:28Z–15:43:36Z, wall time de 8 s, imagem
+`sha256:9c9479db0bae4db1e8d827bf522caab312ad097217aba962cb399f18b74e93a8`,
+commit MPAS `91c5eac175eebeaf4206bacd5cb50c39dff3c152`, hashes de entradas,
+configurações e outputs.
+
+| Arquivo | Bytes | SHA-256 |
+|---|---:|---|
+| `diag.2014-09-10_00.00.00.nc` | 5.268.556 | `be0f450bcccb763be327e3df69f784c2aca7337edc97642cf4fda579f7df1ff2` |
+| `diag.2014-09-10_01.00.00.nc` | 5.268.556 | `e3cc0f3374a596c04fa8638a75b1448add06401a09c92643d2f65958acddc3de` |
+| `history.2014-09-10_00.00.00.nc` | 89.983.848 | `07f93a016ca9c06cb4da8fa5c23426fe30d36f6e8c78ee0a410a2183b6ed029b` |
+| `history.2014-09-10_01.00.00.nc` | 89.983.848 | `0369fe24eefd2e88de2016c15070abb2797128d987a5ab025de73e111e39c93b` |
+| `log.atmosphere.0000.out` | 36.238 | `2e9628802bb75c94bbd43e6e9f6a3bd9eae32713a366b17a09fee6ea66367828` |
+
+O log comprova leitura do init real, inicialização da suite e das tabelas
+Noah, três timesteps iniciados em 00:00, 00:20 e 00:40, escrita do estado das
+01:00 e término normal. O resumo tem 634 outputs, 3 warnings, 0 errors e
+0 critical. Os warnings esperados informam que `qi`, `qs` e `qg` não
+existem no cold-start; WSM6 os inicializa, e todos terminam finitos e
+não negativos. Após a conclusão, cada rank também reportou ao launcher a
+presença de underflow/denormal floating-point, sem incrementar os contadores
+do log e sem NaN/Inf.
+
+Os extremos globais impressos evoluíram:
+
+| Início do timestep | `w` min/max (m/s) | `u` min/max (m/s) |
+|---|---|---|
+| 00:00 | -0,813270 / 0,455260 | -113,981 / 114,371 |
+| 00:20 | -0,863554 / 0,547135 | -113,828 / 114,083 |
+| 00:40 | -0,574540 / 0,634551 | -113,970 / 114,307 |
+
+### Validação NetCDF e evolução
+
+Os quatro outputs são CDF-2 legíveis e não truncados. History possui
+`nCells=10242`, `nVertLevels=55`, `nVertLevelsP1=56` e
+`nSoilLevels=4`; diagnostics possui 10.242 células. Os timestamps são
+exatamente 00 e 01 UTC. O validador varreu 47.603.258 valores numéricos sem
+encontrar NaN/Inf.
+
+No estado final, `rho` fica em 0,0110501–1,50688 kg/m³, pressão derivada em
+674,071–103.879,531 Pa, temperatura derivada em 182,177–313,264 K, `u` em
+-113,970–114,307 m/s e `w` em -0,574540–0,634551 m/s. Superfície, solo e
+umidade permanecem finitos; `smois`/`sh2o` ficam entre 0,02 e 1.
+
+| Campo | Média t=0 | Média t=1h | Valores alterados | Máx. diferença absoluta |
+|---|---:|---:|---:|---:|
+| `rho` | 0,567435067 | 0,567456315 | 563.298 / 563.310 | 0,0238621 |
+| `theta` | 387,861160 | 387,842178 | 563.282 / 563.310 | 18,1399 |
+| `u` | 0,0128582 | 0,0143983 | 1.689.600 / 1.689.600 | 69,1453 |
+| `qv` | 0,00274585766 | 0,00275305967 | 563.305 / 563.310 | 0,00363855 |
+| `skintemp` | — | — | 3.295 / 10.242 | 20,2635 K |
+| `sst` | — | — | 0 / 10.242 | 0 |
+
+A umidade negativa conhecida do init não foi clamped: `qv` passou de mínimo
+`-1,05322406e-05` com seis negativos para `8,90079619e-08 kg/kg` com zero
+negativos. O diagnóstico `q2`, por outro lado, terminou com mínimo
+`-4,71175474e-04 kg/kg` e 11 pontos negativos. A fórmula da surface layer
+revisada no source 8.4.1 extrapola `q2` sem clamp; o validador registra e
+limita essa ocorrência, mas ela permanece dívida para investigação
+meteorológica. Não houve crescimento absurdo, NaN/Inf ou instabilidade.
+
 ## O que este estágio prova
 
 ```text
@@ -402,18 +542,25 @@ init_atmosphere_model 8.4.1 / 4 ranks ✅
         ↓
 x1.10242.init.nc ✅
         ↓
-atmosphere_model ⏳
+atmosphere_model 8.4.1 / 4 ranks ✅
+        ↓
+primeira hora ✅
+        ↓
+history / diagnostics ✅
+        ↓
+validação científica ampla ⏳
 ```
 
-Isto prova `ERA5 → WPS → MPAS init`, inclusive I/O PIO/PnetCDF com a partição
-real. Não prova `init.nc → atmosphere_model → forecast`, estabilidade temporal,
-conservação ou qualidade meteorológica. O atmosphere não foi executado neste
-ciclo.
+Isto prova o pipeline funcional `ERA5 → WPS → MPAS init → MPAS atmosphere`,
+inclusive I/O PIO/PnetCDF, a partição real em quatro ranks, a inicialização da
+física, o avanço temporal e a escrita dos outputs. Não prova conservação
+quantitativa, skill, equilíbrio do spin-up ou qualidade meteorológica.
 
-## Próximas decisões ainda pendentes
+## Próximos trabalhos ainda pendentes
 
-- duração, timestep e configuração de physics;
-- tratamento explícito da pequena tolerância negativa de qv antes do forecast;
-- necessidade de climatologias opcionais para a física adotada;
-- execução do `atmosphere_model` com a mesma partição de quatro ranks;
-- validação científica quantitativa da evolução.
+- investigar o `q2` diagnóstico negativo sem modificar a baseline aprovada;
+- definir métricas de conservação, equilíbrio/spin-up e qualidade
+  meteorológica;
+- avaliar surface update antes de previsões mais longas;
+- decidir duração e produtos de um experimento científico posterior;
+- manter esta hora como smoke funcional, não como validação final.

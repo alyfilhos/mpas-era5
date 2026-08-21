@@ -38,7 +38,7 @@ compilação de software científico, MPI e ferramentas utilizadas em HPC.
 - MPAS-Model 8.4.1 / `init_atmosphere_model` GNU + MPI ✅ build, smoke
   estrutural e execução funcional static e meteorológica com ERA5
 - MPAS-Model 8.4.1 / `atmosphere_model` GNU + MPI ✅ build e smoke
-  estrutural; execução funcional ⏳
+  estrutural; primeira integração funcional de 1 hora em 4 ranks ✅
 
 ### Primeiro caso
 
@@ -49,7 +49,7 @@ compilação de software científico, MPI e ferramentas utilizadas em HPC.
 - ERA5 bruto global, `Vtable.ECMWF`, `ungrib` e WPS intermediate
   combinado validados ✅
 - `x1.10242.init.nc` gerado com 4 ranks e validado estrutural e fisicamente ✅
-- execução funcional do `atmosphere_model` ⏳
+- `atmosphere_model` avançou de 00 a 01 UTC em 4 ranks e gerou history/diag ✅
 
 ## Roadmap
 
@@ -150,8 +150,26 @@ A `Vtable.ECMWF` da própria tag WPS 4.7.0 foi validada contra todos os 204
 registros GRIB reais. O `ungrib` produziu 185 slabs pressure e 19 surface; o
 arquivo combinado version 5 tem 204 slabs em grade global regular
 1440×721, 0,25°, timestamp 2014-09-10 00 UTC. Isso prova ERA5 → WPS →
-MPAS init. A previsão e a validação temporal continuam reservadas ao
-`atmosphere_model`, que não foi executado neste ciclo.
+MPAS init.
+
+A primeira integração temporal versiona configuração mínima derivada dos
+defaults 8.4.1 em
+[`cases/first-global-240km/atmosphere/`](cases/first-global-240km/atmosphere/).
+Com o init e a partição já validados:
+
+```sh
+./scripts/run/run-atmosphere.sh
+./scripts/validate/atmosphere-run.sh
+```
+
+O runner executa `mpiexec -n 4`, sem rede, com rootfs e entradas read-only,
+`config_dt=1200.0`, duração de uma hora, suite
+`mesoscale_reference` e SST fixa. A execução canônica local em
+`data/cases/first-global-240km/atmosphere/run-001/` concluiu o relógio em
+`2014-09-10_01:00:00`, com 0 erros e 0 erros críticos, e produziu history e
+diagnostics em 00 e 01 UTC. Os campos prognósticos evoluíram e todos os valores
+varridos permaneceram finitos. Isso é um PASS funcional; avaliação
+meteorológica ampla continua fora desta baseline.
 
 ## Documentação
 

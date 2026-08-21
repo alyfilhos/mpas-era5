@@ -39,7 +39,9 @@ Vtable.ECMWF + WPS 4.7.0 / ungrib ✅
                                       ▼
 PIO 2.7.0 ✅ ──→ MPAS 8.4.1
                     ├── init_atmosphere_model ✅ static e init meteorológico
-                    └── atmosphere_model ✅ estrutural; execução ⏳
+                    └── atmosphere_model ✅ 1 hora / 4 ranks
+                                      ↓
+                         history + diagnostics ✅
 
 MPAS-Atmosphere Meshes (oficial)
         ↓
@@ -64,7 +66,9 @@ data/geog/mpas-8.4.1/ ───────────────────�
                                             ↓
                               x1.10242.static.nc ✅
                                             ↓
-                               ERA5 intermediate + part.4 → init.nc ✅ / atmosphere ⏳
+                               ERA5 intermediate + part.4 → init.nc ✅
+                                            ↓
+                               atmosphere + part.4 → 1 hora ✅
 ```
 
 ## Stack científica
@@ -92,7 +96,9 @@ todas as camadas até o init foram recuperadas do cache. O core `atmosphere`
 foi acrescentado à mesma árvore `/opt/mpas-model-8.4.1`; os dois executáveis
 estão presentes. No ciclo 0009 o init executou funcionalmente a etapa static
 com a mesh real; no ciclo 0012 executou o init meteorológico com ERA5 e
-part.4. Somente o atmosphere continua pendente.
+part.4. No ciclo 0013 o atmosphere consumiu esse init/partição, avançou uma
+hora e escreveu history/diagnostics; a validação meteorológica ampla continua
+pendente.
 
 PnetCDF não depende da seta HDF5 → netCDF neste ciclo. A ordem no `Dockerfile`
 preserva a stack já construída, mas o caminho funcional novo é independente:
@@ -232,7 +238,9 @@ ERA5_SFC:2014-09-10_00
                                                           ↓
 MPAS init_atmosphere meteorológico / 4 ranks ✅ → x1.10242.init.nc ✅
        ↓
-MPAS atmosphere (build pronto; execução pendente)
+MPAS atmosphere / part.4 / 4 ranks ✅ → 00–01 UTC ✅
+       ├── history 00/01 ✅
+       └── diagnostics 00/01 ✅
 ```
 
 `scripts/validate/wps-ungrib.sh` valida a instalação sem rede;
@@ -339,7 +347,8 @@ mpas-era5/
 │       ├── 0009-generate-static-fields.md nota educacional do ciclo 0009
 │       ├── 0010-add-era5-acquisition.md   nota educacional do ciclo 0010
 │       ├── 0011-ungrib-era5.md           nota educacional do ciclo 0011
-│       └── 0012-generate-initial-conditions.md nota educacional do ciclo 0012
+│       ├── 0012-generate-initial-conditions.md nota educacional do ciclo 0012
+│       └── 0013-first-atmosphere-run.md nota educacional do ciclo 0013
 ├── scripts/
 │   ├── data/
 │   │   ├── fetch-mesh.sh             aquisição first-party e integridade
@@ -349,7 +358,8 @@ mpas-era5/
 │   ├── run/
 │   │   ├── generate-static.sh        init case 7, MPI 1, execução isolada
 │   │   ├── ungrib-era5.sh            dois ungribs isolados + combined atômico
-│   │   └── generate-init.sh           init case 7, MPI 4 e manifesto
+│   │   ├── generate-init.sh           init case 7, MPI 4 e manifesto
+│   │   └── run-atmosphere.sh          primeira hora, MPI 4 e manifesto
 │   ├── prepare/
 │   │   └── partition-mesh.sh         graph.info + N → part.N com METIS
 │   ├── validate/
@@ -365,7 +375,8 @@ mpas-era5/
 │   │   ├── mesh.sh                   validação da mesh real e partição
 │   │   ├── static.sh                 estrutura, campos, ranges e log MPAS
 │   │   ├── era5.sh                   transporte GRIB, manifesto e Git hygiene
-│   │   └── init.sh                    estrutura, física, log e manifesto do init
+│   │   ├── init.sh                    estrutura, física, log e manifesto do init
+│   │   └── atmosphere-run.sh          log, manifesto, NetCDF e evolução temporal
 │   └── codex/                        automações de suporte a ciclos futuros
 ├── tests/
 │   ├── fixtures/
@@ -375,20 +386,23 @@ mpas-era5/
 │       ├── pnetcdf_mpi.f90           I/O coletivo CDF-5 em 4 ranks
 │       ├── pio_pnetcdf.c             PIO explícito sobre PnetCDF em 4 ranks
 │       ├── static_netcdf.c           validador independente do static
-│       └── init_netcdf.c             validador independente do init
+│       ├── init_netcdf.c             validador independente do init
+│       └── atmosphere_netcdf.c       sanidade e comparação t0/t1
 ├── data/                              entradas/saídas científicas fora do Git
 │   ├── meshes/x1.10242/              grid, graph.info e part.4 ignorados
 │   ├── geog/mpas-8.4.1/              oito datasets WPS ignorados
 │   ├── era5/2014-09-10_00/           GRIBs/manifesto locais validados
 │   ├── cases/.../static/             NetCDF e logs ignorados
 │   ├── cases/.../wps/                intermediates/logs/manifesto ignorados
-│   └── cases/.../init/               init.nc/log/manifesto ignorados
+│   ├── cases/.../init/               init.nc/log/manifesto ignorados
+│   └── cases/.../atmosphere/         history/diag/log/manifesto ignorados
 ├── cases/
 │   └── first-global-240km/
 │       ├── static/                    namelist e streams versionados
 │       ├── era5/                      requests globais versionadas
 │       ├── wps/                       namelists ungrib pressure/single
-│       └── init/                      namelist/streams meteorológicos
+│       ├── init/                      namelist/streams meteorológicos
+│       └── atmosphere/                namelist, streams e stream lists
 └── docker/
     └── cds/                           cliente de aquisição; fora da stack MPAS
 ```
@@ -409,7 +423,7 @@ PIO, METIS, WPS/ungrib/ERA5 intermediate, os dois cores MPAS e a mesh x1.10242.
 | `docs/testing/` | distinguir teste planejado, executado e comprovado | atualizada após cada validação técnica |
 | `learning/` | explicar conceitos e raciocínio por baseline/commit | referencia estado, fontes, ADRs e testes sem substituí-los |
 | `scripts/validate/` | hospedar validações repetíveis, incluindo parser WPS streaming | resultados resumidos alimentam `docs/testing/` |
-| `scripts/run/` | executar transformações científicas isoladas | gera static, WPS intermediate ou init somente sob `data/` |
+| `scripts/run/` | executar transformações científicas isoladas | gera static, WPS intermediate, init ou integração atmosphere somente sob `data/` |
 | `scripts/data/` | adquirir dados externos reproduzivelmente | usa somente fontes e hashes registrados; instala sob `data/` |
 | `scripts/prepare/` | transformar entradas sem incorporá-las à imagem | gera `graph.info.part.N` com UID/GID do usuário |
 | `tests/smoke/` | hospedar fontes mínimas independentes do build upstream | compiladas pelos scripts contra a instalação final |

@@ -28,6 +28,7 @@ data/**/*.sha256
 data/**/*manifest*
 data/**/*provenance*
 data/**/*.log
+data/cases/**/atmosphere/
 !data/**/*.md
 
 # Local MPAS case inputs, outputs, and runtime logs

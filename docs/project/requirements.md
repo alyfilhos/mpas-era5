@@ -84,11 +84,12 @@ Estas escolhas são implementações atuais, não requisitos originais imutávei
 | Arquitetura de I/O inicial | HDF5/netCDF serial preservado; PIO usa PnetCDF/MPI-IO para o I/O paralelo padrão do MPAS | [[../decisions/0002-pio2-pnetcdf-with-serial-netcdf|ADR 0002]] |
 | Particionamento inicial | METIS 5.1.0 serial e externo; `gpmetis` pré-computa `graph.info.part.N` | [[../decisions/0003-metis-5.1.0-partitioning-baseline|ADR 0003]] |
 | Pré-processamento GRIB inicial | WPS 4.7.0 separado em `/opt/wps-*`; `ungrib.exe` e `g1print.exe`, GNU serial, `--nowrf`, bibliotecas GRIB2 internas e `Vtable.ECMWF` upstream validada para a baseline ERA5 | [[../decisions/0004-wps-mpas-version-and-layout|ADR 0004]] e [[../testing/validation-matrix|matriz]] |
-| Versão MPAS | MPAS-Model 8.4.1; `init_atmosphere_model` e `atmosphere_model` compilados e validados estruturalmente | [[../decisions/0004-wps-mpas-version-and-layout|ADR 0004]] |
+| Versão MPAS | MPAS-Model 8.4.1; `init_atmosphere_model` validado funcionalmente para static/init e `atmosphere_model` para a primeira hora | [[../decisions/0004-wps-mpas-version-and-layout|ADR 0004]] e [[../testing/validation-matrix|matriz]] |
 | Layout de instalação | `/opt/mpas` para bibliotecas, `/opt/wps-*` para WPS e `/opt/mpas-model-*` para o modelo | [[../decisions/0004-wps-mpas-version-and-layout|ADR 0004]] |
 | Primeira mesh | x1.10242 oficial, global quasi-uniforme, ~240 km e 10.242 células | [[../decisions/0005-first-mesh-baseline|ADR 0005]] |
-| Primeiro particionamento | `part.4` gerado localmente com METIS 5.1.0; quatro partições corresponderam aos quatro ranks do init real e serão reutilizadas pela primeira previsão | [[../decisions/0005-first-mesh-baseline|ADR 0005]] |
-| Primeiro caso descrito publicamente | global e de baixa resolução; mesh, geografia, static, ERA5 bruto, WPS intermediate e `init.nc` preparados; previsão pendente | [[../cases/first-global-240km|Primeiro caso]] |
+| Primeiro particionamento | `part.4` gerado localmente com METIS 5.1.0; quatro partições corresponderam aos quatro ranks do init e da primeira integração reais | [[../decisions/0005-first-mesh-baseline|ADR 0005]] |
+| Primeiro caso descrito publicamente | global e de baixa resolução; pipeline até `init.nc` e primeira integração de 1 hora com history/diagnostics validados | [[../cases/first-global-240km|Primeiro caso]] |
+| Primeira previsão funcional | cold start em 2014-09-10 00 UTC; 1 hora; `dt=1200 s`; 4 ranks/`part.4`; `mesoscale_reference`; Noah; LBC/restart/SST update desligados; radiação a cada hora | [[../cases/first-global-240km|Primeiro caso]] e [[../testing/validation-matrix|matriz]] |
 | Política da mesh | entrada científica reproduzivelmente adquirida em `data/`, fora da imagem e do Git | [`.gitignore`](../../.gitignore) e [`fetch-mesh.sh`](../../scripts/data/fetch-mesh.sh) |
 | Baseline ERA5 | 2014-09-10 00 UTC, global, 5 variáveis em 37 níveis e 19 single-level, GRIB1 real | [[../decisions/0007-first-era5-baseline|ADR 0007]] |
 | Conversão ERA5 | `Vtable.ECMWF` upstream WPS 4.7.0, pressure/single separados e WPS intermediate combinado version 5 | [[../testing/validation-matrix|matriz de validação]] |
@@ -100,12 +101,12 @@ global aprovado continuam sujeitos aos gates do [`AGENTS.md`](../../AGENTS.md).
 
 ## Itens deliberadamente ainda não decididos
 
-- duração, timestep, física e demais parâmetros ainda não fixados da primeira previsão;
 - eventual experimento com METIS 5.2.1 + GKlib fixada ou PT-Scotch,
   conforme [[future-experiments|future-experiments.md]];
 - eventual necessidade futura de HDF5/netCDF paralelo e
   `PIO_IOTYPE_NETCDF4P`, fora do primeiro caso;
-- critérios quantitativos finais de validação física.
+- critérios quantitativos finais de validação meteorológica além do smoke de
+  estabilidade e evolução temporal do ciclo 0013.
 
 Esses itens devem permanecer como **a decidir** até que pesquisa oficial,
 proposta e decisão do usuário sejam registradas.

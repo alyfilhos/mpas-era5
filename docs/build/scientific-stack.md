@@ -756,10 +756,29 @@ A classificação permanece:
 
 - BUILD atmosphere: PASS;
 - STRUCTURAL/INSTALL SMOKE atmosphere: PASS;
-- FUNCTIONAL, `init.nc` + mesh + partição → `atmosphere_model`: PENDENTE;
-- SCIENTIFIC, primeira simulação e avaliação dos campos: PENDENTE.
+- FUNCTIONAL, `init.nc` + mesh + partição → `atmosphere_model`: PASS no
+  ciclo 0013, 1 hora em 4 ranks;
+- SCIENTIFIC, avaliação meteorológica ampla dos campos: PENDENTE.
 
-Nenhuma previsão foi executada, e nenhuma mesh, ERA5, GRIB, `static.nc`,
-`init.nc`, LBC ou saída científica foi criada. WPS e METIS não foram
-reexecutados porque suas camadas ficaram em cache e nenhum arquivo ou contrato
-desses componentes foi alterado.
+O ciclo de build 0007 não executou previsão. Essa lacuna foi fechada sem
+rebuild no ciclo 0013: o executável consumiu o `init.nc` real e a
+`part.4`, avançou uma hora e escreveu history/diagnostics. WPS e METIS não
+foram reconstruídos; suas entradas validadas foram somente consumidas.
+
+### Execução funcional no ciclo 0013
+
+O caso usa `dt=1200 s`, duração `01:00:00`, quatro ranks, domínio global,
+sem LBC/restart/surface update e com
+`config_physics_suite='mesoscale_reference'`. No source exato 8.4.1, a
+suite seleciona WSM6, New Tiedtke, YSU, YSU-GWDO, cloud fraction, RRTMG
+LW/SW, Monin–Obukhov revisado e `sf_noah`; `sf_noahmp` não é ativado.
+As lookup tables permanecem read-only na imagem e são ligadas ao workdir pelo
+runner, sem download ou cópia para o Git.
+
+O log canônico registrou três timesteps, conclusão normal, 634 mensagens de
+output, três warnings de hidrometeoros ausentes no cold start, zero errors e
+zero critical. History e diagnostics em 00/01 UTC são CDF-2 legíveis; não há
+NaN/Inf nos 47.603.258 valores varridos, `rho`/pressão são positivas e
+`rho`, `theta`, `u` e `qv` evoluem. A SST permaneceu byte a byte
+inalterada, como exige `config_sst_update=false`. A classificação é
+funcional, não uma conclusão sobre qualidade da previsão.

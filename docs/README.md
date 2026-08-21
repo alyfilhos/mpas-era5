@@ -46,6 +46,7 @@ Este diretório centraliza a documentação técnica e científica do projeto.
 - [[../learning/commits/0010-add-era5-acquisition|Ciclo 0010 — adquirir ERA5 reproduzivelmente]]
 - [[../learning/commits/0011-ungrib-era5|Ciclo 0011 — converter ERA5 para WPS intermediate]]
 - [[../learning/commits/0012-generate-initial-conditions|Ciclo 0012 — gerar condições iniciais MPAS]]
+- [[../learning/commits/0013-first-atmosphere-run|Ciclo 0013 — primeira integração MPAS atmosphere]]
 
 ## Blocos do projeto
 

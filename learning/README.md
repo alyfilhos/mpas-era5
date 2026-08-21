@@ -44,6 +44,9 @@ apontar para ele.
   educacional sobre inventário GRIB1, Vtable, ungrib e o formato WPS
   intermediate;
 - [`commits/0012-generate-initial-conditions.md`](commits/0012-generate-initial-conditions.md): nota educacional sobre grade vertical, interpolação, MPI, PIO, estado inicial e validação física;
+- [`commits/0013-first-atmosphere-run.md`](commits/0013-first-atmosphere-run.md):
+  nota educacional sobre integração temporal, timestep, física, MPI, streams,
+  lookup tables e a diferença entre PASS funcional e validação científica;
 - `commits/NNNN-<descricao>.md`: uma nota por commit posterior ao bootstrap.
 
 ## O que cada nota por commit deve ensinar

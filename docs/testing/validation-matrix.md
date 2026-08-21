@@ -15,7 +15,7 @@ não prova que a execução ocorreu nesta máquina nem preserva o resultado. Um
 componente só poderá receber status validado quando comando, resultado e
 evidência estiverem registrados.
 
-Última revisão: **2026-08-16**.
+Última revisão: **2026-08-21**.
 
 ## Ambiente e stack existente
 
@@ -32,7 +32,7 @@ evidência estiverem registrados.
 | METIS 5.1.0 | não há `make check`/CTest formal; `graphchk` e `gpmetis` passaram no `4elt.graph` fornecido upstream | versão por macros, ferramentas, biblioteca, help e opções conferidos | fixture → `gpmetis` → `graph.info.part.4`; estrutura, IDs, quatro partições, edge cut e conectividade validados | Implementado e validado no ciclo 0004 | [`Dockerfile`](../../Dockerfile), [`metis.sh`](../../scripts/validate/metis.sh), [`graph.info`](../../tests/fixtures/metis/graph.info) e evidência abaixo |
 | WPS 4.7.0 / ungrib | não foi identificada suíte formal para este recorte; `configure`, `compile ungrib` e alvo incremental `compile g1print` passaram | executáveis, links, `file`, `ldd`, configuração, proveniência, GRIB2 privado e Vtable upstream conferidos offline | 204 mensagens ERA5 GRIB1 → `Vtable.ECMWF` → dois ungribs → WPS intermediate: PASS | Build/smoke no ciclo 0005; inventário e integração funcional no ciclo 0011 | [`Dockerfile`](../../Dockerfile), [`wps-ungrib.sh`](../../scripts/validate/wps-ungrib.sh), [`ungrib-era5.sh`](../../scripts/run/ungrib-era5.sh) e [`wps-era5.sh`](../../scripts/validate/wps-era5.sh) |
 | MPAS 8.4.1 `init_atmosphere` | a tag não contém suíte autocontida; build real passou | executável/defaults/source conferidos; static e init validados independentemente | mesh + WPS_GEOG → static: PASS; static + WPS/ERA5 + part.4 → `init.nc`: PASS | Build nos ciclos 0006/0007; static no 0009; init meteorológico no 0012 | [`generate-init.sh`](../../scripts/run/generate-init.sh), [`init.sh`](../../scripts/validate/init.sh) e [`init_netcdf.c`](../../tests/smoke/init_netcdf.c) |
-| MPAS 8.4.1 `atmosphere` | a tag não contém suíte autocontida aplicável sem mesh, `init.nc` e configuração; o build real do core passou | executável, defaults, configuração, pins, lookup tables, `file`, `ldd` e símbolos conferidos offline | `init.nc` + mesh + partição → `atmosphere_model` pendente | Build e smoke estrutural validados no ciclo 0007; funcional/científico pendentes | [`Dockerfile`](../../Dockerfile), [`mpas-atmosphere.sh`](../../scripts/validate/mpas-atmosphere.sh) e evidência abaixo |
+| MPAS 8.4.1 `atmosphere` | a tag não contém suíte autocontida aplicável sem mesh, `init.nc` e configuração; o build real do core passou | executável/defaults/tabelas conferidos; log, manifesto e quatro NetCDFs validados | `init.nc` + mesh + part.4 → 1 hora em 4 ranks → history/diag: PASS | Build/smoke no 0007; primeira integração funcional no 0013; ciência ampla pendente | [`run-atmosphere.sh`](../../scripts/run/run-atmosphere.sh), [`atmosphere-run.sh`](../../scripts/validate/atmosphere-run.sh) e [`atmosphere_netcdf.c`](../../tests/smoke/atmosphere_netcdf.c) |
 
 ## Dados adquiridos e componentes futuros
 
@@ -44,8 +44,8 @@ evidência estiverem registrados.
 | WPS intermediate ERA5 | Não se aplica | parser streaming valida records Fortran big-endian, version 5, headers, projeção, slabs e EOF | GRIB/g1print → Vtable → logs → pressure/single/combined: PASS; campos funcionais e 37 níveis confirmados | Gerado e validado no ciclo 0011; três arquivos/logs/manifesto locais e ignorados | [`wps-intermediate.py`](../../scripts/validate/wps-intermediate.py), [`wps-era5.py`](../../scripts/validate/wps-era5.py) e evidência do ciclo 0011 |
 | `x1.10242.init.nc` | Não se aplica | CDF-2, dimensões, timestamp, zgrid, campos Registry, missing/NaN/Inf, ranges, EOS, solo e manifesto | static + ERA5 intermediate + part.4 → init case 7 em 4 ranks: PASS | Gerado e validado no ciclo 0012; local e ignorado | [`generate-init.sh`](../../scripts/run/generate-init.sh), [`init.sh`](../../scripts/validate/init.sh), [`init_netcdf.c`](../../tests/smoke/init_netcdf.c) |
 | LBC | Não se aplica | Planejado somente para área limitada: verificar sequência temporal, cobertura e continuidade | Planejado somente quando aplicável: execução curta consome todos os contornos | Não se aplica ao primeiro caso global; condicional para casos futuros | [[../project/requirements|REQ-CASE-003]] |
-| Primeira previsão | Não se aplica | Planejado: atmosphere termina sem erro e produz logs/saídas | Planejado: pipeline completo reproduz a evolução a partir do init validado | Não executada; ciclo 0013 | [[../project/requirements|REQ-RUN-001]] |
-| Validação física | Não se aplica | init: sanidade, extremos amplos, NaN/Inf/missing, vertical e EOS aprovados | previsão: comparar estado inicial e evolução; ainda pendente | Init validado no ciclo 0012; critérios temporais a decidir | [[../project/requirements|REQ-VAL-001]] |
+| Primeira previsão | Não se aplica | término normal, 0 errors/critical, timestamps, dimensões, ranges e outputs: PASS | pipeline completo reproduziu evolução de 00 a 01 UTC em 4 ranks | Primeira hora funcional aprovada no ciclo 0013 | [[../project/requirements|REQ-RUN-001]] e evidência abaixo |
+| Validação física | Não se aplica | init e primeira hora sem NaN/Inf; pressão/densidade positivas; campos plausíveis | estado inicial/final comparados; `rho/theta/u/qv` evoluíram; SST ficou fixa | Sanidade/evolução funcional PASS; qualidade meteorológica ampla pendente | [[../project/requirements|REQ-VAL-001]] e evidência abaixo |
 
 ## Evidência do ciclo 0002 — PnetCDF 1.15.0
 
@@ -588,5 +588,56 @@ pequenos `Bad sm_fg`; `SEAICE_FRACTIONAL`, OMLD e climatologia QNWFA/QNIFA
 opcionais ausentes; quatro notas de underflow/denormal no launcher, sem
 NaN/Inf ou erro de log. Nenhum workaround ROMIO foi usado.
 
-Limite: prova ERA5 → WPS → MPAS init. O `atmosphere_model` não foi executado e
-a previsão continua não validada.
+Limite daquele ciclo: prova ERA5 → WPS → MPAS init. O `atmosphere_model`
+não foi executado no ciclo 0012; essa lacuna foi fechada pelo ciclo 0013
+abaixo.
+
+## Evidência do ciclo 0013 — primeira integração MPAS Atmosphere
+
+| Item | Evidência observada |
+|---|---|
+| Base Git | `0d499294e94661444243f9dbdadae0c776fa5c23` (`data: generate MPAS initial conditions`); worktree inicial já continha arquivos do ciclo |
+| Regressões | `init.sh`, `mpas-atmosphere.sh`, `mesh.sh`: PASS |
+| Source/imagem | MPAS v8.4.1, commit `91c5eac175eebeaf4206bacd5cb50c39dff3c152`; imagem ID `sha256:9c9479db0bae4db1e8d827bf522caab312ad097217aba962cb399f18b74e93a8` |
+| Entradas | init SHA-256 `9f2625d9f93ec873a8c1f3abef24083d1b03b910a77efea2f6dbfd2e13c36c7d`; part.4 SHA-256 `23a8807ecd4f6f06082e681cb7561b9a6d287eb6719182733dfeaeea3e34f558` |
+| Configuração | 2014-09-10 00 UTC; `01:00:00`; `dt=1200.0 s`; global; LBC/restart/SST update false; radiação LW/SW 1 h |
+| Física | `mesoscale_reference` → WSM6, New Tiedtke, YSU, YSU-GWDO, cloud fraction, RRTMG, Monin–Obukhov revisado e Noah; Noah-MP ausente |
+| MPI | `mpiexec -n 4 /opt/mpas-model-8.4.1/atmosphere_model`; `x1.10242.graph.info.part.4` |
+| Isolamento | sem rede; rootfs/inputs read-only; UID/GID host; `cap-drop ALL`; `no-new-privileges`; lookup links read-only |
+| Tempo | 2026-08-21T15:43:28Z–15:43:36Z; 8 s no manifesto |
+| Relógio | 3 timesteps iniciados em 00:00, 00:20 e 00:40; estado final 01:00 |
+| Log | 634 outputs; 3 warnings esperados `qi/qs/qg`; 0 errors; 0 critical; completion markers presentes |
+| Velocidade global | `w`: -0,813270/0,455260 → -0,574540/0,634551; `u`: -113,981/114,371 → -113,970/114,307 |
+| Outputs | history/diag CDF-2 em 00 e 01 UTC; history 89.983.848 bytes cada; diag 5.268.556 bytes cada |
+| Dimensões | history: 10.242 cells, 30.720 edges, 20.480 vertices, 55/56 níveis, 4 soil; diag: 10.242 cells |
+| Integridade | 47.603.258 valores numéricos varridos; 0 NaN/Inf; nenhum arquivo vazio/truncado |
+| Estado final | rho 0,0110500613–1,50687706; pressão 674,071289–103.879,531 Pa; temperatura 182,177307–313,264 K |
+| Ventos finais | `u` -113,969978–114,306702 m/s; `w` -0,5745399–0,634550571 m/s |
+| Umidade final | `qv` 8,90079619e-08–0,0248826761; qc/qr/qi/qs/qg finitos, não negativos |
+| Superfície final | PSFC 53.028,6211–104.170,297 Pa; skin 202,633011–327,545685 K; SST 207,650192–318,184326 K; solo finito |
+| Evolução prognóstica | rho 563.298/563.310; theta 563.282/563.310; u 1.689.600/1.689.600; qv 563.305/563.310 valores alterados |
+| SST | 0/10.242 alterados; checksum/estatísticas idênticos conforme update false |
+| `qv` conhecido | init: mínimo -1,05322406e-05, 6 negativos; 1 h: mínimo +8,90079619e-08, 0 negativos |
+| `q2` diagnóstico | mínimo final -4,71175474e-04, 11 negativos; finito, limitado e registrado como dívida |
+| Resultado | `atmosphere_run_validation=PASS`; segunda chamada do runner: `atmosphere_run=unchanged` |
+
+Inventário canônico:
+
+| Arquivo | Bytes | SHA-256 |
+|---|---:|---|
+| `diag.2014-09-10_00.00.00.nc` | 5.268.556 | `be0f450bcccb763be327e3df69f784c2aca7337edc97642cf4fda579f7df1ff2` |
+| `diag.2014-09-10_01.00.00.nc` | 5.268.556 | `e3cc0f3374a596c04fa8638a75b1448add06401a09c92643d2f65958acddc3de` |
+| `history.2014-09-10_00.00.00.nc` | 89.983.848 | `07f93a016ca9c06cb4da8fa5c23426fe30d36f6e8c78ee0a410a2183b6ed029b` |
+| `history.2014-09-10_01.00.00.nc` | 89.983.848 | `0369fe24eefd2e88de2016c15070abb2797128d987a5ab025de73e111e39c93b` |
+| `log.atmosphere.0000.out` | 36.238 | `2e9628802bb75c94bbd43e6e9f6a3bd9eae32713a366b17a09fee6ea66367828` |
+
+Warnings separados: os três avisos do log são a ausência de `qi`, `qs` e
+`qg` no cold start; WSM6 os inicializa e os outputs finais são finitos e
+não negativos. Quatro notas do launcher apontam underflow/denormal após a
+conclusão, sem NaN/Inf ou erro/critical. O `q2` negativo decorre da
+extrapolação sem clamp na surface layer revisada do source 8.4.1; não houve
+pós-processamento do init ou dos outputs.
+
+Limite: o ciclo prova leitura do init, partição, inicialização física, avanço
+temporal e I/O. Não avalia conservação, spin-up, skill ou qualidade
+meteorológica e não autoriza automaticamente previsões longas com SST fixa.

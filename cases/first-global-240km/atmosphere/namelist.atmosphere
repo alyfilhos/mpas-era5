@@ -1,0 +1,24 @@
+&nhyd_model
+    config_dt = 1200.0
+    config_start_time = '2014-09-10_00:00:00'
+    config_run_duration = '01:00:00'
+/
+&limited_area
+    config_apply_lbcs = false
+/
+&decomposition
+    config_block_decomp_file_prefix = 'x1.10242.graph.info.part.'
+/
+&restart
+    config_do_restart = false
+/
+&printout
+    config_print_global_minmax_vel = true
+    config_print_detailed_minmax_vel = false
+/
+&physics
+    config_sst_update = false
+    config_radtlw_interval = '01:00:00'
+    config_radtsw_interval = '01:00:00'
+    config_physics_suite = 'mesoscale_reference'
+/

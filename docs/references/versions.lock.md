@@ -28,7 +28,7 @@ pacotes do sistema ou testes de compatibilidade.
 | PIO | 2.7.0 (`pio2_7_0`) | adotada e validada | release oficial atual; SHA-256 local verificado; CMake; C/Fortran; timing desabilitado; PnetCDF habilitado; [[../decisions/0002-pio2-pnetcdf-with-serial-netcdf|ADR 0002]] |
 | METIS | 5.1.0 | adotada e validada | tarball first-party histórico; SHA-256 local confirmado em dois downloads; static; `IDXTYPEWIDTH=32`; `REALTYPEWIDTH=32`; GKlib incluída; `gpmetis` offline; [[../decisions/0003-metis-5.1.0-partitioning-baseline|ADR 0003]] |
 | WPS | 4.7.0 (`v4.7.0`) | adotada; `ungrib` e `g1print` validados | commit `5feccecd63384381b6942371c7a837f66e4ccb84`; GNU serial; `--nowrf`; `--build-grib2-libs`; `./compile ungrib` e alvo incremental `./compile g1print`; SHA-256 local confirmado em dois downloads; [[../decisions/0004-wps-mpas-version-and-layout|ADR 0004]] |
-| MPAS-Model | 8.4.1 (`v8.4.1`) | adotada; `init_atmosphere` executado para static e condição inicial meteorológica; `atmosphere` validado estruturalmente | tag/commit `91c5eac175eebeaf4206bacd5cb50c39dff3c152`; GNU/MPI; single precision; PIO2; ESMF embedded; static case 7 PASS; [[../decisions/0004-wps-mpas-version-and-layout|ADR 0004]] |
+| MPAS-Model | 8.4.1 (`v8.4.1`) | adotada; `init_atmosphere` executado para static/init e `atmosphere` executado por 1 hora em 4 ranks | tag/commit `91c5eac175eebeaf4206bacd5cb50c39dff3c152`; GNU/MPI; single precision; PIO2; ESMF embedded; first forecast functional PASS; [[../decisions/0004-wps-mpas-version-and-layout|ADR 0004]] |
 | MMM-physics | `20250616-MPASv8.3` | external atmosphere adotado pelo source MPAS | commit `a4baf7f3243d1db0dbc5f63473f895bdbdc05c30`; checkout detached e limpo |
 | UGWP | `MPAS_20241223` | external atmosphere adotado pelo source MPAS | commit `c1c893edcf171af5639af60e3a3a528816f6cc2b`; checkout detached e limpo |
 | MPAS-Data | `v8.2` | lookup tables adotadas pelo script MPAS 8.4.1 | commit `c57dbc7be629802c6e848770a9e44b9bc602be41`; `COMPATIBILITY` 8.2; 16 arquivos com manifesto SHA-256 |
@@ -39,6 +39,7 @@ pacotes do sistema ou testes de compatibilidade.
 | Vtable ERA5 | `Vtable.ECMWF` upstream WPS 4.7.0 | adotada diretamente para esta baseline real | todas as 204 mensagens casam uma única entrada por parameter/level type/levels; SHA-256 local `989bf7227ae5c822bfdd8467267dacc41396e08f2270735eac08c56a0096b335`; nenhuma cópia no repositório |
 | WPS intermediate ERA5 | format version 5, 1440×721, `iproj=0`, 0,25° | gerado e validado localmente; não versionado | pressure 185 slabs, single 19, combined 204; combinado SHA-256 `2d7a3ac93d1c904e45b3a19a9f524e6367f7fe72abab41a5263888f1a72b50f0` |
 | Init x1.10242 | CDF-2; 55 níveis; topo 30 km; 4 soil; Time 1 | gerado e validado localmente; não versionado | 92.641.692 bytes; SHA-256 `9f2625d9f93ec873a8c1f3abef24083d1b03b910a77efea2f6dbfd2e13c36c7d`; 4 ranks/part.4; [[../decisions/0008-first-initial-condition-baseline|ADR 0008]] |
+| Primeira integração x1.10242 | 1 hora; `dt=1200 s`; 4 ranks; `mesoscale_reference` | executada e validada localmente; outputs não versionados | 00→01 UTC; history/diag CDF-2; 0 errors/critical; SST fixa; validação meteorológica ampla permanece pendente |
 | CMake_Fortran_utils | commit `05ff8d8e4c88786e94a02c853d3ff921113d785c` | auxiliar de build PIO fixado | checkout detached antes da configuração; evita clone sem pin executado internamente pelo PIO |
 | genf90 | commit `4816965ba946731352bad195b7d946a5fe682ff5` | auxiliar de build PIO fixado | checkout detached passado por `GENF90_PATH`; evita resolução mutável durante o build |
 
@@ -125,7 +126,8 @@ e rejeitado por ausência dos datasets requeridos, não por escolha de versão.
 - eventual experimento com METIS 5.2.1 + GKlib fixada ou PT-Scotch online;
   essas alternativas não são versões adotadas e estão somente em
   [[../project/future-experiments|future-experiments.md]];
-- execução funcional e validação científica do `atmosphere` com o `init.nc` já produzido e a partição representativa;
+- validação meteorológica quantitativa ampla do `atmosphere`, para além do
+  PASS funcional de uma hora já concluído;
 
 Essas lacunas não devem ser preenchidas por suposição. Qualquer fixação ou
 mudança deve atualizar o registro de fontes, este arquivo, a matriz de
