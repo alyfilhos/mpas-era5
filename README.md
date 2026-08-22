@@ -1,220 +1,198 @@
 # MPAS-ERA5
 
-Ambiente reproduzível para compilação, configuração e execução do
-MPAS-Atmosphere utilizando dados ERA5.
+Pipeline reproduzível, auditável e didático para transformar dados ERA5 em
+uma simulação global do MPAS-Atmosphere. O projeto cobre a stack científica,
+aquisição e pré-processamento dos dados, condições iniciais, execução MPI,
+validação em camadas e visualização — sem versionar os gigabytes de dados
+científicos.
 
-O projeto também funciona como material de estudo sobre Linux, Docker,
-compilação de software científico, MPI e ferramentas utilizadas em HPC.
+> `PROJECT_BASE_STATUS = COMPLETE`
+>
+> O escopo técnico original foi concluído. Isso não significa que o modelo
+> seja meteorologicamente perfeito: `forecast_skill=NOT_EVALUATED` e
+> `spinup=INSUFFICIENT_TEMPORAL_WINDOW`.
 
-## Objetivos
+## Resultado
 
-- Construir uma stack científica reproduzível em Docker.
-- Compilar e executar o MPAS-Atmosphere.
-- Preparar dados ERA5 para inicialização do modelo.
-- Executar um primeiro caso global de baixa resolução.
-- Documentar todas as etapas, decisões e problemas encontrados.
+A baseline reproduzida usa MPAS-Model 8.4.1 na mesh global x1.10242
+(10.242 células, ~240 km), inicializada pelo ERA5 de
+2014-09-10 00 UTC. O `atmosphere_model` avançou uma hora com `dt=1200 s`
+em quatro ranks MPI e produziu history/diagnostics em 00 e 01 UTC.
 
-## Estado atual
+| Resultado | Estado |
+|---|---|
+| Pipeline ERA5 → WPS → MPAS init → atmosphere | PASS |
+| Execução de 1 h / 4 ranks / 0 errors / 0 critical | PASS |
+| Integridade e estabilidade numérica | PASS |
+| Sanity científico da primeira hora | PASS |
+| Skill contra análise/observação futura | NOT_EVALUATED |
+| Spin-up | INSUFFICIENT_TEMPORAL_WINDOW |
 
-### Ambiente
+O relatório técnico completo está em
+[`docs/project/completion-report.md`](docs/project/completion-report.md).
 
-- Ubuntu 24.04
-- GCC / GFortran
-- OpenMPI
+## Resultados visuais
 
-### Stack científica
+| Temperatura a 2 m em 01 UTC | Variação de T2m em 1 h |
+|---|---|
+| ![Temperatura a 2 m em 01 UTC](docs/assets/validation/0014/t2m-t1.png) | ![Variação de temperatura a 2 m](docs/assets/validation/0014/delta-t2m.png) |
+| x1.10242 (~240 km), 2014-09-10 01 UTC, após 1 h | x1.10242 (~240 km), 00→01 UTC |
 
-- zlib 1.3.2 ✅
-- HDF5 1.14.6 ✅
-- netCDF-C 4.10.1 ✅
-- netCDF-Fortran 4.6.3 ✅
-- PnetCDF 1.15.0 ✅
-- PIO2 2.7.0 ✅
-- METIS 5.1.0 ✅
+![Precipitação acumulada em uma hora](docs/assets/validation/0014/precipitation-1h.png)
 
-### Pré-processamento e modelo
+*Precipitação acumulada entre 00 e 01 UTC na mesh x1.10242 (~240 km). As
+figuras demonstram o pipeline e o sanity do output; não demonstram forecast
+skill.*
 
-- WPS 4.7.0 / `ungrib.exe` GNU serial ✅
-- MPAS-Model 8.4.1 / `init_atmosphere_model` GNU + MPI ✅ build, smoke
-  estrutural e execução funcional static e meteorológica com ERA5
-- MPAS-Model 8.4.1 / `atmosphere_model` GNU + MPI ✅ build e smoke
-  estrutural; primeira integração funcional de 1 hora em 4 ranks ✅
+## Arquitetura
 
-### Primeiro caso
-
-- mesh oficial x1.10242, global quasi-uniforme, ~240 km e 10.242 células ✅
-- `x1.10242.graph.info.part.4` gerado localmente com METIS 5.1.0 e validado ✅
-- dados geográficos oficiais WPS, selecionados e validados para MPAS 8.4.1 ✅
-- `x1.10242.static.nc` gerado localmente e validado ✅
-- ERA5 bruto global, `Vtable.ECMWF`, `ungrib` e WPS intermediate
-  combinado validados ✅
-- `x1.10242.init.nc` gerado com 4 ranks e validado estrutural e fisicamente ✅
-- `atmosphere_model` avançou de 00 a 01 UTC em 4 ranks e gerou history/diag ✅
-
-## Roadmap
-
-Stack científica:
-
-`zlib → HDF5 → netCDF-C → netCDF-Fortran → PnetCDF → PIO2 → METIS`
-
-O prefixo `/opt/mpas` permanece reservado às bibliotecas científicas. WPS e
-MPAS-Model usam árvores separadas: `/opt/wps-4.7.0` com `/opt/wps`, e
-`/opt/mpas-model-8.4.1` com `/opt/mpas-model`. `ungrib.exe`,
-`init_atmosphere_model` e `atmosphere_model` foram construídos; WRF,
-`geogrid` e `metgrid` continuam fora da imagem.
-
-O METIS é usado offline: `gpmetis` transforma `graph.info` em
-`graph.info.part.N`, e `N` deve corresponder ao número de tasks MPI da
-execução MPAS que consome a partição. O backlog de alternativas está em
-[`docs/project/future-experiments.md`](docs/project/future-experiments.md).
-
-A primeira mesh real é adquirida reproduzivelmente por
-[`scripts/data/fetch-mesh.sh`](scripts/data/fetch-mesh.sh), fica somente em
-`data/meshes/x1.10242/` e não é incorporada à imagem nem ao Git. A partição
-baseline em quatro partes é preparada por
-[`scripts/prepare/partition-mesh.sh`](scripts/prepare/partition-mesh.sh) e
-validada offline por [`scripts/validate/mesh.sh`](scripts/validate/mesh.sh).
-
-Os campos geográficos são adquiridos de fontes oficiais WPS por
-[`scripts/data/fetch-geog.sh`](scripts/data/fetch-geog.sh) e permanecem em
-`data/geog/mpas-8.4.1/`. A configuração versionada do primeiro static fica em
-[`cases/first-global-240km/static/`](cases/first-global-240km/static/). Para
-reproduzir e validar:
-
-```sh
-./scripts/data/fetch-geog.sh
-./scripts/run/generate-static.sh
-./scripts/validate/static.sh
+```text
+CDS ERA5 → GRIB → WPS/ungrib → WPS intermediate
+                                      ↓
+WPS_GEOG + x1.10242 → static.nc ─→ init_atmosphere → init.nc
+                                                        ↓
+                                             atmosphere_model
+                                                        ↓
+                                                history / diag
+                                                        ↓
+                                             analysis container
+                                                        ↓
+                                                sanity + figures
 ```
 
-O output local é
-`data/cases/first-global-240km/static/x1.10242.static.nc`; dados, NetCDF e
-logs continuam fora do Git.
+Três responsabilidades ficam isoladas:
 
-A baseline meteorológica é global em 2014-09-10 00 UTC. Requests pressure e
-single-level versionadas ficam em
-[`cases/first-global-240km/era5/`](cases/first-global-240km/era5/), enquanto
-o cliente `cdsapi==0.7.7` usa um container pequeno em
-[`docker/cds/`](docker/cds/), separado da imagem científica. Depois de
-configurar `~/.cdsapirc` e aceitar os termos dos dois datasets no CDS:
+- `scientific`: GNU/OpenMPI, bibliotecas, WPS e MPAS;
+- `acquisition`: Python/CDSAPI e credencial montada somente em runtime;
+- `analysis`: NumPy/xarray/netCDF4/Matplotlib, offline e read-only.
 
-```sh
-./scripts/data/fetch-era5.sh build
-./scripts/data/fetch-era5.sh probe
-./scripts/data/fetch-era5.sh download
-./scripts/validate/era5.sh
-```
+O mapa de navegação e o pipeline detalhado estão em
+[`docs/architecture/project-graph.md`](docs/architecture/project-graph.md).
 
-A credencial é montada read-only somente em runtime. Os dois probes e os
-downloads globais passaram; os GRIBs e o manifesto ficam em
-`data/era5/2014-09-10_00/`, ignorados pelo Git. A validação confirmou 185
-mensagens pressure-level e 19 single-level, todas GRIB edição 1, com tamanho e
-SHA-256 registrados localmente.
+## Tecnologias
 
-Para reproduzir a conversão offline e sua validação cruzada:
+Docker, Linux, GCC/GFortran, OpenMPI/MPI-IO, zlib, HDF5, netCDF-C,
+netCDF-Fortran, PnetCDF, PIO2, METIS, WPS, MPAS-Atmosphere, ERA5/CDS,
+Python, xarray, NumPy e Matplotlib.
 
-```sh
-./scripts/validate/era5.sh
-./scripts/run/ungrib-era5.sh
-./scripts/validate/wps-era5.sh
-```
+Versões principais congeladas: zlib 1.3.2, HDF5 1.14.6, netCDF-C 4.10.1,
+netCDF-Fortran 4.6.3, PnetCDF 1.15.0, PIO 2.7.0, METIS 5.1.0,
+WPS 4.7.0 e MPAS-Model 8.4.1.
 
-As configurações versionadas estão em
-[`cases/first-global-240km/wps/`](cases/first-global-240km/wps/). O wrapper
-processa pressure e single-level em workspaces limpos com a tabela upstream
-`Vtable.ECMWF`, preserva os dois resultados e promove atomicamente sua
-concatenação exata. Intermediates, logs e manifesto ficam em
-`data/cases/first-global-240km/wps/`, fora do Git.
+## Pipeline reproduzido
 
-O caminho atual é:
+1. construir a imagem científica;
+2. adquirir e particionar a mesh x1.10242;
+3. adquirir seletivamente WPS_GEOG e gerar `static.nc`;
+4. adquirir ERA5 global em pressure/single levels;
+5. converter GRIB com a `Vtable.ECMWF` upstream;
+6. gerar `init.nc` em quatro ranks;
+7. executar a primeira hora do MPAS em quatro ranks;
+8. validar funcional, numérica e cientificamente;
+9. produzir summary, tabela diagnóstica e figuras.
 
-`ERA5 GRIB → Vtable → ungrib → WPS intermediate → MPAS init_atmosphere → MPAS atmosphere`
+O guia operacional para quem acabou de clonar o repositório está em
+[`docs/reproducibility/end-to-end.md`](docs/reproducibility/end-to-end.md).
 
-A configuração meteorológica versionada está em
-[`cases/first-global-240km/init/`](cases/first-global-240km/init/). Com static,
-intermediate e part.4 já validados, a reprodução local é:
+## Validar um estado já materializado
+
+Com as imagens e os artefatos canônicos locais presentes:
 
 ```sh
-./scripts/run/generate-init.sh
-./scripts/validate/init.sh
+./scripts/validate/final-project.sh
 ```
 
-O runner usa quatro ranks, rede desligada, rootfs e entradas read-only e não
-sobrescreve output divergente. O arquivo local ignorado
-`data/cases/first-global-240km/init/x1.10242.init.nc` foi validado como CDF-2,
-92.641.692 bytes, SHA-256
-`9f2625d9f93ec873a8c1f3abef24083d1b03b910a77efea2f6dbfd2e13c36c7d`,
-10.242 células, 55 níveis, quatro camadas de solo e timestamp correto.
+Esse comando não baixa dados, não regenera static/init e não executa uma nova
+previsão. Ele valida a instalação e os artefatos existentes; se faltar uma
+entrada, informa os comandos explícitos de reprodução.
 
-A `Vtable.ECMWF` da própria tag WPS 4.7.0 foi validada contra todos os 204
-registros GRIB reais. O `ungrib` produziu 185 slabs pressure e 19 surface; o
-arquivo combinado version 5 tem 204 slabs em grade global regular
-1440×721, 0,25°, timestamp 2014-09-10 00 UTC. Isso prova ERA5 → WPS →
-MPAS init.
+Saída final esperada:
 
-A primeira integração temporal versiona configuração mínima derivada dos
-defaults 8.4.1 em
-[`cases/first-global-240km/atmosphere/`](cases/first-global-240km/atmosphere/).
-Com o init e a partição já validados:
-
-```sh
-./scripts/run/run-atmosphere.sh
-./scripts/validate/atmosphere-run.sh
+```text
+environment=PASS
+scientific_stack=PASS
+mesh=PASS
+static=PASS
+era5_raw=PASS
+wps_intermediate=PASS
+initial_conditions=PASS
+atmosphere_integration=PASS
+scientific_sanity=PASS
+forecast_skill=NOT_EVALUATED
+spinup=INSUFFICIENT_TEMPORAL_WINDOW
+PROJECT_BASE_STATUS=COMPLETE
+project_validation=PASS
 ```
 
-O runner executa `mpiexec -n 4`, sem rede, com rootfs e entradas read-only,
-`config_dt=1200.0`, duração de uma hora, suite
-`mesoscale_reference` e SST fixa. A execução canônica local em
-`data/cases/first-global-240km/atmosphere/run-001/` concluiu o relógio em
-`2014-09-10_01:00:00`, com 0 erros e 0 erros críticos, e produziu history e
-diagnostics em 00 e 01 UTC. Os campos prognósticos evoluíram e todos os valores
-varridos permaneceram finitos. Isso é um PASS funcional; avaliação
-meteorológica ampla continua fora desta baseline.
+## Validação científica
+
+A análise varreu 47.603.258 valores numéricos sem NaN/Inf. Pressão,
+densidade, temperatura e espessura vertical permaneceram positivas; o estado
+prognóstico evoluiu; a precipitação acumulada permaneceu finita, não negativa
+e não decrescente.
+
+Dois resultados são deliberadamente `REPORT-ONLY`:
+
+- massa de ar seco: variação relativa de aproximadamente `-1,6e-11`, sem
+  threshold retrospectivo;
+- 11 valores de `q2 < 0`, mínimo `-4,7118e-4 kg kg⁻¹`, localizados na
+  Antártica e documentados no caminho da surface layer sem clamp.
+
+Método, métricas e limites:
+[`docs/validation/first-atmosphere-run.md`](docs/validation/first-atmosphere-run.md).
 
 ## Documentação
 
-A documentação técnica está em [`docs/`](docs/README.md).
+- [índice técnico e Obsidian](docs/README.md);
+- [guia end-to-end](docs/reproducibility/end-to-end.md);
+- [relatório técnico final](docs/project/completion-report.md);
+- [primeiro caso global](docs/cases/first-global-240km.md);
+- [matriz de validação](docs/testing/validation-matrix.md);
+- [requisitos e rastreabilidade](docs/project/requirements.md);
+- [fontes e versões](docs/references/source-registry.md);
+- [ADRs](docs/decisions/README.md);
+- [material didático](learning/README.md);
+- [material para portfólio/LinkedIn](docs/portfolio/project-showcase.md).
 
-O mapa da estrutura e das relações entre os arquivos está em:
+## Estrutura
 
-[`docs/architecture/project-graph.md`](docs/architecture/project-graph.md)
+| Pasta | Responsabilidade | Versionado | Local/ignorado |
+|---|---|---|---|
+| `cases/` | configurações científicas e requests aprovadas | namelists, streams e JSON | nenhum output |
+| `docker/` | imagens científica, aquisição e análise | Dockerfiles e locks | imagens/cache Docker |
+| `docs/` | arquitetura, operação, evidência e decisões | Markdown, summary e figuras selecionadas | logs volumosos |
+| `learning/` | explicações por ciclo e conceitos transferíveis | notas didáticas | — |
+| `scripts/` | aquisição, preparação, execução, análise e validação | código e contratos | workspaces temporários |
+| `tests/` | fixtures e smokes de interfaces instaladas | fontes pequenas | executáveis/outputs temporários |
+| `data/` | entradas e saídas científicas materializadas | apenas `.gitkeep` quando aplicável | mesh, WPS_GEOG, GRIB, NetCDF, logs e manifestos |
 
-O material didático e as notas de aprendizado por ciclo estão em:
+O grafo do projeto é a referência principal para saber onde procurar cada
+informação.
 
-[`learning/`](learning/README.md)
+## Principais aprendizados
 
-## Referências principais
+- reproduzir uma stack HPC exige versões, fontes, checksums e testes de
+  interface instalada, não apenas um Dockerfile;
+- MPI-IO precisa ser diagnosticado por backend: o projeto distinguiu OMPIO e
+  ROMIO sem trocar a implementação MPI;
+- dados geográficos e meteorológicos devem ser validados contra o consumidor
+  real, não apenas contra nomes de arquivos;
+- correção de software, sanity numérico e skill meteorológico são perguntas
+  diferentes;
+- dados científicos grandes pertencem a armazenamento local reproduzível,
+  enquanto configuração, proveniência e evidência pequena pertencem ao Git.
 
-- NSF Unidata netCDF
-- HDF Group
-- Parallel-NetCDF
-- PIO
-- METIS
-- WPS
-- MPAS-Model
-- MPAS-Atmosphere Meshes
-- ECMWF Climate Data Store
+## Limitações e extensões
 
-## Validação científica da primeira hora
+A baseline tem somente uma hora, quatro ranks, mesh grossa, SST fixa e Noah.
+Ela não mede skill, spin-up, escalabilidade, performance ou estabilidade
+multidiária. Esses itens são extensões, não requisitos faltantes do projeto
+base. O backlog está em
+[`docs/project/future-experiments.md`](docs/project/future-experiments.md).
 
-O run canônico de 00→01 UTC recebeu sanity científico e numérico no ciclo
-0014. A análise não usa ERA5 futuro nem observações: por isso
-`scientific_sanity=PASS`, mas `forecast_skill=NOT_EVALUATED` e
-`spinup=INSUFFICIENT_TEMPORAL_WINDOW`.
+## Referências
 
-A stack Python fica separada da imagem MPAS/WPS em
-[`docker/analysis/`](docker/analysis/). Para construir uma vez e executar a
-análise offline, read-only e sem modificar os NetCDFs:
-
-```sh
-docker build --file docker/analysis/Dockerfile \
-  --tag mpas-era5:analysis-0014 .
-./scripts/validate/scientific-run.sh
-```
-
-O validador roda primeiro a regressão funcional do `run-001`, monta history,
-diagnostics e init read-only e grava somente os artefatos pequenos em
-[`docs/assets/validation/0014/`](docs/assets/validation/0014/). O plano,
-método, estatísticas, investigação de `q2`, diagnósticos de massa/água e
-limites das conclusões estão em
-[`docs/validation/first-atmosphere-run.md`](docs/validation/first-atmosphere-run.md).
+As origens oficiais de MPAS, WPS, ERA5/CDS, bibliotecas, imagens-base,
+artefatos e checksums estão classificadas no
+[`source registry`](docs/references/source-registry.md); a baseline congelada
+está no [`versions.lock.md`](docs/references/versions.lock.md).

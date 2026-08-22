@@ -21,12 +21,12 @@ evidência estiverem registrados.
 
 | Componente | Upstream test | Smoke test | Integration test | Status | Evidência |
 |---|---|---|---|---|---|
-| Ubuntu 24.04 + GNU | Não se aplica como suite única; validar os pacotes instalados | Planejado: registrar versões de `gcc`, `gfortran`, `make` e ferramentas essenciais | Planejado: compilar e executar programas mínimos C e Fortran dentro da imagem | Ambiente definido; resultado persistido ausente | [`Dockerfile`](../../Dockerfile) e [`current-state.md`](../project/current-state.md) |
-| OpenMPI | suite própria não executada neste ciclo | wrappers e componentes MPI-IO consultados | programa Fortran/PnetCDF compilado com `mpifort` e executado em 4 ranks via ROMIO | OpenMPI 4.1.6 observado e integração PnetCDF aprovada; pacote continua sem versão fixada no APT | evidência do ciclo 0002 abaixo |
-| zlib 1.3.2 | Não executado no `Dockerfile`; identificar e executar a suite oficial da release | Planejado: compilar/rodar compressão e descompressão mínima contra `/opt/mpas` | Planejado: confirmar que o HDF5 usa a zlib do prefixo | Build definido; validação incompleta | download, hash, build e install no [`Dockerfile`](../../Dockerfile); sem log de resultado |
-| HDF5 1.14.6 | Não executado no `Dockerfile`; confirmar o comando upstream da release antes de executar | Planejado: consultar wrappers/configuração e criar/ler arquivo HDF5 mínimo em C e Fortran | Planejado: verificar zlib e fornecer HDF5 ao netCDF-C | Build definido; validação incompleta | configuração e install no [`Dockerfile`](../../Dockerfile); sem checksum ou relatório |
-| netCDF-C 4.10.1 | `make check` está definido; resultado histórico não preservado | Planejado: `nc-config` e programa C que cria e relê um arquivo mínimo | Planejado: verificar linkagem com HDF5/zlib do prefixo | Teste exigido pela receita; smoke/integração e evidência ausentes | [`Dockerfile`](../../Dockerfile); nenhum relatório versionado |
-| netCDF-Fortran 4.6.3 | `make check` está definido; resultado histórico não preservado | Planejado: `nf-config` e programa Fortran que cria e relê um arquivo mínimo | Planejado: verificar módulos, linkagem com netCDF-C e runtime do prefixo | Teste exigido pela receita; smoke/integração e evidência ausentes | [`Dockerfile`](../../Dockerfile); nenhum relatório versionado |
+| Ubuntu 24.04 + GNU | não se aplica como suíte única | GCC/GFortran 13.3.0, make 4.3 e OpenMPI 4.1.6 registrados; fontes C/Fortran compiladas | compiladores exercitados contra as bibliotecas instaladas e MPI exercitado nos smokes paralelos | Ambiente instalado validado no ciclo 0015 | [`core-libraries.sh`](../../scripts/validate/core-libraries.sh) e evidência 0015 abaixo |
+| OpenMPI | suíte própria não reexecutada | wrappers e componentes OMPIO/ROMIO consultados | PnetCDF/PIO em 4 ranks e execução MPAS real em 4 ranks | OpenMPI 4.1.6 observado e integrado; pacote continua sem versão APT fixada | evidências 0002/0003/0013/0015 |
+| zlib 1.3.2 | suíte upstream histórica não executada | compressão e descompressão mínima contra `/opt/mpas`: PASS | HDF5 carregou `libz.so` do prefixo e escreveu DEFLATE: PASS | Interface instalada validada; dívida histórica da suíte preservada | [`core-libraries.sh`](../../scripts/validate/core-libraries.sh), [`zlib_roundtrip.c`](../../tests/smoke/zlib_roundtrip.c) |
+| HDF5 1.14.6 | suíte upstream histórica não executada | dataset chunked/DEFLATE criado, escrito e relido: PASS | link com zlib do prefixo e consumo pelo netCDF-C: PASS | Interface instalada validada; checksum/suíte upstream ainda ausentes | [`hdf5_roundtrip.c`](../../tests/smoke/hdf5_roundtrip.c) e evidência 0015 |
+| netCDF-C 4.10.1 | `make check` definido na receita; log histórico não preservado | NetCDF-4/deflate criado, escrito e relido: PASS | link netCDF-C → HDF5 → zlib do prefixo: PASS | Interface instalada validada; log upstream histórico não reconstruído | [`netcdf_c_roundtrip.c`](../../tests/smoke/netcdf_c_roundtrip.c) e evidência 0015 |
+| netCDF-Fortran 4.6.3 | `make check` definido na receita; log histórico não preservado | módulo Fortran criou/escreveu/releu NetCDF-4/deflate: PASS | link netCDF-Fortran → netCDF-C → HDF5/zlib: PASS | Interface instalada validada; log upstream histórico não reconstruído | [`netcdf_fortran_roundtrip.f90`](../../tests/smoke/netcdf_fortran_roundtrip.f90) e evidência 0015 |
 | PnetCDF 1.15.0 | `make check` e `make ptest` executados com código 0 | versão, prefixo, configuração, utilitários e shared/static conferidos na instalação | F90 → PnetCDF → MPI-IO/ROMIO → OpenMPI, escrita/leitura coletiva em 4 ranks | Implementado e validado no ciclo 0002 | [`Dockerfile`](../../Dockerfile), [`pnetcdf.sh`](../../scripts/validate/pnetcdf.sh), [`pnetcdf_mpi.f90`](../../tests/smoke/pnetcdf_mpi.f90) e evidência abaixo |
 | PIO 2.7.0 | CTest: 109/109 testes aprovados | versão, configuração, headers, módulos, bibliotecas e pacote CMake conferidos | C → PIO/PnetCDF → MPI-IO → OpenMPI; CDF-2 escrito e relido em 4 ranks com OMPIO e ROMIO | Implementado e validado no ciclo 0003 | [`Dockerfile`](../../Dockerfile), [`pio.sh`](../../scripts/validate/pio.sh), [`pio_pnetcdf.c`](../../tests/smoke/pio_pnetcdf.c) e evidência abaixo |
 | METIS 5.1.0 | não há `make check`/CTest formal; `graphchk` e `gpmetis` passaram no `4elt.graph` fornecido upstream | versão por macros, ferramentas, biblioteca, help e opções conferidos | fixture → `gpmetis` → `graph.info.part.4`; estrutura, IDs, quatro partições, edge cut e conectividade validados | Implementado e validado no ciclo 0004 | [`Dockerfile`](../../Dockerfile), [`metis.sh`](../../scripts/validate/metis.sh), [`graph.info`](../../tests/fixtures/metis/graph.info) e evidência abaixo |
@@ -683,3 +683,45 @@ linhas no CSV e sete PNGs válidos/não vazios. A fonte completa é
 [`summary.json`](../assets/validation/0014/summary.json); interpretação e
 limitações estão em
 [[../validation/first-atmosphere-run|first-atmosphere-run.md]].
+
+## Evidência do ciclo 0015 — smokes instalados e validação final
+
+| Item | Evidência observada |
+|---|---|
+| Base Git | `872cd8c644f765959cabbb8f438c3510cd377905`; worktree inicial limpo |
+| Preservação | `Dockerfile`, imagem científica, versões e artefatos canônicos não alterados |
+| Imagem | `mpas-era5:mpas-atmosphere-8.4.1`, ID `sha256:9c9479db0bae...` |
+| Ambiente | GCC/GFortran 13.3.0, make 4.3, OpenMPI 4.1.6 observados |
+| zlib | 1.3.2; compressão/descompressão byte a byte; `libz.so` de `/opt/mpas` |
+| HDF5 | 1.14.6; dataset inteiro chunked/DEFLATE nível 6 escrito e relido; zlib do prefixo |
+| netCDF-C | 4.10.1; NetCDF-4/deflate nível 6 escrito/relido; HDF5 do prefixo |
+| netCDF-Fortran | 4.6.3; módulo `netcdf` escreveu/releu NetCDF-4/deflate; netCDF-C do prefixo |
+| Isolamento | container sem rede, rootfs/repositório read-only, tmpfs para build/output |
+| Regressões da stack | PnetCDF F90/CDF-5 4 ranks e PIO/PnetCDF CDF-2 com OMPIO/ROMIO: PASS |
+| Artefatos | mesh, static, ERA5, WPS intermediate, init, atmosphere e sanity científico: PASS |
+| Validador | `./scripts/validate/final-project.sh`; código 0 em 2026-08-21; 20,6 s observados |
+| Status final | `PROJECT_BASE_STATUS=COMPLETE` e `project_validation=PASS` |
+
+Saída resumida:
+
+```text
+environment=PASS
+scientific_stack=PASS
+mesh=PASS
+static=PASS
+era5_raw=PASS
+wps_intermediate=PASS
+initial_conditions=PASS
+atmosphere_integration=PASS
+scientific_sanity=PASS
+forecast_skill=NOT_EVALUATED
+spinup=INSUFFICIENT_TEMPORAL_WINDOW
+PROJECT_BASE_STATUS=COMPLETE
+project_validation=PASS
+```
+
+Limitações preservadas: não se reexecutaram suites upstream grandes de
+zlib/HDF5; os logs históricos de `make check` netCDF não foram reconstruídos;
+checksum HDF5 e pins APT continuam ausentes. Os smokes fecham a evidência
+barata da instalação real sem apresentar essas dívidas históricas como
+resolvidas.

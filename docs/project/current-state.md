@@ -20,30 +20,52 @@ Consequentemente, a referência abaixo é uma observação datada, não uma
 declaração eterna do `HEAD`.
 
 
-## Referência do ciclo 0014 em validação no worktree
+## Referência do ciclo 0015 em validação no worktree
 
-Estado atualizado em **2026-08-21** depois da validação científica e visual da
-primeira hora, sem nova integração do modelo:
+Estado atualizado em **2026-08-21** depois da consolidação final, sem novo
+experimento meteorológico:
 
-- branch inspecionada: `main`, inicialmente alinhada com `origin/main`;
-- base e `HEAD` real:
+- branch inspecionada: `main`, alinhada com `origin/main` no início;
+- base e `HEAD` real do ciclo:
+  `872cd8c644f765959cabbb8f438c3510cd377905`
+  (`analysis: validate first MPAS forecast`);
+- worktree inicial: limpo;
+- auditoria dos 19 requisitos: 13 `SATISFIED`, 5
+  `SATISFIED_WITH_LIMITATION`, 1 `NOT_APPLICABLE` e nenhum blocker;
+- smokes instalados de zlib/HDF5/netCDF-C/netCDF-Fortran: PASS, sem rebuild;
+- `final-project.sh`: PASS sobre stack e artefatos canônicos;
+- README público, guia end-to-end, relatório final, portfólio, grafo,
+  documentação e learning note consolidados;
+- stack científica, `Dockerfile`, `run-001` e dados brutos inalterados;
+- estado produzido: `PROJECT_BASE_STATUS = COMPLETE`;
+- limites preservados: `forecast_skill=NOT_EVALUATED` e
+  `spinup=INSUFFICIENT_TEMPORAL_WINDOW`;
+- commit que materializará o estado: consultar o Git depois da aprovação;
+  nenhum SHA futuro é escrito aqui;
+- nenhum commit ou push foi executado neste ciclo.
+
+## Ciclo 0014 materializado no commit real
+
+O ciclo 0014 foi desenvolvido sobre:
+
+- base do ciclo:
   `66ffe7746b4ba144f179d4cea3011e1f0b178d38`
   (`run: add first MPAS atmosphere integration`);
-- worktree inicial: limpo;
-- `init.sh` e `atmosphere-run.sh`: PASS sobre os artefatos canônicos;
-- imagem de análise separada, fixada e executada com `--network none`,
-  `--read-only` e inputs read-only;
-- integridade, estabilidade numérica e sanity científico: PASS;
-- forecast skill: `NOT_EVALUATED`;
-- spin-up: `INSUFFICIENT_TEMPORAL_WINDOW`;
-- 11 valores `q2 < 0` localizados e explicados como comportamento numérico
-  limitado/documentado da extrapolação da surface layer, sem clamp;
-- massa de ar seco: diagnóstico de conservação REPORT-ONLY;
-- água: inventário incompleto REPORT-ONLY, sem reivindicar fechamento;
-- sete figuras, `summary.json` e tabela das células `q2` produzidos em
-  `docs/assets/validation/0014/`;
-- `run-001`, os quatro NetCDFs e a imagem científica permaneceram inalterados;
-- nenhum commit ou push foi executado; o ciclo aguarda aprovação pré-commit.
+- estado produzido: validação científica/visual da primeira hora, sem nova
+  integração do modelo;
+- commit que materializou esse estado:
+  `872cd8c644f765959cabbb8f438c3510cd377905`
+  (`analysis: validate first MPAS forecast`).
+
+Essa distinção registra apenas fatos que passaram a ser conhecidos em seus
+respectivos momentos; não reescreve o worktree pré-commit como se ele já
+conhecesse o SHA futuro.
+
+Evidências: `init.sh` e `atmosphere-run.sh` PASS; análise separada offline e
+read-only; integridade, sanity numérico e científico PASS; 11 valores `q2`
+limitados/documentados; massa seca e água REPORT-ONLY; sete figuras,
+`summary.json` e CSV. `run-001`, os quatro NetCDFs e a imagem científica
+permaneceram inalterados.
 
 ## Ciclo 0013 materializado no commit real
 
@@ -180,10 +202,10 @@ Não foi criada uma variável `METIS`: o workflow usa
 
 | Componente | Versão | Estado e evidência atual |
 |---|---:|---|
-| zlib | 1.3.2 | camada existente preservada; recuperada do cache no build do ciclo 0004 |
-| HDF5 | 1.14.6 | camada serial existente preservada e recuperada do cache |
-| netCDF-C | 4.10.1 | camada serial preservada; `nc-config` reconfirmado na regressão |
-| netCDF-Fortran | 4.6.3 | camada preservada; `nf-config` reconfirmado |
+| zlib | 1.3.2 | compressão/descompressão instalada e link em `/opt/mpas` validados no ciclo 0015 |
+| HDF5 | 1.14.6 | serial; dataset DEFLATE escrito/relido e link com zlib do prefixo validados no ciclo 0015 |
+| netCDF-C | 4.10.1 | serial; NetCDF-4/deflate escrito/relido sobre HDF5/zlib no ciclo 0015 |
+| netCDF-Fortran | 4.6.3 | módulo instalado criou/releu NetCDF-4/deflate sobre netCDF-C no ciclo 0015 |
 | PnetCDF | 1.15.0 | camada MPI-IO preservada; F90/CDF-5 em quatro ranks aprovado |
 | PIO | 2.7.0 | C/Fortran static, PnetCDF habilitado; integração CDF-2 aprovada com OMPIO e ROMIO |
 | METIS | 5.1.0 | static, índices/reais 32 bits, GKlib incluída; `gpmetis` offline validado |
@@ -744,12 +766,16 @@ As decisões e alternativas estão em
 - `learning/commits/0013-first-atmosphere-run.md`: nota educacional;
 - outputs locais em `data/cases/first-global-240km/atmosphere/`, ignorados.
 
-## Componentes ainda não implementados
+## Extensões futuras, não componentes faltantes
 
 - METIS 5.2.1 e GKlib externa;
 - PT-Scotch;
 - LBC permanece somente para eventual caso futuro de área limitada;
-- validação meteorológica ampla do `atmosphere_model`.
+- forecast verification com ERA5 futuro, janela de spin-up e budgets
+  científicos em integrações mais longas.
+
+O projeto base não depende dessas extensões. A auditoria do ciclo 0015 conclui
+`PROJECT_BASE_STATUS=COMPLETE` para o escopo técnico aprovado.
 
 ## Lacunas e limitações atuais
 
@@ -764,6 +790,9 @@ As decisões e alternativas estão em
 - a imagem Ubuntu e as versões APT não possuem digest/lock completos;
 - `csh` foi acrescentado por APT, mas sua versão não está fixada na receita;
 - o checksum HDF5 continua ausente;
+- os smokes instalados de zlib, HDF5, netCDF-C e netCDF-Fortran passaram no
+  ciclo 0015; logs históricos das suítes upstream dessas quatro bibliotecas
+  não foram preservados e permanecem como dívida documental;
 - HDF5 e netCDF continuam seriais por decisão anterior;
 - METIS 5.2.1 + GKlib fixada e PT-Scotch online são somente hipóteses futuras,
   sem conclusão de superioridade;
@@ -772,9 +801,10 @@ As decisões e alternativas estão em
   build e da linkagem bem-sucedidos;
 - o `q2` diagnóstico terminou com 11 valores negativos e mínimo
   -4,71175474e-04 kg/kg; o source da surface layer explica a extrapolação,
-  mas a relevância meteorológica precisa de investigação;
-- o PASS de uma hora prova execução e estabilidade básica, não conservação,
-  spin-up, skill ou qualidade meteorológica;
+  e o caso está limitado/documentado; sua relevância meteorológica exige uma
+  janela futura apropriada;
+- os PASS funcional, numérico e científico de uma hora não provam forecast
+  skill, equilíbrio de spin-up, desempenho multiday ou budgets fechados;
 - o high mandatory exige download de 2,77 GB e seus hashes são locais porque
   o upstream não publica SHA-256;
 - os seis warnings de metadata opcional da mesh permanecem documentados;

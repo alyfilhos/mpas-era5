@@ -1,478 +1,240 @@
 # Grafo do projeto
 
-## Fluxo principal
+Este documento é o mapa principal do repositório. Ele responde onde cada
+responsabilidade vive, o que é versionado e como dados, código, documentação e
+evidência se conectam.
+
+## Pipeline científico final
 
 ```text
-Dockerfile
-    │
-    ▼
-Stack científica
-    │
-    ├── zlib
-    │     ↓
-    ├── HDF5
-    │     ↓
-    ├── netCDF-C
-    │     ↓
-    ├── netCDF-Fortran
-    │     ↓
-    ├── PnetCDF 1.15.0 ✅
-    │     ↓
-    ├── PIO 2.7.0 ✅
-    │     ↓
-    └── METIS 5.1.0 ✅
-
-CDS
- ├── ERA5 pressure levels ─┐
- └── ERA5 single levels ───┴─→ container CDS + fetch-era5
-                                      ↓
-                         data/era5/2014-09-10_00/ ✅ GRIB bruto
-                                      ↓ ciclo 0011
-Vtable.ECMWF + WPS 4.7.0 / ungrib ✅
-                                      ↓
-               ERA5:2014-09-10_00 ✅ WPS intermediate
-                                      ↓
-                    init_atmosphere_model / 4 ranks ✅
-                                      ↓
-                         x1.10242.init.nc ✅
-                                      │
-                                      ▼
-PIO 2.7.0 ✅ ──→ MPAS 8.4.1
-                    ├── init_atmosphere_model ✅ static e init meteorológico
-                    └── atmosphere_model ✅ 1 hora / 4 ranks
-                                      ↓
-                         history + diagnostics ✅
-
-MPAS-Atmosphere Meshes (oficial)
-        ↓
-scripts/data/fetch-mesh.sh
-        ↓
-data/meshes/x1.10242/
-        ├── x1.10242.grid.nc ───────────────┐
-        └── x1.10242.graph.info             │
-                      ↓                     │
-              METIS 5.1.0                   │
-                      ↓                     │
-          x1.10242.graph.info.part.4         │
-              (init e previsão)             │
-                                            │
-WPS Geographic Static Data (oficial)        │
-        ↓                                   │
-scripts/data/fetch-geog.sh                   │
-        ↓                                   │
-data/geog/mpas-8.4.1/ ──────────────────────┤
-                                            ↓
-                              init_atmosphere, case 7
-                                            ↓
-                              x1.10242.static.nc ✅
-                                            ↓
-                               ERA5 intermediate + part.4 → init.nc ✅
-                                            ↓
-                               atmosphere + part.4 → 1 hora ✅
+CDS ERA5
+   ↓
+GRIB
+   ↓
+WPS/ungrib
+   ↓
+WPS intermediate
+   ↓
+MPAS init_atmosphere
+   ├── WPS_GEOG → static.nc
+   └── static + ERA5 → init.nc
+                           ↓
+                    atmosphere_model
+                           ↓
+                    history / diag
+                           ↓
+                  analysis container
+                           ↓
+                 sanity + figures
 ```
+
+A mesh e o particionamento entram nos dois executáveis MPAS:
+
+```text
+MPAS mesh x1.10242 ─→ grid.nc ───────────────┐
+        │                                     ├→ init_atmosphere
+        └→ graph.info → METIS → part.4 ──────┤       │
+                                              │       └→ static.nc / init.nc
+                                              └→ atmosphere_model (4 ranks)
+```
+
+## Containers e separação de responsabilidades
+
+```text
+scientific                         acquisition                    analysis
+Dockerfile                         docker/cds/                    docker/analysis/
+GNU + OpenMPI                    Python + cdsapi               Python + xarray
+scientific libraries              CDS requests                   NumPy/netCDF4
+METIS + WPS + MPAS               CDS credential at runtime      Matplotlib
+        │                                  │                           │
+        └── offline processing             └── writes raw ERA5         └── read-only NetCDF
+```
+
+| Imagem | Pode usar rede | Inputs | Output autorizado |
+|---|---|---|---|
+| científica | build/aquisição de source; runtime científico não | mesh, geog, ERA5, configs read-only | workspace sob `data/` |
+| aquisição | sim, somente ao consultar CDS | requests e secret read-only | ERA5/manifesto local |
+| análise | build; runtime não | init/history/diag read-only | summary/CSV/PNGs pequenos |
+
+A separação foi formalizada no
+[[../decisions/0009-separate-analysis-container|ADR 0009]].
 
 ## Stack científica
 
 ```text
-Dockerfile
-→ zlib
-→ HDF5
-→ netCDF-C
-→ netCDF-Fortran
-→ PnetCDF
-→ PIO2
-→ METIS
-
-/opt/wps-4.7.0 → ungrib.exe + g1print.exe + link_grib.csh
-/opt/wps       → /opt/wps-4.7.0
-
-/opt/mpas-model-8.4.1 → init_atmosphere_model
-                       └──→ atmosphere_model
-/opt/mpas-model       → /opt/mpas-model-8.4.1
+Ubuntu 24.04
+  └→ GNU 13.3.0 + OpenMPI 4.1.6 (observados)
+      ├→ zlib 1.3.2
+      │   └→ HDF5 1.14.6 serial
+      │       └→ netCDF-C 4.10.1 serial
+      │           └→ netCDF-Fortran 4.6.3
+      ├→ PnetCDF 1.15.0 → MPI-IO
+      │   └→ PIO 2.7.0
+      │       └→ MPAS-Model 8.4.1
+      ├→ METIS 5.1.0 → part.N
+      └→ WPS 4.7.0 → ungrib + g1print
 ```
 
-No ciclo 0007, a stack científica sob `/opt/mpas` permaneceu inalterada e
-todas as camadas até o init foram recuperadas do cache. O core `atmosphere`
-foi acrescentado à mesma árvore `/opt/mpas-model-8.4.1`; os dois executáveis
-estão presentes. No ciclo 0009 o init executou funcionalmente a etapa static
-com a mesh real; no ciclo 0012 executou o init meteorológico com ERA5 e
-part.4. No ciclo 0013 o atmosphere consumiu esse init/partição, avançou uma
-hora e escreveu history/diagnostics; a validação meteorológica ampla continua
-pendente.
-
-PnetCDF não depende da seta HDF5 → netCDF neste ciclo. A ordem no `Dockerfile`
-preserva a stack já construída, mas o caminho funcional novo é independente:
+HDF5/netCDF permanecem seriais. O I/O paralelo usado pelo MPAS é:
 
 ```text
-tests/smoke/pnetcdf_mpi.f90
-          ↓
-   API Fortran PnetCDF
-          ↓
-   PnetCDF 1.15.0
-          ↓
- MPI-IO (ROMIO 4.1.6)
-          ↓
-     OpenMPI 4.1.6
+MPAS → PIO_IOTYPE_PNETCDF → PnetCDF → MPI-IO → OpenMPI
 ```
 
-PIO preserva esse caminho paralelo e acrescenta a camada de abstração usada
-por `init_atmosphere_model` e `atmosphere_model`:
+Os smokes instalados em
+[`scripts/validate/core-libraries.sh`](../../scripts/validate/core-libraries.sh)
+comprovam zlib → HDF5 → netCDF-C → netCDF-Fortran. PnetCDF/PIO têm smokes
+MPI próprios. Evidência: [[../testing/validation-matrix|matriz]].
+
+## Árvore final
 
 ```text
-tests/smoke/pio_pnetcdf.c
-          ↓
-   API C do PIO 2.7.0
-          ↓
-  PIO_IOTYPE_PNETCDF
-          ↓
-   PnetCDF 1.15.0
-          ↓
- MPI-IO (OMPIO ou ROMIO local)
-          ↓
-     OpenMPI 4.1.6
+mpas-era5/
+├── AGENTS.md                     governança obrigatória
+├── Dockerfile                    imagem/stack científica
+├── README.md                     página pública
+├── cases/
+│   └── first-global-240km/       configs static, ERA5, WPS, init, atmosphere
+├── docker/
+│   ├── cds/                      imagem de aquisição
+│   └── analysis/                 imagem de análise
+├── docs/
+│   ├── README.md                 índice Obsidian
+│   ├── architecture/             este grafo
+│   ├── assets/validation/0014/   evidência visual/JSON/CSV pequena
+│   ├── build/                    stack científica
+│   ├── cases/                    documentação do caso
+│   ├── decisions/                ADRs
+│   ├── portfolio/                material de apresentação
+│   ├── project/                  requisitos, estado, workflow, relatório
+│   ├── references/               fontes e versões
+│   ├── reproducibility/          guia end-to-end
+│   ├── testing/                  matriz de validação
+│   └── validation/               método e resultados científicos
+├── learning/
+│   ├── README.md                 índice didático
+│   ├── baseline.md               conceitos da stack
+│   └── commits/                  uma learning note por ciclo
+├── scripts/
+│   ├── analyze/                  análise científica
+│   ├── data/                     aquisição de mesh/geog/ERA5
+│   ├── prepare/                  partição da mesh
+│   ├── run/                      static, ungrib, init, atmosphere
+│   └── validate/                 smokes e validadores integrados/final
+├── tests/
+│   ├── fixtures/                 entradas didáticas pequenas
+│   └── smoke/                    fontes mínimas de interfaces instaladas
+└── data/                         dados científicos locais/ignorados
+    ├── meshes/
+    ├── geog/
+    ├── era5/
+    └── cases/
 ```
 
-HDF5 e netCDF permanecem seriais. O PIO também disponibiliza o backend
-`PIO_IOTYPE_NETCDF`; `PIO_IOTYPE_NETCDF4C` e `PIO_IOTYPE_NETCDF4P` não são
-compilados nesta configuração.
+## Responsabilidade e política de versionamento
 
-METIS não pertence ao caminho de I/O e não é uma implementação MPI. Seu fluxo
-é serial, externo e anterior ao modelo:
+| Caminho | Responsabilidade | Versionado | Não versionado / onde procurar |
+|---|---|---|---|
+| `cases/` | contrato científico do primeiro caso | namelists, streams, lists e requests JSON | outputs ficam no espelho sob `data/cases/` |
+| `docker/` | ambientes por responsabilidade | Dockerfiles e locks | imagens/layers/cache ficam no Docker |
+| `docs/` | estado, arquitetura, decisão, operação e evidência | Markdown e artefatos pequenos selecionados | dados/logs completos ficam sob `data/` |
+| `learning/` | ensinar conceitos, comandos, falhas e trade-offs | baseline e notas por ciclo | não substitui matriz/ADRs |
+| `scripts/data/` | adquirir fontes externas com integridade | scripts | downloads sob `data/` |
+| `scripts/prepare/` | transformar entradas antes do modelo | scripts | `part.N` sob `data/meshes/` |
+| `scripts/run/` | executar transformações científicas | runners | workspaces/outputs sob `data/` |
+| `scripts/analyze/` | ler NetCDFs e produzir evidência | Python | somente output documental selecionado entra no Git |
+| `scripts/validate/` | provar instalação, artefatos e ciência | validadores | temporários em tmpfs/`/tmp` |
+| `tests/smoke/` | programas independentes do build upstream | C/Fortran pequenos | executáveis e arquivos gerados são efêmeros |
+| `data/` | store local de entradas/saídas grandes | somente placeholders deliberados | mesh, WPS_GEOG, GRIB, intermediate, NetCDF, logs, manifests |
+
+## Fluxos por responsabilidade
+
+### Mesh e static
 
 ```text
-tests/fixtures/metis/graph.info
-          ↓
-gpmetis -minconn -contig -niter=200 graph.info N
-          ↓
-graph.info.part.N
-          ↓
-MPAS com N ranks MPI em um ciclo funcional futuro
+fetch-mesh.sh → grid.nc + graph.info
+                       └→ partition-mesh.sh → part.4
+fetch-geog.sh → WPS_GEOG
+grid.nc + WPS_GEOG → generate-static.sh → static.nc → static.sh
 ```
 
-O script `scripts/validate/metis.sh` copia o fixture para tmpfs, gera
-`graph.info.part.4` somente ali e valida estrutura, IDs, cobertura,
-balanceamento, `edge cut` e conectividade.
-
-O ciclo 0008 aplica o mesmo contrato a uma entrada científica real, mantendo
-os dados fora da imagem e do Git:
+### ERA5 e WPS
 
 ```text
-https://www2.mmm.ucar.edu/.../x1.10242.tar.gz
-        ↓ SHA-256 local fixado
-scripts/data/fetch-mesh.sh
-        ↓
-data/meshes/x1.10242/x1.10242.graph.info
-        ↓ scripts/prepare/partition-mesh.sh
-gpmetis -minconn -contig -niter=200 ... 4
-        ↓
-x1.10242.graph.info.part.4
-        ↓ scripts/validate/mesh.sh
-NetCDF + graphchk + estrutura + balanceamento + edge cut + contiguidade ✅
+cases/.../era5/*.json → docker/cds → fetch-era5.sh → GRIB
+GRIB → g1print + Vtable.ECMWF → ungrib-era5.sh
+     → pressure + surface → combined intermediate → wps-era5.sh
 ```
 
-O ciclo 0009 acrescenta um caminho geográfico separado do caminho ERA5:
+### Init e atmosphere
 
 ```text
-geog_high_res_mandatory
-  ├── topo_gmted2010_30s
-  ├── soiltype_top_30s
-  ├── soiltemp_1deg
-  ├── greenfrac_fpar_modis
-  ├── albedo_modis
-  └── maxsnowalb_modis
-modis_landuse_20class_30s ─┐
-landuse_30s (native GWD) ──┴─→ data/geog/mpas-8.4.1/
-                                      +
-                              x1.10242.grid.nc
-                                      ↓
-                   cases/.../static + generate-static.sh
-                                      ↓
-                              x1.10242.static.nc
-                                      ↓
-                               validate/static.sh ✅
+static + combined intermediate + part.4
+    → generate-init.sh → init.nc → init.sh
+init.nc + part.4 + lookup tables
+    → run-atmosphere.sh → run-001 → atmosphere-run.sh
 ```
 
-Os archives são entradas first-party; `data/geog/`, logs e outputs são
-ignorados. O namelist/streams, scripts e validador C são os contratos
-versionados. A seta não passa por ERA5 porque campos estáticos independem da
-data.
-
-O ciclo 0010 cria um caminho de aquisição isolado da stack científica:
+### Análise e publicação
 
 ```text
-Climate Data Store
-    ├── reanalysis-era5-pressure-levels
-    └── reanalysis-era5-single-levels
-                    ↓
-cases/first-global-240km/era5/*.json
-                    +
-docker/cds/Dockerfile → Python 3.12.13 → cdsapi 0.7.7
-                    ↓ scripts/data/fetch-era5.sh
-       .cdsapirc read-only em runtime
-                    ↓
-         probe 1° × 1° descartável
-                    ↓
-data/era5/2014-09-10_00/
-    ├── era5-pressure-levels.grib
-    ├── era5-single-levels.grib
-    └── manifest.json
-                    ↓
-         scripts/validate/era5.sh
+run-001 + init.nc (read-only)
+    → scientific-run.sh
+    → scripts/analyze/first-atmosphere-run.py
+    → docs/assets/validation/0014/{summary,CSV,PNGs}
 ```
 
-Requests, cliente e lock estão versionados. Os dois probes passaram antes dos
-downloads globais; os GRIBs e o manifesto existem somente no diretório local
-ignorado e passaram na validação de transporte. A credencial nunca entra na
-imagem, nos argumentos ou no Git.
+## Validação final
 
-WPS prepara dados meteorológicos por um caminho distinto da stack científica:
+`./scripts/validate/final-project.sh` é o ponto de entrada para validar um
+estado já materializado. Ele não baixa nem regenera artefatos caros:
 
 ```text
-ERA5 pressure GRIB ─→ g1print ─→ Vtable.ECMWF ─→ ungrib
-       ↓                                         ↓
-ERA5_PRES:2014-09-10_00 ───────────────────────────────┐
-                                                          ├─→ ERA5:2014-09-10_00 ✅
-ERA5 single GRIB ─→ g1print ─→ Vtable.ECMWF ─→ ungrib ─┘
-       ↓
-ERA5_SFC:2014-09-10_00
-                                                          ↓
-MPAS init_atmosphere meteorológico / 4 ranks ✅ → x1.10242.init.nc ✅
-       ↓
-MPAS atmosphere / part.4 / 4 ranks ✅ → 00–01 UTC ✅
-       ├── history 00/01 ✅
-       └── diagnostics 00/01 ✅
+core library smokes
+  → PnetCDF/PIO
+  → mesh
+  → static
+  → ERA5 raw
+  → WPS intermediate
+  → init
+  → atmosphere run
+  → scientific sanity
+  → project_validation=PASS
 ```
 
-`scripts/validate/wps-ungrib.sh` valida a instalação sem rede;
-`scripts/run/ungrib-era5.sh` executa os dois workspaces isolados; o parser e
-`scripts/validate/wps-era5.sh` cruzam GRIB, Vtable, logs e 204 headers. As
-bibliotecas zlib, libpng e JasPer privadas continuam separadas da stack em
-`/opt/mpas`. Os intermediates/logs/manifesto ficam somente sob `data/`.
-
-As dependências de física do atmosphere são materializadas antes do make:
-
-```text
-Externals.cfg
-    ├── MMM-physics tag → commit exato
-    └── UGWP tag        → commit exato
-
-checkout_data_files.sh (`mpas_vers=8.2`)
-    ↓
-MPAS-Data v8.2 → commit exato → COMPATIBILITY → 16 lookup tables
-    ↓
-physics_wrf/files → manifesto SHA-256 → build offline quanto aos dados
-```
+Se um artefato faltar, o preflight falha e informa o comando de reprodução.
 
 ## Fluxo de governança
 
 ```text
-AGENTS.md
-    ↓
-docs/project/requirements.md
-    ├── docs/references/source-registry.md
-    ├── docs/references/versions.lock.md
-    ├── docs/decisions/
-    ├── docs/project/future-experiments.md
-    └── docs/testing/validation-matrix.md
-            ↓
-      implementação e testes
-            ↓
-docs/project/current-state.md
-            ↓
-learning/commits/NNNN-*.md
-            ↓
-relatório pré-commit → aprovação → commit → push
+requirements + sources + versions
+          ↓
+       proposal
+          ↓
+     user decision
+          ↓
+implementation → tests → review
+          ↓
+docs + learning note + current state
+          ↓
+pre-commit report → user approval → commit/push
 ```
 
-## Estrutura do repositório
+O ciclo 0015 termina antes de commit/push, conforme
+[[../project/development-workflow|workflow]].
 
-```text
-mpas-era5/
-├── AGENTS.md                         regras obrigatórias dos ciclos assistidos
-├── .codex/
-│   └── config.toml                   política local de aprovação e sandbox
-├── Dockerfile                        ambiente e stack científica
-├── README.md                         entrada pública do projeto
-├── docs/
-│   ├── README.md                     índice Obsidian da documentação
-│   ├── architecture/
-│   │   └── project-graph.md          este mapa
-│   ├── build/
-│   │   └── scientific-stack.md       documentação técnica da stack
-│   ├── cases/
-│   │   └── first-global-240km.md     mesh, geografia, static e init prontos
-│   ├── project/
-│   │   ├── requirements.md           escopo original versus decisões
-│   │   ├── current-state.md          estado produzido e referência Git real
-│   │   ├── development-workflow.md   ciclo obrigatório de desenvolvimento
-│   │   └── future-experiments.md     backlog, não roadmap aprovado
-│   ├── references/
-│   │   ├── source-registry.md        classificação e proveniência das fontes
-│   │   └── versions.lock.md          versões adotadas e pendências
-│   ├── decisions/
-│   │   ├── README.md                 política e template de ADR
-│   │   ├── 0001-pnetcdf-mpiio-backend.md
-│   │   │                              decisão PnetCDF/GIO/MPI-IO
-│   │   ├── 0002-pio2-pnetcdf-with-serial-netcdf.md
-│   │   │                              arquitetura PIO2 e backends habilitados
-│   │   ├── 0003-metis-5.1.0-partitioning-baseline.md
-│   │                                  baseline offline e alternativas futuras
-│   │   ├── 0004-wps-mpas-version-and-layout.md
-│   │   │                              versões, flags e prefixos separados
-│   │   ├── 0005-first-mesh-baseline.md
-│   │   │                              x1.10242 e part.4 aprovadas
-│   │   ├── 0006-first-static-baseline.md
-│   │   │                              geografia, 1 task, supersampling e Noah
-│   │   ├── 0007-first-era5-baseline.md
-│   │   │                              instante, inventário e cliente CDS
-│   │   └── 0008-first-initial-condition-baseline.md
-│   │                                  55 níveis, 4 ranks e initial_conds
-│   ├── testing/
-│   │   └── validation-matrix.md      testes, status e evidências
-│   └── logs/                         reservado; atualmente vazio
-├── learning/
-│   ├── README.md                     índice e regras do material didático
-│   ├── baseline.md                   explicação da stack já construída
-│   └── commits/
-│       ├── 0001-bootstrap-codex-workflow.md
-│       ├── 0002-add-pnetcdf.md         nota educacional do ciclo 0002
-│       ├── 0003-add-pio2.md            nota educacional do ciclo 0003
-│       ├── 0004-add-metis.md           nota educacional do ciclo 0004
-│       ├── 0005-add-wps-ungrib.md      nota educacional do ciclo 0005
-│       ├── 0006-add-mpas-init-atmosphere.md
-│       │                                  nota educacional do ciclo 0006
-│       ├── 0007-add-mpas-atmosphere.md
-│       │                                  nota educacional do ciclo 0007
-│       ├── 0008-add-first-mesh.md         nota educacional do ciclo 0008
-│       ├── 0009-generate-static-fields.md nota educacional do ciclo 0009
-│       ├── 0010-add-era5-acquisition.md   nota educacional do ciclo 0010
-│       ├── 0011-ungrib-era5.md           nota educacional do ciclo 0011
-│       ├── 0012-generate-initial-conditions.md nota educacional do ciclo 0012
-│       └── 0013-first-atmosphere-run.md nota educacional do ciclo 0013
-├── scripts/
-│   ├── data/
-│   │   ├── fetch-mesh.sh             aquisição first-party e integridade
-│   │   ├── fetch-geog.sh             WPS_GEOG exato, hashes e manifesto
-│   │   ├── fetch-era5.py             requests, CDS, GRIB e manifesto seguro
-│   │   └── fetch-era5.sh             isolamento/volumes do container CDS
-│   ├── run/
-│   │   ├── generate-static.sh        init case 7, MPI 1, execução isolada
-│   │   ├── ungrib-era5.sh            dois ungribs isolados + combined atômico
-│   │   ├── generate-init.sh           init case 7, MPI 4 e manifesto
-│   │   └── run-atmosphere.sh          primeira hora, MPI 4 e manifesto
-│   ├── prepare/
-│   │   └── partition-mesh.sh         graph.info + N → part.N com METIS
-│   ├── validate/
-│   │   ├── pnetcdf.sh                validação instalada MPI/Fortran
-│   │   ├── pio.sh                    validação PIO/PnetCDF e IOTYPEs
-│   │   ├── metis.sh                  partição e validação estrutural em tmpfs
-│   │   ├── wps-ungrib.sh             smoke WPS offline e read-only
-│   │   ├── wps-intermediate.py        parser Fortran sequential version 5
-│   │   ├── wps-era5.py                 cruzamento semântico e manifesto
-│   │   ├── wps-era5.sh                 integração ERA5 → combined
-│   │   ├── mpas-init.sh              smoke MPAS init offline/read-only
-│   │   ├── mpas-atmosphere.sh        smoke MPAS atmosphere offline/read-only
-│   │   ├── mesh.sh                   validação da mesh real e partição
-│   │   ├── static.sh                 estrutura, campos, ranges e log MPAS
-│   │   ├── era5.sh                   transporte GRIB, manifesto e Git hygiene
-│   │   ├── init.sh                    estrutura, física, log e manifesto do init
-│   │   └── atmosphere-run.sh          log, manifesto, NetCDF e evolução temporal
-│   └── codex/                        automações de suporte a ciclos futuros
-├── tests/
-│   ├── fixtures/
-│   │   └── metis/
-│   │       └── graph.info            grafo didático de 16 vértices
-│   └── smoke/
-│       ├── pnetcdf_mpi.f90           I/O coletivo CDF-5 em 4 ranks
-│       ├── pio_pnetcdf.c             PIO explícito sobre PnetCDF em 4 ranks
-│       ├── static_netcdf.c           validador independente do static
-│       ├── init_netcdf.c             validador independente do init
-│       └── atmosphere_netcdf.c       sanidade e comparação t0/t1
-├── data/                              entradas/saídas científicas fora do Git
-│   ├── meshes/x1.10242/              grid, graph.info e part.4 ignorados
-│   ├── geog/mpas-8.4.1/              oito datasets WPS ignorados
-│   ├── era5/2014-09-10_00/           GRIBs/manifesto locais validados
-│   ├── cases/.../static/             NetCDF e logs ignorados
-│   ├── cases/.../wps/                intermediates/logs/manifesto ignorados
-│   ├── cases/.../init/               init.nc/log/manifesto ignorados
-│   └── cases/.../atmosphere/         history/diag/log/manifesto ignorados
-├── cases/
-│   └── first-global-240km/
-│       ├── static/                    namelist e streams versionados
-│       ├── era5/                      requests globais versionadas
-│       ├── wps/                       namelists ungrib pressure/single
-│       ├── init/                      namelist/streams meteorológicos
-│       └── atmosphere/                namelist, streams e stream lists
-└── docker/
-    └── cds/                           cliente de aquisição; fora da stack MPAS
-```
+## Índice de relações
 
-`scripts/validate/` contém validações instaladas e repetíveis para PnetCDF,
-PIO, METIS, WPS/ungrib/ERA5 intermediate, os dois cores MPAS e a mesh x1.10242.
-`scripts/codex/` continua vazio e, por isso, não é preservado pelo Git.
-
-## Responsabilidades e relações
-
-| Caminho | Responsabilidade | Relações principais |
-|---|---|---|
-| `Dockerfile` | construir ambiente e bibliotecas adotadas | versões em `docs/references/versions.lock.md`; testes em `docs/testing/validation-matrix.md` |
-| `docker/cds/` | construir somente o cliente de aquisição ERA5 | Python/cdsapi fixados; não contém MPAS/WPS nem recebe credencial no build |
-| `docs/project/` | controlar escopo, estado e processo | lido antes de todo ciclo conforme `AGENTS.md` |
-| `docs/references/` | registrar autoridade das fontes e versões | alimenta propostas, ADRs e reprodução do build |
-| `docs/decisions/` | preservar decisões significativas e alternativas | depende de proposta e decisão do usuário |
-| `docs/testing/` | distinguir teste planejado, executado e comprovado | atualizada após cada validação técnica |
-| `learning/` | explicar conceitos e raciocínio por baseline/commit | referencia estado, fontes, ADRs e testes sem substituí-los |
-| `scripts/validate/` | hospedar validações repetíveis, incluindo parser WPS streaming | resultados resumidos alimentam `docs/testing/` |
-| `scripts/run/` | executar transformações científicas isoladas | gera static, WPS intermediate, init ou integração atmosphere somente sob `data/` |
-| `scripts/data/` | adquirir dados externos reproduzivelmente | usa somente fontes e hashes registrados; instala sob `data/` |
-| `scripts/prepare/` | transformar entradas sem incorporá-las à imagem | gera `graph.info.part.N` com UID/GID do usuário |
-| `tests/smoke/` | hospedar fontes mínimas independentes do build upstream | compiladas pelos scripts contra a instalação final |
-| `tests/fixtures/` | manter entradas pequenas, deliberadas e versionadas | copiadas para espaço efêmero; nunca recebem saídas geradas |
-| `scripts/codex/` | hospedar automação de governança aprovada | deve respeitar `AGENTS.md` e o workflow |
-| `data/` | manter meshes, ERA5 e outras entradas científicas locais | credenciais, NetCDF, GRIB, partições e outputs nunca devem entrar no Git |
-| `cases/` | manter configurações de execuções MPAS e requests científicas aprovadas | depende de mesh, ERA5 e versões aprovadas; dados materializados ficam em `data/` |
-
-## Documentos relacionados
-
-- [[../README|Índice da documentação]]
-- [[../build/scientific-stack|Stack científica]]
-- [[../project/requirements|Requisitos do projeto]]
+- [[../project/completion-report|Relatório técnico final]]
+- [[../reproducibility/end-to-end|Reprodução end-to-end]]
+- [[../project/requirements|Requisitos e rastreabilidade]]
 - [[../project/current-state|Estado atual]]
-- [[../project/development-workflow|Workflow de desenvolvimento]]
-- [[../project/future-experiments|Experimentos técnicos futuros]]
-- [[../references/source-registry|Registro de fontes]]
-- [[../references/versions.lock|Versões adotadas e pendentes]]
-- [[../decisions/README|ADRs]]
-- [[../decisions/0003-metis-5.1.0-partitioning-baseline|ADR 0003 — METIS 5.1.0]]
-- [[../decisions/0004-wps-mpas-version-and-layout|ADR 0004 — WPS/MPAS e layout]]
-- [[../decisions/0005-first-mesh-baseline|ADR 0005 — primeira mesh e part.4]]
-- [[../decisions/0006-first-static-baseline|ADR 0006 — primeira baseline static]]
-- [[../decisions/0007-first-era5-baseline|ADR 0007 — baseline ERA5]]
-- [[../cases/first-global-240km|Primeiro caso global de ~240 km]]
+- [[../project/future-experiments|Extensões futuras]]
 - [[../testing/validation-matrix|Matriz de validação]]
-- [[../../learning/README|Índice de aprendizado]]
-
-## Fluxo de análise científica do ciclo 0014
-
-```text
-run-001 history/diag
-        ↓ (bind mount read-only)
-docker/analysis/
-        ↓ (--network none, root filesystem read-only)
-scripts/analyze/first-atmosphere-run.py
-        ↓
-scientific summary
-        ├── physical/numerical checks
-        ├── q2 investigation
-        ├── budget diagnostics
-        └── figures
-                ↓
-docs/assets/validation/0014/
-```
-
-`scripts/validate/scientific-run.sh` orquestra a regressão
-`atmosphere-run.sh`, executa a imagem isolada e valida schema, classes de
-critério, CSV e PNGs. O `Dockerfile` raiz continua responsável somente por
-MPAS/MPI/WPS; `docker/cds/` somente pela aquisição; `docker/analysis/`
-somente pela leitura e visualização de outputs. A decisão está em
-[[../decisions/0009-separate-analysis-container|ADR 0009]].
+- [[../validation/first-atmosphere-run|Validação científica]]
+- [[../cases/first-global-240km|Primeiro caso]]
+- [[../references/source-registry|Fontes]]
+- [[../references/versions.lock|Versões]]
+- [[../decisions/README|ADRs]]
+- [[../portfolio/project-showcase|Showcase]]
+- [[../../learning/README|Aprendizado]]

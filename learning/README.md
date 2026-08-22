@@ -89,3 +89,6 @@ deve ser revisada antes de uma aprovação futura.
 - [`commits/0014-validate-first-forecast.md`](commits/0014-validate-first-forecast.md):
   sanity científico, estatística espacial, q2/surface layer, inventários,
   Mollweide e análise reproduzível em container separado.
+- [`commits/0015-finalize-project.md`](commits/0015-finalize-project.md):
+  conclusão de escopo, rastreabilidade, reprodução, validação em camadas,
+  documentação executiva/operacional e transformação em portfólio.

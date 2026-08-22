@@ -55,7 +55,7 @@ O [[../decisions/0007-first-era5-baseline|ADR 0007]] fixa:
 | Cliente | `cdsapi==0.7.7` em container Python 3.12.13 por digest |
 
 As requests completas estão em
-[`cases/first-global-240km/era5/`](../../cases/first-global-240km/era5/).
+[`cases/first-global-240km/era5/README.md`](../../cases/first-global-240km/era5/README.md).
 Elas omitem recorte e regrid. Um probe temporário mantém todas as 204
 mensagens esperadas — 185 pressure e 19 single-level — numa área de 1° × 1°,
 validando a API e o transporte antes do download global.
@@ -304,7 +304,7 @@ derivado da fórmula do source 8.4.1, não de uma suposição de normalização.
 
 O ciclo 0012 partiu dos defaults gerados pelo MPAS 8.4.1 e do source exato
 `v8.4.1`. A configuração versionada está em
-[`cases/first-global-240km/init/`](../../cases/first-global-240km/init/) e fixa:
+[`cases/first-global-240km/init/README.md`](../../cases/first-global-240km/init/README.md) e fixa:
 
 | Grupo | Configuração efetiva |
 |---|---|
@@ -548,22 +548,26 @@ primeira hora ✅
         ↓
 history / diagnostics ✅
         ↓
-validação científica ampla ⏳
+sanity científico ✅
 ```
 
 Isto prova o pipeline funcional `ERA5 → WPS → MPAS init → MPAS atmosphere`,
 inclusive I/O PIO/PnetCDF, a partição real em quatro ranks, a inicialização da
-física, o avanço temporal e a escrita dos outputs. Não prova conservação
-quantitativa, skill, equilíbrio do spin-up ou qualidade meteorológica.
+física, o avanço temporal e a escrita dos outputs. O ciclo 0014 também
+estabeleceu `scientific_sanity=PASS`, com balanços de massa seca e água em
+modo report-only e investigação limitada do `q2` negativo. Não prova forecast
+skill, equilíbrio de spin-up, previsão de múltiplos dias ou fechamento de
+budgets científicos.
 
-## Próximos trabalhos ainda pendentes
+## Extensões futuras, não blockers do projeto base
 
-- investigar o `q2` diagnóstico negativo sem modificar a baseline aprovada;
-- definir métricas de conservação, equilíbrio/spin-up e qualidade
-  meteorológica;
-- avaliar surface update antes de previsões mais longas;
-- decidir duração e produtos de um experimento científico posterior;
-- manter esta hora como smoke funcional, não como validação final.
+- ampliar a janela temporal para avaliar spin-up e conservação;
+- executar previsão mais longa acompanhada de ERA5 futuro para verificação;
+- decidir `surface_update`/SST antes dessa integração;
+- explorar Noah-MP, mesh mais fina e escalabilidade somente em experimentos
+  próprios;
+- preservar esta primeira hora como baseline funcional e de sanity
+  científico, sem convertê-la em evidência de forecast skill.
 
 ## Validação científica e visual da primeira hora
 

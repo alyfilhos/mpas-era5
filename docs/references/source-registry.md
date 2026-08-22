@@ -295,3 +295,22 @@ A base Python reutiliza [[#Documentação oficial|DOC-PYTHON-IMAGE-001]] e o
 digest já comprovado para `python:3.12.13-slim-bookworm`. As 16 dependências
 diretas/transitivas e seus hashes estão em
 [`docker/analysis/requirements.lock`](../../docker/analysis/requirements.lock).
+
+## Auditoria final do ciclo 0015
+
+Conferência realizada em **2026-08-21** para a baseline final:
+
+- não houve introdução ou upgrade de dependência neste ciclo;
+- versões adotadas, fontes oficiais e decisões relevantes continuam
+  rastreáveis neste registro, no
+  [[versions.lock|versions.lock.md]] e nos ADRs;
+- hashes de WPS, mesh, WPS_GEOG, ERA5, Vtable e artefatos derivados que foram
+  calculados localmente permanecem descritos como **locais**;
+- nenhum commit, tag ou SHA upstream foi criado por inferência;
+- CDS/ERA5 está associado ao container de aquisição, enquanto os containers
+  científico e de análise têm responsabilidades e locks próprios;
+- ausências conhecidas — digest Ubuntu, locks APT completos e checksum HDF5 —
+  permanecem registradas como limitações, não como valores presumidos.
+
+A auditoria não atualizou versões apenas por existirem releases mais novas: o
+projeto preserva a baseline que foi construída, executada e validada.

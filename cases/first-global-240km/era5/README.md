@@ -55,4 +55,4 @@ conteúdo divergente nunca é sobrescrito silenciosamente.
 O ciclo 0010 validou aquisição e transporte. No ciclo 0011, o inventário
 semântico real casou integralmente a `Vtable.ECMWF` upstream e os dois GRIBs
 foram convertidos e combinados. A configuração correspondente está em
-[`../wps/`](../wps/); `init.nc` permanece fora desse ciclo.
+[`../wps/README.md`](../wps/README.md); `init.nc` permanece fora desse ciclo.

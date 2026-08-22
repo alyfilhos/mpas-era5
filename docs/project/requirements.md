@@ -134,3 +134,55 @@ A análise adota container próprio por [[../decisions/0009-separate-analysis-co
 Isso não altera a decisão, a build ou as versões da stack MPAS/WPS. A execução
 normativa e seus limites estão em
 [[../validation/first-atmosphere-run|first-atmosphere-run.md]].
+
+## Rastreabilidade final do escopo original
+
+Status permitidos nesta auditoria:
+
+- `SATISFIED`: requisito demonstrado por evidência executada e rastreável;
+- `SATISFIED_WITH_LIMITATION`: entrega demonstrada, com limite de evidência
+  ou alcance que não bloqueia o objetivo original;
+- `NOT_APPLICABLE`: condição do requisito não ocorre na baseline aprovada;
+- `FUTURE_EXTENSION`: hipótese fora do escopo base (nenhum requisito original
+  recebeu este status).
+
+| ID | Requisito | Status | Evidência | Limitação | Ciclo |
+|---|---|---|---|---|---|
+| REQ-ENV-001 | ambiente Linux GNU + MPI | SATISFIED | imagem científica; versões GNU/OpenMPI e compilação C/Fortran em [`core-libraries.sh`](../../scripts/validate/core-libraries.sh); execução MPI real | pacotes APT não possuem lock/digest completo | baseline, 0002–0013, 0015 |
+| REQ-STACK-001 | zlib | SATISFIED_WITH_LIMITATION | 1.3.2 instalada; compressão/descompressão e link em `/opt/mpas` passam | suíte upstream histórica não executada/preservada | baseline + 0015 |
+| REQ-STACK-002 | HDF5 | SATISFIED_WITH_LIMITATION | 1.14.6 serial; dataset DEFLATE criado, escrito e relido; link com zlib do prefixo | suíte upstream e checksum do archive não preservados | baseline + 0015 |
+| REQ-STACK-003 | netCDF-C | SATISFIED_WITH_LIMITATION | 4.10.1; NetCDF-4/deflate criado e relido sobre HDF5/zlib; integração MPAS | `make check` está na receita, mas o log histórico não foi preservado | baseline + 0015 |
+| REQ-STACK-004 | netCDF-Fortran | SATISFIED_WITH_LIMITATION | 4.6.3; módulo Fortran cria/relê NetCDF-4/deflate e liga netCDF-C | `make check` está na receita, mas o log histórico não foi preservado | baseline + 0015 |
+| REQ-STACK-005 | PnetCDF | SATISFIED | `make check`/`ptest` e F90 CDF-5 coletivo em 4 ranks via MPI-IO | `ptests` extensa não executada; diagnóstico OMPIO documentado | 0002 |
+| REQ-STACK-006 | PIO2 | SATISFIED | PIO 2.7.0, 109/109 CTest e PnetCDF/CDF-2 em 4 ranks com OMPIO/ROMIO | NetCDF4P não compilado por decisão da stack serial | 0003 |
+| REQ-STACK-007 | METIS | SATISFIED | 5.1.0, `graphchk`/`gpmetis`, fixture e partição x1.10242 válida/consumida | release sem suíte formal; não mede performance | 0004, 0008, 0012–0013 |
+| REQ-PRE-001 | WPS/ungrib | SATISFIED | WPS 4.7.0, `g1print`, Vtable cruzada com 204 GRIBs e intermediate version 5 | Vtable validada para esta baseline ERA5 | 0005, 0011 |
+| REQ-MPAS-001 | `init_atmosphere` | SATISFIED | build/smoke, geração real de static e init meteorológico | static baseline não contém campos Noah-MP | 0006, 0009, 0012 |
+| REQ-MPAS-002 | `atmosphere` | SATISFIED | build/smoke e integração de 1 h em 4 ranks com history/diag | execução curta; sem skill/escalabilidade | 0007, 0013 |
+| REQ-DATA-001 | ERA5 | SATISFIED | requests aprovadas, CDSAPI isolado, probes, 185+19 GRIBs e conversão | um único instante; credencial/dados permanecem locais | 0010–0012 |
+| REQ-MESH-001 | primeira malha pública | SATISFIED | x1.10242 oficial, 10.242 células, grafo e `part.4` validados/consumidos | ~240 km e 4 ranks não constituem benchmark | 0008–0013 |
+| REQ-CASE-001 | `static.nc` | SATISFIED | CDF-2 gerado em 1 task; campos, ranges, log e hash validados | `config_noahmp_static=false` | 0009 |
+| REQ-CASE-002 | `init.nc` | SATISFIED | CDF-2, 55 níveis, 4 soil, 4 ranks, estrutura/física/proveniência PASS | seis `qv` negativos pequenos, limitados e documentados | 0012 |
+| REQ-CASE-003 | LBC quando aplicável | NOT_APPLICABLE | domínio global aprovado, `config_apply_lbcs=false` e nenhum LBC artificial | será requisito somente de eventual caso limitado | 0012–0013 |
+| REQ-RUN-001 | execução rastreável | SATISFIED | configuração, comando, inputs/outputs, 4 ranks, manifestos, 1 h e idempotência | uma hora e SST fixa | 0013 |
+| REQ-VAL-001 | validação física/numérica | SATISFIED_WITH_LIMITATION | integridade, estabilidade e sanity PASS; massa/água/`q2` classificados; figuras | skill não avaliado; spin-up insuficiente; budgets não fechados | 0014 |
+| REQ-DOC-001 | documentação final | SATISFIED | README público, guia end-to-end, relatório, grafo, matriz, fontes, learning note e portfólio | documentação não substitui dados locais nem novos experimentos | 0015 |
+
+Resumo:
+
+| Status | Quantidade |
+|---|---:|
+| SATISFIED | 13 |
+| SATISFIED_WITH_LIMITATION | 5 |
+| NOT_APPLICABLE | 1 |
+| FUTURE_EXTENSION | 0 |
+
+### O escopo original do projeto foi concluído?
+
+**Sim.** Cada requisito original foi satisfeito com evidência, satisfeito com
+uma limitação explicitamente não bloqueante, ou corretamente considerado não
+aplicável ao caso global. Não há blocker escondido como “experimento futuro”.
+
+`PROJECT_BASE_STATUS = COMPLETE` significa escopo técnico aprovado concluído.
+Permanece ao lado de `forecast_skill=NOT_EVALUATED` e
+`spinup=INSUFFICIENT_TEMPORAL_WINDOW`.

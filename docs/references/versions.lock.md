@@ -126,8 +126,9 @@ e rejeitado por ausência dos datasets requeridos, não por escolha de versão.
 - eventual experimento com METIS 5.2.1 + GKlib fixada ou PT-Scotch online;
   essas alternativas não são versões adotadas e estão somente em
   [[../project/future-experiments|future-experiments.md]];
-- validação meteorológica quantitativa ampla do `atmosphere`, para além do
-  PASS funcional de uma hora já concluído;
+- forecast verification com ERA5 futuro, avaliação de spin-up e budgets em
+  uma janela maior; o sanity científico da hora base já é PASS, sem alegação
+  de skill;
 
 Essas lacunas não devem ser preenchidas por suposição. Qualquer fixação ou
 mudança deve atualizar o registro de fontes, este arquivo, a matriz de
@@ -175,3 +176,20 @@ MATPLOTLIB_VERSION=3.11.1
 O lock de wheels é específico da plataforma Linux x86-64/CPython 3.12. A
 imagem foi construída com rede, mas seu runtime científico passou com
 `--network none --read-only`. Jupyter e Cartopy não foram adotados.
+
+## Auditoria final do ciclo 0015
+
+- nenhuma versão, dependência ou estratégia serial/paralela foi alterada;
+- as versões adotadas têm origem registrada no
+  [[source-registry|source-registry.md]] ou evidência direta nas receitas;
+- checksums produzidos pelo projeto continuam identificados como **locais** e
+  não são atribuídos aos upstreams;
+- nenhum SHA upstream foi inferido ou inventado;
+- ERA5/CDS, a imagem científica e a imagem de análise permanecem registradas
+  como papéis separados;
+- digest Ubuntu, locks APT e checksum HDF5 continuam limitações explícitas,
+  sem preenchimento por suposição.
+
+Esta baseline fica congelada como a configuração efetivamente reproduzida.
+Novas releases pertencem a extensões futuras e exigem nova decisão e
+validação.

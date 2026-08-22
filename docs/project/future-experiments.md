@@ -1,83 +1,147 @@
 # Experimentos técnicos futuros
 
-Este documento é um backlog de hipóteses que podem merecer ciclos próprios.
-Ele não é um roadmap aprovado, não altera as versões adotadas e não autoriza
-implementação. Cada experimento continua sujeito a pesquisa, decisão do usuário,
-ADR quando aplicável e validação reproduzível.
+## Projeto base concluído
 
-## Graph partitioning
+`PROJECT_BASE_STATUS = COMPLETE`
 
-### METIS 5.2.1 + pinned GKlib
+A baseline aprovada — ERA5 → WPS → MPAS init → primeira hora → validação
+científica — está concluída. Os itens abaixo são **extensões futuras**, não
+requisitos faltantes. Nenhum item autoriza implementação: cada experimento
+exige pesquisa oficial, proposta, decisão do usuário, ADR quando aplicável,
+testes e documentação.
 
-**Status:** futuro / não implementado
-
-**Hipótese:** avaliar se a linha moderna do METIS traz benefício mensurável sem
-comprometer a compatibilidade com as malhas e o workflow do MPAS.
-
-A release oficial METIS 5.2.1 existe no repositório moderno
-`KarypisLab/METIS`. Diferentemente do tarball 5.1.0 adotado como baseline, ela
-espera a GKlib como dependência externa. Um experimento deverá fixar
-explicitamente uma release ou commit da GKlib, registrar a compatibilidade entre
-as duas revisões e verificar a integridade de ambos os artefatos. `gpmetis`
-continua sendo o executável offline de interesse.
-
-Não há evidência neste ciclo de que 5.2.1 seja melhor para MPAS. A comparação
-deve usar exatamente o mesmo `graph.info`, número de partições, opções, hardware
-e método de medição usados com 5.1.0. Deve comparar pelo menos:
-
-- validade estrutural da partição;
-- `edge cut`;
-- balanceamento e contiguidade;
-- tempo e, quando viável, memória do particionamento;
-- compatibilidade com grafos derivados de meshes MPAS.
-
-### PT-Scotch online partitioning
-
-**Status:** futuro / não implementado
-
-**Hipótese:** avaliar o valor do particionamento distribuído/online para
-workflows que variam frequentemente o número de ranks.
-
-A documentação atual do MPAS registra particionamento online desde MPAS v8.4.0.
-Ele requer que o MPAS seja construído com PT-Scotch, atualmente documentado com
-versão mínima 7.0.8 e compatibilidade com índices de 32 bits. O particionamento
-pode ser criado em runtime e salvo para reutilização. Isso pode evitar a etapa
-manual de pré-computar `graph.info.part.N` em alguns workflows; o fluxo offline
-com METIS continua suportado.
-
-Este ciclo não instala PT-Scotch, não compila MPAS e não mede particionamento
-online. A hipótese só poderá ser testada depois que existirem uma mesh e uma
-configuração MPAS aprovadas.
-
-### Comparative experiment
-
-Comparação futura proposta, ainda não aprovada para execução:
+Os limites que permanecem ao lado do status completo são:
 
 ```text
-METIS 5.1.0 offline
-vs METIS 5.2.1 offline + GKlib fixada
-vs PT-Scotch online
+forecast_skill = NOT_EVALUATED
+spinup         = INSUFFICIENT_TEMPORAL_WINDOW
 ```
 
-Para uma comparação justa, devem permanecer constantes:
+Eles descrevem o desenho de uma hora; não invalidam o escopo base.
 
-- a mesma mesh e a mesma representação `graph.info` quando o método a usar;
-- o mesmo número de partições/ranks e os mesmos critérios de contiguidade;
-- a mesma definição de peso de vértices e arestas;
-- a mesma plataforma, recursos, afinidade e carga concorrente;
-- a mesma versão e configuração do MPAS para medições integradas;
-- entradas, namelists, duração do caso e critérios de validação;
-- número de repetições, warm-up e método de coleta das métricas.
+## Extensões meteorológicas
 
-Métricas candidatas:
+### Previsão mais longa / cinco dias
 
-- tempo e memória do particionamento;
-- validade, balanceamento e `edge cut` da partição;
-- comunicação inferida e depois observada entre ranks;
-- tempo total de inicialização e de execução do MPAS;
-- escalabilidade com o número de ranks;
-- conveniência operacional e capacidade de reutilização;
-- reprodutibilidade da partição e do procedimento.
+**Hipótese:** avaliar estabilidade e evolução multidiária.
 
-O resultado do fixture artificial do ciclo 0004 não deve ser usado para
-concluir desempenho em uma mesh MPAS real.
+Exige decidir período, outputs, retenção, custo, critérios de falha e
+estratégia de superfície. A baseline de uma hora não deve ser simplesmente
+esticada com SST fixa sem essa decisão.
+
+### ERA5 futuro para forecast verification
+
+**Hipótese:** comparar a previsão com ERA5 ou outra verdade de referência.
+
+Exige adquirir tempos futuros, definir interpolação mesh↔grade, variáveis,
+métricas, baseline/climatologia e tolerâncias antes de observar os resultados.
+Só esse experimento poderá mudar `forecast_skill`.
+
+### Surface update / SST
+
+**Hipótese:** atualizar SST, gelo marinho e campos superficiais durante
+integrações mais longas.
+
+Exige `sfc_update.nc`, cadência temporal, proveniência e teste de consumo. A
+SST fixa é somente a configuração da hora concluída.
+
+### Avaliação de spin-up
+
+**Hipótese:** medir ajuste inicial em uma janela temporal suficiente.
+
+Exige mais instantes, métricas e regiões/camadas definidas previamente. Só
+então `spinup` pode deixar `INSUFFICIENT_TEMPORAL_WINDOW`.
+
+### Noah-MP
+
+**Hipótese:** avaliar outra física de superfície.
+
+Exige gerar outro static com os campos Noah-MP; o static baseline com
+`config_noahmp_static=false` não pode ser reutilizado artificialmente.
+
+### Mesh mais fina
+
+**Hipótese:** avaliar processos e estruturas não representados em ~240 km.
+
+Exige nova mesh/caso, custo de WPS_GEOG/static/init/run, timestep adequado,
+partições e critérios próprios. Não substitui silenciosamente x1.10242.
+
+## Extensões HPC e particionamento
+
+### Performance MPI, escalabilidade e mais ranks
+
+**Hipótese:** medir strong/weak scaling e custo de I/O.
+
+Um experimento justo fixa hardware, afinidade, carga concorrente, input,
+namelist, outputs, warm-up e número de repetições. A execução de quatro ranks
+prova integração, não speedup.
+
+### METIS moderno
+
+**Candidato:** METIS 5.2.1 com GKlib explicitamente fixada.
+
+Comparar com 5.1.0 usando o mesmo grafo, número de partições e flags. Medir
+validade, edge cut, balanceamento, contiguidade, tempo e memória. Não existe
+evidência atual de superioridade.
+
+### PT-Scotch
+
+**Hipótese:** avaliar particionamento distribuído/online do MPAS.
+
+Exige versão/compatibilidade aprovadas, rebuild separado e comparação com a
+partição offline. A baseline METIS permanece válida.
+
+### Apptainer/HPC
+
+**Hipótese:** portar o ambiente para clusters onde Docker não é permitido.
+
+Exige política do centro, MPI host/container, bind mounts, filesystem
+paralelo, scheduler e validação numérica contra a baseline Docker.
+
+### NetCDF4P / HDF5 paralelo
+
+**Hipótese:** avaliar `PIO_IOTYPE_NETCDF4P` para casos em que o backend traga
+benefício mensurável.
+
+Exige mudar a estratégia HDF5/netCDF serial/paralela — gate protegido —,
+reconstruir uma imagem alternativa e comparar correção e performance. O
+caminho PnetCDF atual não é incompleto por não usar NetCDF4P.
+
+### GPU
+
+**Status:** somente se houver suporte aplicável, objetivo mensurável e
+compatibilidade comprovada numa futura linha MPAS/física.
+
+Não há evidência nesta baseline para prometer aceleração, portabilidade ou
+benefício de GPU.
+
+## Matriz do backlog
+
+| Extensão | Pergunta principal | Nova entrada/decisão | Não pode alegar antes do teste |
+|---|---|---|---|
+| 5 dias | estabilidade multidiária | duração, superfície e outputs | estabilidade longa |
+| ERA5 futuro | skill | verdade e métricas | acurácia/viés |
+| surface update | evolução de SST/ice | arquivo/cadência | adequação de SST fixa |
+| spin-up | tempo de ajuste | janela/métricas | spin-up concluído |
+| Noah-MP | sensibilidade de superfície | novo static/física | superioridade |
+| mesh fina | resolução | nova mesh/caso | maior qualidade |
+| mais ranks | escalabilidade | hardware/protocolo | speedup |
+| METIS 5.2.1 | particionamento | GKlib pinada | melhor partição |
+| PT-Scotch | particionamento online | rebuild/ADR | menor custo |
+| Apptainer | portabilidade HPC | cluster/MPI | equivalência |
+| NetCDF4P | backend paralelo | HDF5/netCDF paralelo | I/O mais rápido |
+| GPU | aceleração | suporte e hardware | ganho de performance |
+
+## Regras para qualquer extensão
+
+1. preservar a baseline concluída em outro caso/tag;
+2. registrar fontes oficiais e data de verificação;
+3. decidir versões e arquitetura antes de implementar;
+4. definir métricas/tolerâncias antes de observar o resultado;
+5. manter inputs e outputs grandes fora do Git;
+6. comparar com o caso base sem reclassificar limitações retrospectivamente;
+7. produzir learning note e relatório pré-commit.
+
+O desenho do caso concluído está em
+[[../cases/first-global-240km|first-global-240km.md]], e o resumo técnico em
+[[completion-report|completion-report.md]].
